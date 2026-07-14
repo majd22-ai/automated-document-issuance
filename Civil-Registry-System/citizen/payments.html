@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المدفوعات</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/sidebar.css">
+    <link rel="stylesheet" href="../assets/css/tables.css">
+    <link rel="stylesheet" href="../assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="../assets/images/yemen-logo.png" alt="الشعار">
+                <h3>مصلحة الأحوال المدنية والسجل المدني</h3>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="dashboard.html"><i class="fas fa-home"></i> الرئيسية</a></li>
+                    <li><a href="profile.html"><i class="fas fa-user"></i> الملف الشخصي</a></li>
+                    <li><a href="new-card.html"><i class="fas fa-id-card"></i> إصدار بطاقة</a></li>
+                    <li><a href="renew-card.html"><i class="fas fa-rotate-right"></i> تجديد بطاقة</a></li>
+                    <li><a href="track-application.html"><i class="fas fa-search"></i> تتبع الطلبات</a></li>
+                    <li><a href="payments.html" class="active"><i class="fas fa-credit-card"></i> المدفوعات</a></li>
+                    <li><a href="appointments.html"><i class="fas fa-calendar-check"></i> المواعيد</a></li>
+                    <li><a href="notifications.html"><i class="fas fa-bell"></i> الإشعارات</a></li>
+                    <li><a href="settings.html"><i class="fas fa-cog"></i> الإعدادات</a></li>
+                    <li><a href="../login.html"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <header class="dashboard-header">
+                <div class="header-left">
+                    <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+                    <h2>المدفوعات الإلكترونية</h2>
+                </div>
+                <div class="header-right">
+                    <a href="../index.html" class="portal-link" title="البوابة الرئيسية"><i class="fas fa-home"></i> <span>الرئيسية</span></a>
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </div>
+                    <div class="user-info">
+                        <span>أحمد محمد</span>
+                        <img src="../assets/images/user-avatar.png" alt="الصورة الشخصية">
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="payment-summary">
+                    <div class="summary-card">
+                        <h4>إجمالي المدفوعات</h4>
+                        <p class="amount">RM 450.00</p>
+                    </div>
+                    <div class="summary-card">
+                        <h4>المدفوعات المعلقة</h4>
+                        <p class="amount">RM 150.00</p>
+                    </div>
+                    <div class="summary-card">
+                        <h4>المدفوعات المكتملة</h4>
+                        <p class="amount">RM 300.00</p>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <h3>سجل المدفوعات</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>رقم الفاتورة</th>
+                                <th>الخدمة</th>
+                                <th>المبلغ</th>
+                                <th>التاريخ</th>
+                                <th>الحالة</th>
+                                <th>الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#INV-2024-001</td>
+                                <td>إصدار بطاقة</td>
+                                <td>RM 150.00</td>
+                                <td>01/01/2024</td>
+                                <td><span class="status completed">مدفوع</span></td>
+                                <td><a href="#" class="btn btn-sm">عرض</a></td>
+                            </tr>
+                            <tr>
+                                <td>#INV-2024-002</td>
+                                <td>تجديد بطاقة</td>
+                                <td>RM 100.00</td>
+                                <td>05/01/2024</td>
+                                <td><span class="status pending">قيد الانتظار</span></td>
+                                <td><a href="#" class="btn btn-sm btn-primary">دفع الآن</a></td>
+                            </tr>
+                            <tr>
+                                <td>#INV-2024-003</td>
+                                <td>تمديد تأشيرة</td>
+                                <td>RM 200.00</td>
+                                <td>10/01/2024</td>
+                                <td><span class="status completed">مدفوع</span></td>
+                                <td><a href="#" class="btn btn-sm">عرض</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="payment-methods">
+                    <h3>طرق الدفع المتاحة</h3>
+                    <div class="methods-grid">
+                        <div class="method-card">
+                            <i class="fas fa-credit-card"></i>
+                            <p>بطاقة ائتمانية</p>
+                        </div>
+                        <div class="method-card">
+                            <i class="fas fa-university"></i>
+                            <p>تحويل بنكي</p>
+                        </div>
+                        <div class="method-card">
+                            <i class="fas fa-mobile-alt"></i>
+                            <p>محفظة رقمية</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="dashboard-footer">
+                <div class="dashboard-footer-content">
+                    <div>&copy; 2024 مصلحة الأحوال المدنية والسجل المدني. جميع الحقوق محفوظة.</div>
+                    <ul class="dashboard-footer-links">
+                        <li><a href="../index.html">البوابة الرئيسية</a></li>
+                        <li><a href="appointments.html">المواعيد</a></li>
+                        <li><a href="track-application.html">الاستعلام</a></li>
+                        <li><a href="settings.html">الإعدادات</a></li>
+                    </ul>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="../assets/js/app.js"></script>
+    <script src="../assets/js/payment.js"></script>
+    <script src="../assets/js/citizen.js"></script>
+</body>
+</html>

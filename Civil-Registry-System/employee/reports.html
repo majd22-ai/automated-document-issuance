@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التقارير - الموظف</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/sidebar.css">
+    <link rel="stylesheet" href="../assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="../assets/images/yemen-logo.png" alt="الشعار">
+                <h3>مصلحة الأحوال المدنية والسجل المدني</h3>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="dashboard.html"><i class="fas fa-home"></i> الرئيسية</a></li>
+                    <li><a href="applications.html"><i class="fas fa-file-alt"></i> الطلبات</a></li>
+                    <li><a href="notifications.html"><i class="fas fa-bell"></i> الإشعارات</a></li>
+                    <li><a href="reports.html" class="active"><i class="fas fa-chart-bar"></i> التقارير</a></li>
+                    <li><a href="../login.html"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="dashboard-main">
+            <header class="dashboard-header">
+                <div class="header-left">
+                    <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+                    <h2>التقارير والإحصائيات</h2>
+                </div>
+                <div class="header-right">
+                    <a href="../index.html" class="portal-link" title="البوابة الرئيسية"><i class="fas fa-home"></i> <span>الرئيسية</span></a>
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">5</span>
+                    </div>
+                    <div class="user-info">
+                        <span>موظف الأحوال</span>
+                        <img src="../assets/images/user-avatar.png" alt="الصورة الشخصية">
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="reports-grid">
+                    <div class="report-card">
+                        <div class="report-icon" style="background: #007bff;">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="report-info">
+                            <h4>إجمالي الطلبات</h4>
+                            <p>65</p>
+                            <span>هذا الشهر</span>
+                        </div>
+                    </div>
+                    <div class="report-card">
+                        <div class="report-icon" style="background: #28a745;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="report-info">
+                            <h4>المعتمدة</h4>
+                            <p>45</p>
+                            <span>69%</span>
+                        </div>
+                    </div>
+                    <div class="report-card">
+                        <div class="report-icon" style="background: #dc3545;">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="report-info">
+                            <h4>المرفوضة</h4>
+                            <p>8</p>
+                            <span>12%</span>
+                        </div>
+                    </div>
+                    <div class="report-card">
+                        <div class="report-icon" style="background: #ffc107;">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="report-info">
+                            <h4>قيد المعالجة</h4>
+                            <p>12</p>
+                            <span>19%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>تحليل الطلبات حسب الخدمة</h3>
+                    <div class="chart-placeholder">
+                        <div class="bar-chart">
+                            <div class="bar" style="height: 60%;">إصدار بطاقة</div>
+                            <div class="bar" style="height: 40%;">تجديد بطاقة</div>
+                            <div class="bar" style="height: 30%;">تمديد تأشيرة</div>
+                            <div class="bar" style="height: 20%;">أخرى</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="dashboard-footer">
+                <div class="dashboard-footer-content">
+                    <div>&copy; 2024 مصلحة الأحوال المدنية والسجل المدني. جميع الحقوق محفوظة.</div>
+                    <ul class="dashboard-footer-links">
+                        <li><a href="../index.html">البوابة الرئيسية</a></li>
+                        <li><a href="applications.html">الطلبات</a></li>
+                        <li><a href="reports.html">التقارير</a></li>
+                    </ul>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="../assets/js/app.js"></script>
+    <script src="../assets/js/employee.js"></script>
+</body>
+</html>

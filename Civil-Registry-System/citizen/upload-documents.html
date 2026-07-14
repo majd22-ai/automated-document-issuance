@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رفع المستندات</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/sidebar.css">
+    <link rel="stylesheet" href="../assets/css/forms.css">
+    <link rel="stylesheet" href="../assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="../assets/images/yemen-logo.png" alt="الشعار">
+                <h3>مصلحة الأحوال المدنية والسجل المدني</h3>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="dashboard.html"><i class="fas fa-home"></i> الرئيسية</a></li>
+                    <li><a href="profile.html"><i class="fas fa-user"></i> الملف الشخصي</a></li>
+                    <li><a href="new-card.html"><i class="fas fa-id-card"></i> إصدار بطاقة</a></li>
+                    <li><a href="renew-card.html"><i class="fas fa-rotate-right"></i> تجديد بطاقة</a></li>
+                    <li><a href="upload-documents.html" class="active"><i class="fas fa-upload"></i> رفع المستندات</a></li>
+                    <li><a href="track-application.html"><i class="fas fa-search"></i> تتبع الطلبات</a></li>
+                    <li><a href="payments.html"><i class="fas fa-credit-card"></i> المدفوعات</a></li>
+                    <li><a href="appointments.html"><i class="fas fa-calendar-check"></i> المواعيد</a></li>
+                    <li><a href="notifications.html"><i class="fas fa-bell"></i> الإشعارات</a></li>
+                    <li><a href="settings.html"><i class="fas fa-cog"></i> الإعدادات</a></li>
+                    <li><a href="../login.html"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="dashboard-main">
+            <header class="dashboard-header">
+                <div class="header-left">
+                    <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+                    <h2>رفع المستندات</h2>
+                </div>
+                <div class="header-right">
+                    <a href="../index.html" class="portal-link" title="البوابة الرئيسية"><i class="fas fa-home"></i> <span>الرئيسية</span></a>
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </div>
+                    <div class="user-info">
+                        <span>أحمد محمد</span>
+                        <img src="../assets/images/user-avatar.png" alt="الصورة الشخصية">
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="upload-container">
+                    <div class="upload-box">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <h3>اسحب ملفاتك هنا أو انقر للتحميل</h3>
+                        <p>يدعم الملفات: PDF, JPG, PNG (حد أقصى 5MB لكل ملف)</p>
+                        <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none" id="fileInput">
+                        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-upload"></i> اختر الملفات
+                        </button>
+                    </div>
+
+                    <div class="uploaded-files">
+                        <h4>الملفات المرفوعة</h4>
+                        <div class="file-item">
+                            <div class="file-info">
+                                <i class="fas fa-file-pdf" style="color: #dc3545;"></i>
+                                <span>جواز_السفر.pdf</span>
+                                <small>2.3 MB</small>
+                            </div>
+                            <div class="file-status">
+                                <span class="status completed">مرفوع</span>
+                                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-info">
+                                <i class="fas fa-image" style="color: #17a2b8;"></i>
+                                <span>الصورة_الشخصية.jpg</span>
+                                <small>1.1 MB</small>
+                            </div>
+                            <div class="file-status">
+                                <span class="status completed">مرفوع</span>
+                                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-info">
+                                <i class="fas fa-file-pdf" style="color: #dc3545;"></i>
+                                <span>نموذج_الطلب.pdf</span>
+                                <small>0.8 MB</small>
+                            </div>
+                            <div class="file-status">
+                                <span class="status pending">جاري الرفع...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="upload-actions">
+                        <button class="btn btn-secondary">إلغاء</button>
+                        <button class="btn btn-primary">إرسال المستندات</button>
+                    </div>
+                </div>
+            </div>
+            <footer class="dashboard-footer">
+                <div class="dashboard-footer-content">
+                    <div>&copy; 2024 مصلحة الأحوال المدنية والسجل المدني. جميع الحقوق محفوظة.</div>
+                    <ul class="dashboard-footer-links">
+                        <li><a href="../index.html">البوابة الرئيسية</a></li>
+                        <li><a href="appointments.html">المواعيد</a></li>
+                        <li><a href="track-application.html">الاستعلام</a></li>
+                        <li><a href="settings.html">الإعدادات</a></li>
+                    </ul>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="../assets/js/app.js"></script>
+    <script src="../assets/js/upload.js"></script>
+    <script src="../assets/js/citizen.js"></script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المواعيد</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/sidebar.css">
+    <link rel="stylesheet" href="../assets/css/tables.css">
+    <link rel="stylesheet" href="../assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="../assets/images/yemen-logo.png" alt="الشعار">
+                <h3>مصلحة الأحوال المدنية والسجل المدني</h3>
+                <span>الإدارة</span>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="dashboard.html"><i class="fas fa-home"></i> الرئيسية</a></li>
+                    <li><a href="users.html"><i class="fas fa-users"></i> المستخدمين</a></li>
+                    <li><a href="employees.html"><i class="fas fa-user-tie"></i> الموظفين</a></li>
+                    <li><a href="services.html"><i class="fas fa-concierge-bell"></i> الخدمات</a></li>
+                    <li><a href="fees.html"><i class="fas fa-dollar-sign"></i> الرسوم</a></li>
+                    <li><a href="appointments.html" class="active"><i class="fas fa-calendar-check"></i> المواعيد</a></li>
+                    <li><a href="notifications.html"><i class="fas fa-bell"></i> الإشعارات</a></li>
+                    <li><a href="reports.html"><i class="fas fa-chart-bar"></i> التقارير</a></li>
+                    <li><a href="statistics.html"><i class="fas fa-chart-pie"></i> الإحصائيات</a></li>
+                    <li><a href="settings.html"><i class="fas fa-cog"></i> الإعدادات</a></li>
+                    <li><a href="../login.html"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="dashboard-main">
+            <header class="dashboard-header">
+                <div class="header-left">
+                    <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+                    <h2>إدارة المواعيد</h2>
+                </div>
+                <div class="header-right">
+                    <a href="../index.html" class="portal-link" title="البوابة الرئيسية"><i class="fas fa-home"></i> <span>الرئيسية</span></a>
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">8</span>
+                    </div>
+                    <div class="user-info">
+                        <span>مدير النظام</span>
+                        <img src="../assets/images/user-avatar.png" alt="الصورة الشخصية">
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="calendar-view">
+                    <div class="calendar-header">
+                        <button class="btn btn-sm"><i class="fas fa-chevron-right"></i></button>
+                        <h3>يناير 2024</h3>
+                        <button class="btn btn-sm"><i class="fas fa-chevron-left"></i></button>
+                    </div>
+                    <div class="calendar-grid">
+                        <!-- Simplified calendar -->
+                        <div class="calendar-day">
+                            <span class="day-name">الأحد</span>
+                            <div class="day-number">1</div>
+                            <div class="appointment-dot"></div>
+                        </div>
+                        <div class="calendar-day">
+                            <span class="day-name">الإثنين</span>
+                            <div class="day-number">2</div>
+                            <div class="appointment-dot"></div>
+                        </div>
+                        <!-- More days -->
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <h3>المواعيد القادمة</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>المتقدم</th>
+                                <th>الخدمة</th>
+                                <th>التاريخ</th>
+                                <th>الوقت</th>
+                                <th>الحالة</th>
+                                <th>الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>أحمد محمد</td>
+                                <td>إصدار بطاقة</td>
+                                <td>15/01/2024</td>
+                                <td>10:00</td>
+                                <td><span class="status confirmed">مؤكد</span></td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>سارة علي</td>
+                                <td>تجديد بطاقة</td>
+                                <td>22/01/2024</td>
+                                <td>14:00</td>
+                                <td><span class="status pending">قيد الانتظار</span></td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <footer class="dashboard-footer">
+                <div class="dashboard-footer-content">
+                    <div>&copy; 2024 مصلحة الأحوال المدنية والسجل المدني. جميع الحقوق محفوظة.</div>
+                    <ul class="dashboard-footer-links">
+                        <li><a href="../index.html">البوابة الرئيسية</a></li>
+                        <li><a href="users.html">المواطنون</a></li>
+                        <li><a href="employees.html">الموظفون</a></li>
+                        <li><a href="reports.html">التقارير</a></li>
+                    </ul>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="../assets/js/app.js"></script>
+    <script src="../assets/js/admin.js"></script>
+</body>
+</html>

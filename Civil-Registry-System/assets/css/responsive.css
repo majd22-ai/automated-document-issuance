@@ -1,0 +1,255 @@
+/* Responsive Styles */
+
+/* Small devices (tablets, 768px and up) */
+@media (max-width: 768px) {
+    .top-bar-content {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .certificates {
+        font-size: 11px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .top-links {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .embassy-name h1 {
+        font-size: 18px;
+    }
+
+    .embassy-name p {
+        font-size: 12px;
+    }
+
+    /* Hero Section */
+    .hero {
+        min-height: 300px;
+    }
+
+    .hero-content h2 {
+        font-size: 28px;
+    }
+
+    .hero-content p {
+        font-size: 16px;
+    }
+
+    .hero-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .hero-buttons .btn {
+        width: 200px;
+    }
+
+    /* Section Titles */
+    .section-title {
+        font-size: 24px;
+    }
+
+    .section-desc {
+        font-size: 14px;
+    }
+
+    /* Footer */
+    .footer-content {
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .social-icons {
+        justify-content: center;
+    }
+}
+
+/* Extra small devices (phones, 576px and down) */
+@media (max-width: 576px) {
+    .container {
+        padding: 0 15px;
+    }
+
+    .top-bar {
+        padding: 8px 0;
+    }
+
+    .certificates {
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .logo-img {
+        height: 40px;
+    }
+
+    .embassy-name h1 {
+        font-size: 16px;
+    }
+
+    .embassy-name p {
+        font-size: 11px;
+    }
+
+    .nav-list > li > a {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+
+    .dropdown-menu {
+        min-width: 180px;
+    }
+
+    .dropdown-menu li a {
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+
+    .hero {
+        min-height: 250px;
+    }
+
+    .hero-content h2 {
+        font-size: 22px;
+    }
+
+    .hero-content p {
+        font-size: 14px;
+    }
+
+    .hero-buttons .btn {
+        width: 100%;
+        max-width: 200px;
+    }
+
+    .section-title {
+        font-size: 20px;
+    }
+
+    .service-card {
+        padding: 20px 15px;
+    }
+
+    .service-card .card-icon {
+        font-size: 36px;
+    }
+
+    .service-card h3 {
+        font-size: 16px;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .footer-section ul {
+        text-align: center;
+    }
+
+    .footer-section ul li a {
+        justify-content: center;
+    }
+
+    .social-icons {
+        justify-content: center;
+    }
+
+    .footer-bottom {
+        font-size: 12px;
+    }
+
+    /* Form responsiveness */
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .form-group.half {
+        width: 100%;
+    }
+
+    .form-progress {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .form-progress::before {
+        display: none;
+    }
+
+    .form-progress .step {
+        padding: 0;
+        width: 100%;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .profile-actions {
+        flex-direction: column;
+    }
+
+    .upload-box {
+        padding: 30px 20px;
+    }
+
+    .file-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .file-item .file-status {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .sidebar,
+    .dashboard-header,
+    .no-print {
+        display: none !important;
+    }
+
+    .dashboard-main {
+        margin-right: 0 !important;
+    }
+
+    .dashboard-content {
+        padding: 10px !important;
+    }
+
+    .data-table {
+        font-size: 12px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 5px 8px;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
