@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة الإصدار الآلي - الأحوال المدنية</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../src/assets/css/variables.css">
+    <link rel="stylesheet" href="../src/assets/css/global.css">
+    <link rel="stylesheet" href="../src/assets/css/components.css">
+    <link rel="stylesheet" href="../src/assets/css/responsive.css">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="index.html">
+                <i class="fa-solid fa-id-card fa-2x text-primary me-2 ms-2"></i>
+                <span class="fw-bold fs-4 text-gradient">منصة الإصدار الآلي</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="index.html">الرئيسية</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#services">الخدمات الإلكترونية</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#how-it-works">كيف تعمل المنصة؟</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact">تواصل معنا</a>
+                    </li>
+                </ul>
+                <div class="d-flex gap-2">
+                    <a href="../src/pages/auth/login.html" class="btn btn-outline-custom">تسجيل الدخول</a>
+                    <a href="../src/pages/auth/register.html" class="btn btn-primary-custom">إنشاء حساب</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-shapes"></div>
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-5 mb-lg-0">
+                    <h1 class="display-4 fw-bold mb-4">بوابتك الرقمية الشاملة للخدمات الحكومية</h1>
+                    <p class="lead text-muted mb-4">نظام إلكتروني متكامل لإدارة خدمات إصدار وتجديد الوثائق الرسمية (بطاقات، رخص، جوازات) وتحديث البيانات بسهولة وأمان عبر منصة واحدة.</p>
+                    <div class="d-flex gap-3">
+                        <a href="#services" class="btn btn-primary-custom btn-lg"><i class="fa-solid fa-rocket ms-2"></i>ابدأ الآن</a>
+                        <a href="../src/pages/auth/login.html" class="btn btn-outline-custom btn-lg"><i class="fa-solid fa-magnifying-glass ms-2"></i>تتبع طلبك</a>
+                    </div>
+                    
+                    <div class="mt-5 d-flex gap-4 align-items-center">
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-shield-halved fs-3 text-success ms-2"></i>
+                            <span class="fw-bold">آمن وموثوق</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-bolt fs-3 text-warning ms-2"></i>
+                            <span class="fw-bold">إنجاز سريع</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 position-relative">
+                    <div class="glass-card">
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80" alt="Dashboard Preview" class="img-fluid rounded shadow-sm" style="opacity: 0.9;">
+                        <!-- Note: Real project will use actual local assets in public/assets/images -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="section-padding bg-white">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold text-dark">دليل الخدمات الإلكترونية</h2>
+                <p class="text-muted">اختر الخدمة التي تحتاجها من القائمة أدناه للبدء في الإجراءات</p>
+                <div class="mx-auto mt-3" style="width: 60px; height: 4px; background: var(--secondary-color); border-radius: 2px;"></div>
+            </div>
+            
+            <div class="row g-4">
+                <!-- Service 1 -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fa-solid fa-id-card"></i>
+                        </div>
+                        <h4 class="mb-3">البطاقات الشخصية</h4>
+                        <p class="text-muted mb-4">إصدار بطاقة جديدة، أو تجديد بطاقة منتهية، بالإضافة إلى تحديث البيانات الشخصية بسهولة تامة.</p>
+                        <a href="../src/pages/citizen/services.html" class="btn btn-outline-custom btn-sm">تقديم طلب <i class="fa-solid fa-arrow-left me-1"></i></a>
+                    </div>
+                </div>
+                
+                <!-- Service 2 -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fa-solid fa-passport"></i>
+                        </div>
+                        <h4 class="mb-3">جوازات السفر</h4>
+                        <p class="text-muted mb-4">طلب إصدار جواز سفر لأول مرة أو تجديد الجواز الحالي عبر خطوات إلكترونية معتمدة وسريعة.</p>
+                        <a href="../src/pages/citizen/services.html" class="btn btn-outline-custom btn-sm">تقديم طلب <i class="fa-solid fa-arrow-left me-1"></i></a>
+                    </div>
+                </div>
+                
+                <!-- Service 3 -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fa-solid fa-car-side"></i>
+                        </div>
+                        <h4 class="mb-3">رخص القيادة</h4>
+                        <p class="text-muted mb-4">خدمات إصدار وتجديد رخص القيادة ورفع المستندات والتقارير الطبية اللازمة إلكترونياً.</p>
+                        <a href="../src/pages/citizen/services.html" class="btn btn-outline-custom btn-sm">تقديم طلب <i class="fa-solid fa-arrow-left me-1"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works Section -->
+    <section id="how-it-works" class="section-padding" style="background-color: var(--bg-main);">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-5 mb-5 mb-lg-0">
+                    <h2 class="fw-bold text-dark mb-4">آلية عمل المنصة</h2>
+                    <p class="text-muted mb-4">قمنا بتبسيط الإجراءات الورقية المعقدة وتحويلها إلى خطوات رقمية سهلة وواضحة يمكنك إنجازها من منزلك.</p>
+                    <ul class="list-unstyled">
+                        <li class="d-flex mb-4">
+                            <div class="flex-shrink-0">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: var(--primary-color) !important;">1</div>
+                            </div>
+                            <div class="flex-grow-1 ms-3 me-3">
+                                <h5>تسجيل الدخول / إنشاء حساب</h5>
+                                <p class="text-muted mb-0">أنشئ حسابك الخاص للوصول إلى كافة الخدمات.</p>
+                            </div>
+                        </li>
+                        <li class="d-flex mb-4">
+                            <div class="flex-shrink-0">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: var(--primary-color) !important;">2</div>
+                            </div>
+                            <div class="flex-grow-1 ms-3 me-3">
+                                <h5>تعبئة البيانات ورفع المرفقات</h5>
+                                <p class="text-muted mb-0">اختر الخدمة، وقم بتعبئة الاستمارة ورفع الصور المطلوبة.</p>
+                            </div>
+                        </li>
+                        <li class="d-flex mb-4">
+                            <div class="flex-shrink-0">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: var(--primary-color) !important;">3</div>
+                            </div>
+                            <div class="flex-grow-1 ms-3 me-3">
+                                <h5>المراجعة والاعتماد</h5>
+                                <p class="text-muted mb-0">يقوم الموظف المختص بمراجعة طلبك وإشعارك بالقبول.</p>
+                            </div>
+                        </li>
+                        <li class="d-flex">
+                            <div class="flex-shrink-0">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background-color: var(--primary-color) !important;">4</div>
+                            </div>
+                            <div class="flex-grow-1 ms-3 me-3">
+                                <h5>إصدار الوثيقة</h5>
+                                <p class="text-muted mb-0">يتم إصدار الوثيقة وتجهيزها للاستلام مع إمكانية تحميل نسخة PDF.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-lg-7">
+                    <div class="p-4 rounded-4 shadow-sm bg-white border border-light">
+                        <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800&q=80" alt="Workflow" class="img-fluid rounded-3">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white pt-5 pb-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <h5 class="fw-bold mb-4 text-white"><i class="fa-solid fa-id-card text-primary me-2 ms-2"></i> منصة الإصدار الآلي</h5>
+                    <p class="text-light opacity-75">منصة إلكترونية حكومية موحدة تهدف إلى تسهيل وتبسيط كافة إجراءات إصدار وتجديد الوثائق الرسمية للمواطنين.</p>
+                    <div class="mt-4">
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2"><i class="fa-brands fa-twitter"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle me-2"><i class="fa-brands fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5 class="fw-bold mb-4 text-white">روابط سريعة</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-light opacity-75 text-decoration-none hover-primary">الرئيسية</a></li>
+                        <li class="mb-2"><a href="#services" class="text-light opacity-75 text-decoration-none hover-primary">الخدمات</a></li>
+                        <li class="mb-2"><a href="../src/pages/auth/login.html" class="text-light opacity-75 text-decoration-none hover-primary">تسجيل الدخول</a></li>
+                        <li class="mb-2"><a href="../src/pages/auth/register.html" class="text-light opacity-75 text-decoration-none hover-primary">إنشاء حساب</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <h5 class="fw-bold mb-4 text-white">الخدمات</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-light opacity-75 text-decoration-none">إصدار بطاقة شخصية</a></li>
+                        <li class="mb-2"><a href="#" class="text-light opacity-75 text-decoration-none">تجديد بطاقة شخصية</a></li>
+                        <li class="mb-2"><a href="#" class="text-light opacity-75 text-decoration-none">إصدار جواز سفر</a></li>
+                        <li class="mb-2"><a href="#" class="text-light opacity-75 text-decoration-none">إصدار رخصة قيادة</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <h5 class="fw-bold mb-4 text-white">تواصل معنا</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-3 d-flex align-items-center">
+                            <i class="fa-solid fa-location-dot ms-2 text-primary"></i>
+                            <span class="text-light opacity-75">المبنى الرئيسي، العاصمة</span>
+                        </li>
+                        <li class="mb-3 d-flex align-items-center">
+                            <i class="fa-solid fa-phone ms-2 text-primary"></i>
+                            <span class="text-light opacity-75" dir="ltr">+967 123 4567</span>
+                        </li>
+                        <li class="mb-3 d-flex align-items-center">
+                            <i class="fa-solid fa-envelope ms-2 text-primary"></i>
+                            <span class="text-light opacity-75">info@auto-issue.gov</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="mt-4 mb-4 border-light opacity-25">
+            <div class="text-center">
+                <p class="mb-0 text-light opacity-75">جميع الحقوق محفوظة &copy; 2024 منصة الإصدار الآلي.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../src/assets/js/app.js"></script>
+</body>
+</html>
