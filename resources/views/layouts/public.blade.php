@@ -1,38 +1,52 @@
-
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-  <title>@yield('title', 'منصة الإصدار الآلي للوثائق الرسمية')</title>
+    <title>@yield('title', 'منصة الإصدار الآلي للوثائق الرسمية')</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    {{-- الخطوط الأساسية --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  @vite([
-    'resources/css/design-system.css',
-    'resources/css/public.css',
-    'resources/css/citizen.css',
-    'resources/js/app.js'
-  ])
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
 
-  @stack('styles')
+    {{-- ملفات CSS و JavaScript الأساسية --}}
+    @vite([
+        'resources/css/design-system.css',
+        'resources/css/public.css',
+        'resources/css/citizen.css',
+        'resources/js/app.js',
+        'resources/js/homepage-fix.js'
+    ])
+
+    {{-- تنسيقات إضافية خاصة بالصفحات --}}
+    @stack('styles')
+
 </head>
+
 <body>
 
-  @include('components.public-header')
+    {{-- الترويسة والقائمة الرئيسية --}}
+    @include('components.public-header')
 
-  <main>
-    @yield('content')
-  </main>
+    {{-- محتوى الصفحة --}}
+    <main id="main-content">
+        @yield('content')
+    </main>
 
-  @include('components.public-footer')
+    {{-- التذييل --}}
+    @include('components.public-footer')
 
-  @stack('scripts')
+    {{-- سكربتات إضافية خاصة بالصفحات --}}
+    @stack('scripts')
 
 </body>
-</html>
 
+</html>
