@@ -1,0 +1,418 @@
+/* ============================================================
+   AUTOMATED OFFICIAL DOCUMENT ISSUANCE PLATFORM
+   Government Design System - Core Tokens & Base Components
+   ============================================================ */
+
+/* ---------- 1. DESIGN TOKENS ---------- */
+:root {
+  /* Government Identity */
+  --primary-black: #000000;
+  --primary-cyan: #1CA7C9;
+  --primary-cyan-hover: #168EAB;
+  --primary-cyan-light: #EAF7FB;
+  --primary-gold: #DDBB4D;
+  --primary-gold-light: #F3DE9A;
+
+  /* Backgrounds */
+  --background-main: #FFFFFF;
+  --background-secondary: #F5F5F5;
+  --background-soft: #F9FAFB;
+  --background-table-header: #F3F8FA;
+  --background-table-hover: #F9FCFD;
+  --background-footer: #555555;
+
+  /* Text */
+  --text-main: #333333;
+  --text-secondary: #555555;
+  --text-muted: #777777;
+  --text-white: #FFFFFF;
+
+  /* Borders */
+  --border-light: #D9E3E8;
+  --border-soft: #EAEAEA;
+  --border-input: #D6DDE3;
+
+  /* Status */
+  --success: #28A745;
+  --success-light: #E6F4EA;
+  --warning: #FFC107;
+  --warning-light: #FFF8E1;
+  --danger: #DC3545;
+  --danger-light: #FDEAEC;
+  --info: #17A2B8;
+  --info-light: #E3F4F7;
+
+  /* Typography */
+  --font-arabic: "Cairo", "Tajawal", system-ui, sans-serif;
+  --font-english: "Inter", "Roboto", system-ui, sans-serif;
+
+  /* Layout */
+  --content-max-width: 1280px;
+  --sidebar-width: 260px;
+  --topbar-height: 70px;
+
+  /* Radius */
+  --radius-input: 8px;
+  --radius-button: 10px;
+  --radius-card: 12px;
+  --radius-panel: 14px;
+  --radius-dialog: 16px;
+
+  /* Shadows */
+  --shadow-small: 0 2px 6px rgba(0,0,0,0.06);
+  --shadow-card: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-dialog: 0 12px 32px rgba(0,0,0,0.12);
+
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-standard: 250ms ease-in-out;
+}
+
+/* ---------- 2. RESET & BASE ---------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-arabic);
+  color: var(--text-main);
+  background-color: var(--background-main);
+  line-height: 1.7;
+  direction: rtl;
+  text-align: right;
+  -webkit-font-smoothing: antialiased;
+}
+
+img, svg { max-width: 100%; display: block; }
+a { text-decoration: none; color: var(--primary-cyan); transition: color var(--transition-fast); }
+a:hover { color: var(--primary-cyan-hover); }
+
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+input, select, textarea { font-family: inherit; }
+
+/* Latin content inside RTL */
+.ltr, [dir="ltr"] { direction: ltr; unicode-bidi: embed; }
+
+/* ---------- 3. TYPOGRAPHY ---------- */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-arabic);
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.text-h1 { font-size: 34px; font-weight: 700; }
+.text-h2 { font-size: 27px; font-weight: 700; }
+.text-h3 { font-size: 21px; font-weight: 600; }
+.text-h4 { font-size: 19px; font-weight: 600; }
+.text-body { font-size: 16px; font-weight: 400; }
+.text-sm { font-size: 14px; color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); font-size: 13px; }
+
+.text-cyan { color: var(--primary-cyan); }
+.text-gold { color: var(--primary-gold); }
+.text-center { text-align: center; }
+
+/* ---------- 4. LAYOUT UTILITIES ---------- */
+.container {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.section { padding: 64px 0; }
+.section-sm { padding: 40px 0; }
+
+.section-header { text-align: center; margin-bottom: 48px; }
+.section-header h2 { color: var(--primary-cyan); margin-bottom: 12px; }
+.section-header p { color: var(--text-secondary); font-size: 17px; }
+
+.grid { display: grid; gap: 24px; }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+@media (max-width: 1100px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 1023px) {
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 639px) {
+  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  .section { padding: 40px 0; }
+}
+
+/* ---------- 5. BUTTONS ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: var(--radius-button);
+  transition: all var(--transition-standard);
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background-color: var(--primary-cyan);
+  color: var(--text-white);
+}
+.btn-primary:hover {
+  background-color: var(--primary-cyan-hover);
+  color: var(--text-white);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-small);
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--primary-cyan);
+  border-color: var(--primary-cyan);
+}
+.btn-outline:hover {
+  background-color: var(--primary-cyan-light);
+  color: var(--primary-cyan-hover);
+}
+
+.btn-secondary {
+  background-color: var(--primary-black);
+  color: var(--text-white);
+}
+.btn-secondary:hover {
+  background-color: #222;
+  color: var(--text-white);
+}
+
+.btn-success { background-color: var(--success); color: white; }
+.btn-danger { background-color: var(--danger); color: white; }
+.btn-warning { background-color: var(--warning); color: #333; }
+
+.btn-sm { padding: 8px 16px; font-size: 14px; }
+.btn-lg { padding: 14px 32px; font-size: 16px; }
+.btn-block { width: 100%; }
+
+/* ---------- 6. CARDS ---------- */
+.card {
+  background-color: var(--background-main);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  transition: all var(--transition-standard);
+}
+
+.card-hover:hover {
+  border-color: var(--primary-cyan);
+  box-shadow: var(--shadow-card);
+  transform: translateY(-3px);
+}
+
+/* ---------- 7. FORMS ---------- */
+.form-group { margin-bottom: 20px; }
+
+.form-label {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.form-control {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-input);
+  background-color: var(--background-main);
+  font-size: 15px;
+  color: var(--text-main);
+  transition: all var(--transition-fast);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-cyan);
+  box-shadow: 0 0 0 3px rgba(28, 167, 201, 0.15);
+}
+
+textarea.form-control { height: auto; padding: 12px 14px; min-height: 100px; }
+
+.form-error {
+  color: var(--danger);
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+.form-control.is-invalid { border-color: var(--danger); }
+
+/* ---------- 8. BADGES ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.badge-success { background: var(--success-light); color: var(--success); }
+.badge-warning { background: var(--warning-light); color: #B8860B; }
+.badge-danger { background: var(--danger-light); color: var(--danger); }
+.badge-info { background: var(--info-light); color: var(--info); }
+.badge-cyan { background: var(--primary-cyan-light); color: var(--primary-cyan); }
+
+/* ---------- 9. GOLD DECORATION ---------- */
+.gold-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 24px 0;
+}
+.gold-divider::before,
+.gold-divider::after {
+  content: "";
+  height: 1px;
+  width: 80px;
+  background: linear-gradient(to left, transparent, var(--primary-gold), transparent);
+}
+.gold-divider .diamond {
+  width: 10px;
+  height: 10px;
+  background: var(--primary-gold);
+  transform: rotate(45deg);
+}
+
+.gold-pattern {
+  height: 20px;
+  background-image:
+    linear-gradient(45deg, transparent 48%, var(--primary-gold) 49%, var(--primary-gold) 51%, transparent 52%),
+    linear-gradient(-45deg, transparent 48%, var(--primary-gold) 49%, var(--primary-gold) 51%, transparent 52%);
+  background-size: 20px 20px;
+  background-position: center;
+  opacity: 0.5;
+}
+
+/* ---------- 10. ALERTS ---------- */
+.alert {
+  padding: 14px 18px;
+  border-radius: var(--radius-input);
+  border-right: 4px solid;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+}
+.alert-success { background: var(--success-light); border-color: var(--success); color: #155724; }
+.alert-danger { background: var(--danger-light); border-color: var(--danger); color: #721c24; }
+.alert-warning { background: var(--warning-light); border-color: var(--warning); color: #856404; }
+.alert-info { background: var(--info-light); border-color: var(--info); color: #0c5460; }
+
+/* ---------- 11. TABLES ---------- */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border-soft);
+  background: white;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.table th {
+  background-color: var(--background-table-header);
+  color: var(--text-main);
+  font-weight: 600;
+  text-align: right;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  white-space: nowrap;
+}
+.table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text-secondary);
+}
+.table tbody tr:hover { background-color: var(--background-table-hover); }
+.table tbody tr:last-child td { border-bottom: none; }
+
+/* ---------- 12. BREADCRUMB ---------- */
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-muted);
+  padding: 20px 0;
+}
+.breadcrumb a { color: var(--primary-cyan); }
+.breadcrumb a:hover { color: var(--primary-cyan-hover); }
+.breadcrumb .sep { color: var(--text-muted); }
+
+/* ---------- 13. PAGINATION ---------- */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 24px;
+}
+.pagination a, .pagination span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border-soft);
+  color: var(--text-secondary);
+  font-size: 14px;
+  transition: all var(--transition-fast);
+}
+.pagination a:hover { border-color: var(--primary-cyan); color: var(--primary-cyan); }
+.pagination .active {
+  background: var(--primary-cyan);
+  color: white;
+  border-color: var(--primary-cyan);
+}
+
+/* ---------- 14. SCROLLBAR ---------- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--background-soft); }
+::-webkit-scrollbar-thumb { background: #c5d0d6; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #a8b8c0; }
+
+/* ---------- 15. UTILITIES ---------- */
+.flex { display: flex; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-center { display: flex; justify-content: center; align-items: center; }
+.gap-1 { gap: 8px; }
+.gap-2 { gap: 16px; }
+.gap-3 { gap: 24px; }
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }
+.mt-4 { margin-top: 32px; }
+.mb-1 { margin-bottom: 8px; }
+.mb-2 { margin-bottom: 16px; }
+.mb-3 { margin-bottom: 24px; }
+.mb-4 { margin-bottom: 32px; }
+.hidden { display: none; }

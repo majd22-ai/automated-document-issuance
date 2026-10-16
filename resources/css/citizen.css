@@ -1,0 +1,268 @@
+/* ============================================================
+   AUTH PAGES - Login, Register, Forgot Password
+   Unified with main portal identity (gov-masthead palette)
+   ============================================================ */
+
+/* Wrapper */
+.auth-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0 20px;
+  font-family: var(--font-arabic);
+  direction: rtl;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #d9e3e8;
+  border-top: 4px solid var(--primary-cyan);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+  padding: 40px 36px 32px;
+}
+
+/* Logo / Brand top */
+.auth-logo {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.auth-logo .branding-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--primary-cyan-light);
+  color: var(--primary-cyan);
+  margin-bottom: 14px;
+  border: 2px solid rgba(28,167,201,0.3);
+}
+
+.auth-logo h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #20313e;
+  margin-bottom: 6px;
+}
+
+.auth-logo p {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Gold divider under logo */
+.auth-logo::after {
+  content: "";
+  display: block;
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--primary-gold), transparent);
+  margin: 16px auto 0;
+}
+
+/* Auth form */
+.auth-form { margin-bottom: 20px; }
+
+/* Links below form */
+.auth-links {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.auth-links a {
+  font-size: 14px;
+  color: var(--primary-cyan);
+  font-weight: 600;
+}
+
+.auth-links a:hover { color: var(--primary-cyan-hover); text-decoration: underline; }
+
+/* ============================================================
+   DASHBOARD PAGES - Stat Cards & Quick Links
+   Shared by citizen, employee, admin dashboards
+   ============================================================ */
+
+/* Page hero matching the gov-page-title style */
+.dashboard-hero {
+  background: #fffdf4;
+  border-bottom: 2px solid #dabe55;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 28px 0;
+  text-align: center;
+}
+
+.dashboard-hero h1 {
+  color: #168da9;
+  font-size: clamp(20px, 2.5vw, 28px);
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.dashboard-hero p {
+  color: #62686c;
+  font-size: 15px;
+}
+
+/* Stat / counter cards */
+.stat-card {
+  background: #fff;
+  border: 1px solid #dae8ee;
+  border-top: 4px solid var(--primary-gold);
+  border-radius: 12px;
+  padding: 28px 20px;
+  text-align: center;
+  transition: all 0.25s ease;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.05);
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.10);
+  border-top-color: var(--primary-cyan);
+}
+
+.stat-card .stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #e7f8fc;
+  color: var(--primary-cyan);
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+}
+
+.stat-card .stat-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--primary-cyan);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.stat-card .stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Quick link cards (same style as gov-service-card) */
+.quick-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #dae8ee;
+  border-top: 4px solid var(--primary-gold);
+  border-radius: 12px;
+  padding: 28px 20px 22px;
+  color: #333;
+  transition: all 0.25s ease;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.05);
+  text-decoration: none;
+}
+
+.quick-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  border-top-color: var(--primary-cyan);
+  color: #333;
+}
+
+.quick-card .quick-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #e7f8fc;
+  color: var(--primary-cyan);
+  font-size: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.quick-card h4 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #20313e;
+}
+
+.quick-card p {
+  color: #656b70;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* Notice / empty state box */
+.empty-state {
+  text-align: center;
+  padding: 52px 24px;
+  background: #fff;
+  border: 1px solid #dae8ee;
+  border-radius: 12px;
+}
+
+.empty-state .empty-icon {
+  font-size: 52px;
+  margin-bottom: 14px;
+}
+
+.empty-state h3 {
+  color: #20313e;
+  margin-bottom: 10px;
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  margin-bottom: 22px;
+  font-size: 14px;
+}
+
+/* Logout strip */
+.logout-strip {
+  text-align: center;
+  padding: 24px 0 8px;
+  border-top: 1px solid var(--border-soft);
+  margin-top: 16px;
+}
+
+/* Gold horizontal rule (reuse design-system look) */
+.section-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 12px 0 40px;
+}
+
+.section-divider::before,
+.section-divider::after {
+  content: "";
+  flex: 1;
+  max-width: 120px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--primary-gold), transparent);
+}
+
+.section-divider .diamond {
+  width: 10px;
+  height: 10px;
+  background: var(--primary-gold);
+  transform: rotate(45deg);
+}
