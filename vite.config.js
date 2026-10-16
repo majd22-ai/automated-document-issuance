@@ -9,6 +9,7 @@ export default defineConfig({
                 "resources/css/public.css",
                 "resources/css/citizen.css",
                 "resources/js/app.js",
+                "resources/js/homepage-fix.js",
             ],
             refresh: true,
         }),

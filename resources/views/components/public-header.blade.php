@@ -1,4 +1,4 @@
- {{-- الترويسة العامة للمنصة --}}
+  {{-- الترويسة العامة للمنصة --}}
 <header class="gov-site-header">
   <div class="gov-header-visual">
     <div class="gov-header-landscape gov-header-landscape-right" aria-hidden="true">
@@ -21,7 +21,6 @@
       </div>
     </div>
   </div>
-
   <div class="gov-contact-strip">
     <div class="gov-container gov-contact-inner">
       <div class="gov-contact-text">منصة تجريبية أكاديمية وليست جهة حكومية لإصدار الوثائق</div>
@@ -32,12 +31,11 @@
       </div>
     </div>
   </div>
-
   <nav class="gov-main-nav" aria-label="القائمة الرئيسية">
     <div class="gov-container gov-nav-inner">
       <input class="gov-nav-check" type="checkbox" id="gov-nav-check" aria-label="عرض القائمة على الهاتف">
-      <label for="gov-nav-check" class="gov-nav-toggle">☰ <span>القائمة</span></label>
-      <div class="gov-nav-links">
+      <button type="button" class="gov-nav-toggle" aria-expanded="false" aria-controls="gov-navigation">☰ <span>القائمة</span></button>
+      <div class="gov-nav-links" id="gov-navigation">
         <a class="gov-nav-link {{ request()->routeIs('home') ? 'is-active' : '' }}" href="{{ route('home') }}">⌂ الرئيسية</a>
         <div class="gov-nav-dropdown">
           <button type="button" class="gov-nav-link gov-dropdown-trigger {{ request()->is('services*') || request()->is('appointments*') ? 'is-active' : '' }}" aria-expanded="false" aria-controls="gov-services-menu">▣ بوابة الخدمات <span class="gov-caret" aria-hidden="true">⌄</span></button>
