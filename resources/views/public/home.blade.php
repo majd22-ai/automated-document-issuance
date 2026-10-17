@@ -18,7 +18,15 @@
           <li>استعراض خدمات إصدار وتجديد رخص القيادة.</li>
           <li>تقديم الطلبات ومتابعة حالتها إلكترونيًا بعد تسجيل الدخول.</li>
         </ul>
-        <a href="#services" class="btn btn-primary">استعراض الخدمات <span aria-hidden="true">←</span></a>
+        <div class="gov-welcome-actions">
+  <a href="{{ route('login') }}" class="btn btn-primary">
+    تسجيل الدخول
+  </a>
+
+  <a href="{{ route('register') }}" class="btn btn-outline">
+    التسجيل لأول مرة
+  </a>
+</div>
       </div>
       <div class="gov-welcome-picture" role="img" aria-label="مشهد من معالم اليمن">
         <div class="gov-picture-caption">اليمن | نحو خدمات رقمية أسهل</div>

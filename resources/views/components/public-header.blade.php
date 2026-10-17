@@ -1,68 +1,154 @@
-  {{-- الترويسة العامة للمنصة --}}
+@php
+  $menus = [
+    [
+      'id' => 'services',
+      'label' => 'بوابة الخدمات',
+      'items' => [
+        ['خدمات بطاقة الهوية', route('services.identity'), ''],
+        ['خدمات جواز السفر', route('services.passports'), ''],
+        ['خدمات رخصة القيادة', route('services.driving-licenses'), ''],
+        ['خدمة حجز المواعيد', route('appointments.book'), ''],
+      ],
+    ],
+    [
+      'id' => 'requirements',
+      'label' => 'متطلبات الخدمات',
+      'items' => [
+        [
+          'متطلبات الهوية الوطنية',
+          route('services.identity').'#requirements',
+          'الإصدار لأول مرة والتجديد وتحديث البيانات',
+        ],
+        [
+          'متطلبات جواز السفر',
+          route('services.passports').'#requirements',
+          'إصدار وتجديد جواز السفر',
+        ],
+        [
+          'متطلبات رخصة القيادة',
+          route('services.driving-licenses').'#requirements',
+          'إصدار وتجديد رخصة القيادة',
+        ],
+      ],
+    ],
+    [
+      'id' => 'inquiry',
+      'label' => 'الاستعلام',
+      'items' => [
+        [
+          'الاستعلام عن حالة طلب',
+          route('inquiry.reference'),
+          'متابعة معاملة محددة باستخدام رقم الطلب المرجعي',
+        ],
+        [
+          'الاستعلام عن جميع طلباتي',
+          route('inquiry.mine'),
+          'عرض المعاملات المرتبطة بالرقم الوطني',
+        ],
+      ],
+    ],
+    [
+      'id' => 'contact',
+      'label' => 'تواصل معنا',
+      'items' => [
+        ['تواصل معنا', route('contact.index'), ''],
+        ['تقديم بلاغ إلى الجهة المعنية', route('contact.report'), ''],
+        ['تقديم شكوى', route('contact.complaint'), 'خاص بالمواطنين'],
+      ],
+    ],
+  ];
+@endphp
+
 <header class="gov-site-header">
   <div class="gov-header-visual">
+
     <div class="gov-header-landscape gov-header-landscape-right" aria-hidden="true">
       <img src="{{ asset('assets/images/banner/header-right.png') }}" alt="">
     </div>
+
     <div class="gov-header-landscape gov-header-landscape-left" aria-hidden="true">
       <img src="{{ asset('assets/images/banner/header-left.png') }}" alt="">
     </div>
-    <div class="gov-header-identity gov-container">
+
+    <div class="gov-header-identity">
       <div class="gov-header-logos">
-        <img src="{{ asset('assets/images/banner/cra-logo.png') }}" alt="شعار مصلحة الأحوال المدنية والسجل المدني">
-        <img src="{{ asset('assets/images/banner/yemen-eagle.png') }}" alt="الطير الجمهوري">
-        <img src="{{ asset('assets/images/banner/moi-logo.png') }}" alt="شعار وزارة الداخلية">
+        <img
+          src="{{ asset('assets/images/banner/yemen-eagle.png') }}"
+          alt="شعار الجمهورية اليمنية"
+        >
       </div>
+
       <h1>منصة الإصدار الآلي للوثائق الرسمية</h1>
-      <p class="gov-header-english" dir="ltr">Automated Official Document Issuance &amp; Management Platform</p>
-      <p class="gov-header-subtitle">الجمهورية اليمنية | بوابة الخدمات الإلكترونية</p>
-      <div class="gov-header-tags" aria-label="مزايا المنصة">
-        <span>سهولة الوصول</span><span>تنظيم الطلبات</span><span>حماية البيانات</span><span>خدمات رقمية</span>
+
+      <p class="gov-header-english" dir="ltr">
+        AUTOMATED OFFICIAL DOCUMENT ISSUANCE &amp; MANAGEMENT PLATFORM
+      </p>
+
+      <div class="gov-header-tags">
+        <span>سهولة الوصول</span>
+        <span>تنظيم الطلبات</span>
+        <span>حماية البيانات</span>
+        <span>خدمات رقمية</span>
       </div>
     </div>
   </div>
+
   <div class="gov-contact-strip">
     <div class="gov-container gov-contact-inner">
-      <div class="gov-contact-text">منصة تجريبية أكاديمية وليست جهة حكومية لإصدار الوثائق</div>
-      <div class="gov-contact-social" aria-label="روابط مساعدة">
-        <a href="{{ url('/#about-platform') }}">عن المنصة</a>
-        <span aria-hidden="true">✦</span>
-        <a href="{{ url('/#contact') }}">التواصل</a>
-      </div>
+      منصة تجريبية أكاديمية وليست جهة حكومية لإصدار الوثائق
     </div>
   </div>
+
   <nav class="gov-main-nav" aria-label="القائمة الرئيسية">
     <div class="gov-container gov-nav-inner">
-      <input class="gov-nav-check" type="checkbox" id="gov-nav-check" aria-label="عرض القائمة على الهاتف">
-      <button type="button" class="gov-nav-toggle" aria-expanded="false" aria-controls="gov-navigation">☰ <span>القائمة</span></button>
+
+      <button
+        type="button"
+        class="gov-nav-toggle"
+        aria-expanded="false"
+        aria-controls="gov-navigation"
+      >
+        ☰ القائمة
+      </button>
+
       <div class="gov-nav-links" id="gov-navigation">
-        <a class="gov-nav-link {{ request()->routeIs('home') ? 'is-active' : '' }}" href="{{ route('home') }}">⌂ الرئيسية</a>
-        <div class="gov-nav-dropdown">
-          <button type="button" class="gov-nav-link gov-dropdown-trigger {{ request()->is('services*') || request()->is('appointments*') ? 'is-active' : '' }}" aria-expanded="false" aria-controls="gov-services-menu">▣ بوابة الخدمات <span class="gov-caret" aria-hidden="true">⌄</span></button>
-          <div class="gov-dropdown-content" id="gov-services-menu">
-            <a href="{{ route('services.identity') }}">🪪 خدمات بطاقة الهوية</a>
-            <a href="{{ route('services.passports') }}">📘 خدمات جواز السفر</a>
-            <a href="{{ route('services.driving-licenses') }}">🚗 خدمات رخصة القيادة</a>
-            <a href="{{ route('appointments.book') }}">📅 خدمة حجز المواعيد</a>
+
+        <a
+          class="gov-nav-link {{ request()->routeIs('home') ? 'is-active' : '' }}"
+          href="{{ route('home') }}"
+        >
+          الرئيسية
+        </a>
+
+        @foreach($menus as $menu)
+          <div class="gov-nav-dropdown" data-menu="{{ $menu['id'] }}">
+            <button
+              type="button"
+              class="gov-nav-link gov-dropdown-trigger"
+              aria-expanded="false"
+              aria-controls="gov-{{ $menu['id'] }}-menu"
+            >
+              {{ $menu['label'] }}
+              <span class="gov-caret" aria-hidden="true">⌄</span>
+            </button>
+
+            <div
+              class="gov-dropdown-content"
+              id="gov-{{ $menu['id'] }}-menu"
+            >
+              @foreach($menu['items'] as [$title, $href, $description])
+                <a href="{{ $href }}">
+                  <span>{{ $title }}</span>
+
+                  @if($description)
+                    <small>{{ $description }}</small>
+                  @endif
+                </a>
+              @endforeach
+            </div>
           </div>
-        </div>
-        <a class="gov-nav-link" href="{{ url('/#services') }}">☷ متطلبات الخدمات</a>
-        <a class="gov-nav-link" href="{{ url('/login') }}">⌕ تتبع الطلب</a>
-        <a class="gov-nav-link" href="{{ url('/#about-platform') }}">ⓘ عن المنصة</a>
-        <a class="gov-nav-link" href="{{ url('/#contact') }}">✉ تواصل معنا</a>
-      </div>
-      <div class="gov-nav-actions">
-        @auth
-          @if(auth()->user()->role === 'admin')
-            <a href="{{ url('/admin/dashboard') }}" class="gov-nav-button">لوحة التحكم</a>
-          @elseif(auth()->user()->role === 'employee')
-            <a href="{{ url('/employee/dashboard') }}" class="gov-nav-button">لوحة التحكم</a>
-          @else
-            <a href="{{ url('/citizen/dashboard') }}" class="gov-nav-button">لوحة التحكم</a>
-          @endif
-        @else
-          <a href="{{ url('/login') }}" class="gov-nav-button">دخول المستخدم</a>
-        @endauth
+        @endforeach
+
       </div>
     </div>
   </nav>

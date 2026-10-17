@@ -87,4 +87,4 @@
     </div>
   </section>
 
-@endsection
+@include('components.service-requirements', ['category' => 'passports'])
