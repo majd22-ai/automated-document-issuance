@@ -3,6 +3,12 @@
 @section('title', 'الرئيسية - منصة الإصدار الآلي للوثائق الرسمية')
 
 @section('content')
+  <div class="gov-notice-section">
+    <div class="gov-container">
+      <a href="{{ asset('demo/index.html') }}">تجربة الواجهات: الطلبات والمواعيد والدفع ومراجعة الموظف ←</a>
+      <span> — بيانات تجريبية دون إرسال فعلي.</span>
+    </div>
+  </div>
   <section class="gov-page-title" aria-labelledby="portal-title">
     <div class="gov-container"><h2 id="portal-title">بوابة الخدمات الإلكترونية</h2></div>
   </section>

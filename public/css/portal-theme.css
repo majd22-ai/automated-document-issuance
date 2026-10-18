@@ -57,10 +57,11 @@ body { background:#fff; }
 .gov-dropdown-trigger { font-family:inherit; cursor:pointer; }
 .gov-caret { transition:transform .15s; }
 .gov-dropdown-trigger[aria-expanded="true"] .gov-caret { transform:rotate(180deg); }
-.gov-dropdown-content { display:none; position:absolute; inset-block-start:100%; inset-inline-start:0; min-width:260px; padding:8px; background:#fff; border:1px solid #ddd; border-top:3px solid var(--primary-gold); border-radius:0 0 6px 6px; box-shadow:0 8px 20px #0002; }
+.gov-dropdown-content { display:none; position:absolute; inset-block-start:100%; inset-inline-start:0; min-width:260px; padding:8px; background:#080808; border:1px solid #333; border-top:3px solid var(--primary-gold); border-radius:0 0 6px 6px; box-shadow:0 8px 20px #0002; }
 .gov-nav-dropdown.is-open .gov-dropdown-content { display:block; }
-.gov-dropdown-content a { display:block; padding:10px 12px; color:#333; font-size:13px; border-radius:4px; }
-.gov-dropdown-content a:hover { color:var(--primary-cyan-hover); background:var(--primary-cyan-light); }
+.gov-dropdown-content a { display:block; padding:10px 12px; color:#fff; font-size:13px; border-radius:4px; }
+.gov-dropdown-content a:hover,
+.gov-dropdown-content a:focus-visible { color:#fff; background:var(--primary-cyan-hover); }
 .gov-site-header a:focus-visible,
 .gov-site-header button:focus-visible,
 .gov-service-card:focus-visible { outline:3px solid var(--primary-gold); outline-offset:2px; }
