@@ -60,39 +60,6 @@
 @endphp
 
 <header class="gov-site-header">
-  <div class="gov-header-visual">
-
-    <div class="gov-header-landscape gov-header-landscape-right" aria-hidden="true">
-      <img src="{{ asset('assets/images/banner/header-right.png') }}" alt="">
-    </div>
-
-    <div class="gov-header-landscape gov-header-landscape-left" aria-hidden="true">
-      <img src="{{ asset('assets/images/banner/header-left.png') }}" alt="">
-    </div>
-
-    <div class="gov-header-identity">
-      <div class="gov-header-logos">
-        <img
-          src="{{ asset('assets/images/banner/yemen-eagle.png') }}"
-          alt="شعار الجمهورية اليمنية"
-        >
-      </div>
-
-      <h1>منصة الإصدار الآلي للوثائق الرسمية</h1>
-
-      <p class="gov-header-english" dir="ltr">
-        AUTOMATED OFFICIAL DOCUMENT ISSUANCE &amp; MANAGEMENT PLATFORM
-      </p>
-
-      <div class="gov-header-tags">
-        <span>سهولة الوصول</span>
-        <span>تنظيم الطلبات</span>
-        <span>حماية البيانات</span>
-        <span>خدمات رقمية</span>
-      </div>
-    </div>
-  </div>
-
   <div class="gov-contact-strip">
     <div class="gov-container gov-contact-inner">
       منصة تجريبية أكاديمية وليست جهة حكومية لإصدار الوثائق

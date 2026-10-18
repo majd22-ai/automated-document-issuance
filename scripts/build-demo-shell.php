@@ -44,8 +44,9 @@ function request(): object
     };
 }
 
-function renderSharedComponent(string $file): string
+function renderSharedComponent(string $file, array $data = []): string
 {
+    extract($data, EXTR_SKIP);
     $source = file_get_contents($file);
     $source = str_replace(['@php', '@endphp'], ['<?php', '?>'], $source);
     $source = preg_replace('/@foreach\((.*)\)/', '<?php foreach ($1): ?>', $source);
@@ -62,6 +63,7 @@ function renderSharedComponent(string $file): string
 }
 
 $header = renderSharedComponent($root.'/resources/views/components/public-header.blade.php');
+$banner = renderSharedComponent($root.'/resources/views/components/page-banner.blade.php', ['bannerHome' => false, 'bannerTitle' => 'نظرة عامة']);
 $footer = renderSharedComponent($root.'/resources/views/components/public-footer.blade.php');
 $html = <<<HTML
 <!doctype html>
@@ -79,8 +81,9 @@ $html = <<<HTML
   <script src="../js/portal-theme.js" defer></script>
   <script src="../js/portal-demo.js" defer></script>
 </head>
-<body>
+<body class="gov-inner-page">
   <!-- Generated from the shared Blade components by scripts/build-demo-shell.php. -->
+  {$banner}
   {$header}
   <main id="main-content" data-portal-demo data-screen="dashboard">
     <noscript>يرجى تفعيل JavaScript لتجربة الواجهات.</noscript>
@@ -89,5 +92,6 @@ $html = <<<HTML
 </body>
 </html>
 HTML;
+$html = preg_replace('/[ \t]+$/m', '', $html);
 file_put_contents($root.'/public/demo/index.html', $html.PHP_EOL);
 echo "Static preview rebuilt from shared header and footer.".PHP_EOL;

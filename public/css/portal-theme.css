@@ -35,6 +35,25 @@ body { background:#fff; }
 .gov-header-tags { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; }
 .gov-header-tags span { padding:5px 12px; background:#fff; border:1px solid #e8e1d1; border-radius:5px; color:#59606a; font-size:10px; box-shadow:0 2px 7px #0001; }
 
+/* The image banner is independent of the black navigation header. */
+.gov-page-banner { margin-bottom:20px; border-bottom:1px solid #e8e1d1; }
+.gov-banner-home { min-height:300px; }
+.gov-banner-inner { min-height:170px; }
+.gov-banner-inner .gov-header-identity { padding-block:18px; }
+.gov-banner-inner .gov-header-logos { margin-bottom:6px; }
+.gov-banner-inner .gov-header-logos img { width:65px; height:48px; }
+.gov-banner-inner h1 { font-size:clamp(22px,2.4vw,32px); margin-bottom:0; }
+.gov-inner-page #main-content .page-hero h1 { display:none; }
+.gov-inner-page #main-content .page-hero { padding:16px 0; border-bottom:1px solid #eee; background:#fff; }
+.gov-inner-page #main-content > .gov-page-title { display:none; }
+.gov-inner-page #main-content .pd-hero { display:none; }
+@media(max-width:600px) {
+  .gov-banner-home { min-height:260px; }
+  .gov-banner-inner { min-height:145px; }
+  .gov-page-banner { margin-bottom:14px; }
+}
+@media print { body:has(.pd-document) .gov-page-banner { display:none!important; } }
+
 /* Contact strip */
 .gov-contact-strip { background:#080808; border-top:2px solid var(--primary-cyan); color:#eee; font-size:11px; }
 .gov-contact-inner { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:34px; padding-block:6px; }

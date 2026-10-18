@@ -28,7 +28,8 @@
   @stack('styles')
 </head>
 
-<body>
+<body class="{{ request()->routeIs('home') ? 'gov-home-page' : 'gov-inner-page' }}">
+  @include('components.page-banner')
   @include('components.public-header')
 
   <main id="main-content"

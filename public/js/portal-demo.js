@@ -155,6 +155,10 @@
   function render() {
     previewUrls.forEach(url => URL.revokeObjectURL(url)); previewUrls = []; selectedFiles = [];
     const { screen, id } = route();
+    const bannerTitle = document.querySelector('[data-banner-title]');
+    if (bannerTitle) {
+      bannerTitle.textContent = titles[screen] || (screen === 'preview' ? 'معاينة الوثيقة' : 'تفاصيل الطلب');
+    }
     const unread = state.notifications.filter(n => !n.read).length;
     root.innerHTML = '<div class="pd-shell"><header class="pd-hero"><p class="pd-eyebrow">بوابة الخدمات الإلكترونية</p><h1>' + (titles[screen] || (screen === 'preview' ? 'معاينة الوثيقة' : 'تفاصيل الطلب')) + '</h1><p>خدمات الهوية والجوازات ورخص القيادة في مكان واحد</p></header><div class="pd-layout"><aside class="pd-sidebar"><div class="pd-profile"><span class="pd-avatar">أم</span><b>أحمد محمد علي</b><small>حساب عرض تجريبي</small></div><nav aria-label="تنقل بوابة العرض">' + navItems.map(([key, label]) => '<a href="#' + key + '"' + (screen === key ? ' class="is-active" aria-current="page"' : '') + '>' + label + (key === 'notifications' && unread ? '<span>' + unread + '</span>' : '') + '</a>').join('') + '</nav><button class="pd-reset" data-reset>إعادة البيانات التجريبية</button><a class="pd-home" href="/">العودة للرئيسية ←</a></aside><div class="pd-content"><div class="pd-notice"><b>معاينة تفاعلية ببيانات تجريبية</b><span> لا يوجد إرسال أو دفع أو إصدار فعلي. استخدم بيانات غير حقيقية.</span></div><p id="pd-feedback" role="status" tabindex="-1" class="pd-feedback">' + esc(flash) + '</p><div id="pd-view"></div><p class="pd-storage">' + (storageAvailable ? 'تُحفظ التغييرات محليًا في هذا المتصفح.' : 'التخزين المحلي غير متاح؛ التغييرات لهذه الجلسة فقط.') + '</p></div></div></div>';
     const view = root.querySelector('#pd-view');
