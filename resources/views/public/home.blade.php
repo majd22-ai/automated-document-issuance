@@ -71,6 +71,57 @@
     </div>
   </section>
 
+  <section class="section" id="service-requirements" aria-labelledby="service-requirements-heading">
+    <div class="gov-container">
+      <div class="section-header">
+        <h2 id="service-requirements-heading">متطلبات الخدمات</h2>
+        <p>اختر نوع الوثيقة للاطلاع على المستندات والشروط الخاصة بكل خدمة.</p>
+      </div>
+      <div class="gov-services-grid">
+        <a class="gov-service-card" href="{{ route('services.identity').'#requirements' }}">
+          <h3>متطلبات البطاقة الشخصية</h3>
+          <p>متطلبات الإصدار لأول مرة والتجديد وبدل الفاقد.</p>
+          <span class="gov-service-more">عرض المتطلبات ←</span>
+        </a>
+        <a class="gov-service-card" href="{{ route('services.passports').'#requirements' }}">
+          <h3>متطلبات جواز السفر</h3>
+          <p>المستندات المطلوبة لإصدار جواز السفر وتجديده.</p>
+          <span class="gov-service-more">عرض المتطلبات ←</span>
+        </a>
+        <a class="gov-service-card" href="{{ route('services.driving-licenses').'#requirements' }}">
+          <h3>متطلبات رخصة القيادة</h3>
+          <p>المستندات والفحص الطبي ومتطلبات الإصدار والتجديد.</p>
+          <span class="gov-service-more">عرض المتطلبات ←</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq" aria-labelledby="faq-heading">
+    <div class="gov-container">
+      <div class="section-header">
+        <h2 id="faq-heading">الأسئلة الشائعة</h2>
+        <p>إجابات مختصرة حول استخدام النموذج التجريبي.</p>
+      </div>
+      <details class="card">
+        <summary>كيف أقدم طلبًا جديدًا؟</summary>
+        <p>افتح رابط تجربة الواجهات، واختر «طلب جديد»، ثم حدد الخدمة وأدخل بيانات تجريبية وأرفق المستندات وأكد إرسال الطلب.</p>
+      </details>
+      <details class="card">
+        <summary>كيف أتابع طلبي أو أستكمل النواقص؟</summary>
+        <p>من رابط «تتبع الطلب» في الفوتر افتح تفاصيل طلبك لعرض حالته وسجل المراجعة. إذا كانت الحالة «يحتاج استكمال» يمكنك استبدال المرفقات وإعادة الإرسال.</p>
+      </details>
+      <details class="card">
+        <summary>هل الدفع والوثائق في المنصة حقيقية؟</summary>
+        <p>لا، المنصة نموذج أكاديمي. الدفع والوثائق محاكاة فقط؛ استخدم بيانات وملفات تجريبية، ولا تدخل بيانات مالية حقيقية.</p>
+      </details>
+      <details class="card">
+        <summary>أين تُحفظ الطلبات والمرفقات التجريبية؟</summary>
+        <p>تُحفظ بيانات الطلبات وأسماء الملفات وأحجامها محليًا في المتصفح دون رفع الملفات إلى خادم. مسح بيانات المتصفح أو إعادة البيانات التجريبية يزيل التغييرات المحفوظة.</p>
+      </details>
+    </div>
+  </section>
+
   <section class="gov-notice-section" id="contact">
     <div class="gov-container">
       <p><strong>تنويه:</strong> هذه المنصة نموذج لمشروع تخرج أكاديمي، ولا تمثل جهة حكومية مخوّلة قانونيًا بإصدار الوثائق الرسمية.</p>

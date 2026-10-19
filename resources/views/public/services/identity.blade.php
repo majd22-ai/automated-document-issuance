@@ -104,4 +104,4 @@
     </div>
   </section>
 @include('components.service-requirements', ['category' => 'identity'])
-<!-- @endsection -->
+@endsection
