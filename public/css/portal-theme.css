@@ -18,7 +18,8 @@ body { background:#fff; }
 .gov-container { width:min(100% - 40px,1200px); margin-inline:auto; }
 
 /* Header */
-.gov-site-header { padding:0; }
+.gov-site-header { position:sticky; top:0; z-index:100; padding:0; background:#080808; }
+html { scroll-padding-top:120px; }
 .gov-header-visual { position:relative; isolation:isolate; display:grid; place-items:center; min-height:250px; overflow:hidden; background:#f5f2e9; }
 .gov-header-landscape { position:absolute; inset-block:0; width:36%; z-index:0; }
 .gov-header-landscape-right { right:0; }
@@ -36,7 +37,7 @@ body { background:#fff; }
 .gov-header-tags span { padding:5px 12px; background:#fff; border:1px solid #e8e1d1; border-radius:5px; color:#59606a; font-size:10px; box-shadow:0 2px 7px #0001; }
 
 /* The image banner is independent of the black navigation header. */
-.gov-page-banner { margin-bottom:20px; border-bottom:1px solid #e8e1d1; }
+.gov-page-banner { margin-bottom:0; border-bottom:0; }
 .gov-banner-home { min-height:300px; }
 .gov-banner-inner { min-height:170px; }
 .gov-banner-inner .gov-header-identity { padding-block:18px; }
@@ -50,7 +51,7 @@ body { background:#fff; }
 @media(max-width:600px) {
   .gov-banner-home { min-height:260px; }
   .gov-banner-inner { min-height:145px; }
-  .gov-page-banner { margin-bottom:14px; }
+  .gov-page-banner { margin-bottom:0; }
 }
 @media print { body:has(.pd-document) .gov-page-banner { display:none!important; } }
 
