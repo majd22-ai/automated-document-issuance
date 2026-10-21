@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" role="img" aria-labelledby="title desc">
+  <title id="title">الخيار السادس: تدفق رقمي</title>
+  <desc id="desc">شعار يرمز إلى انتقال طلب إصدار الوثيقة عبر خطوات رقمية منظمة.</desc>
+  <rect width="520" height="160" rx="20" fill="#f5f8fc"/>
+  <text x="350" y="72" text-anchor="end" fill="#183955" font-family="Cairo, Tahoma, sans-serif" font-size="27" font-weight="700">منصة الإصدار الآلي</text>
+  <text x="350" y="103" text-anchor="end" fill="#60768a" font-family="Cairo, Tahoma, sans-serif" font-size="16">من الطلب إلى الوثيقة رقمياً</text>
+  <rect x="387" y="28" width="106" height="104" rx="28" fill="#183955"/>
+  <path d="M411 52h37l15 15v39h-52z" fill="#fff"/>
+  <path d="M448 53v16h15" fill="none" stroke="#c5d7e8" stroke-linejoin="round" stroke-width="3"/>
+  <path d="M421 78h28m-28 9h20" stroke="#4a85a7" stroke-linecap="round" stroke-width="3"/>
+  <path d="M418 105h38" stroke="#d2ae52" stroke-linecap="round" stroke-width="4"/>
+  <circle cx="462" cy="105" r="6" fill="#d2ae52"/>
+  <path d="M400 49v-7m-8 15-5-5m9 22h-7" stroke="#74bed0" stroke-linecap="round" stroke-width="3"/>
+</svg>

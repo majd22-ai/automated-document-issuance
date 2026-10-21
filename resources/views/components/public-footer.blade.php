@@ -8,7 +8,7 @@
           في الجمهورية اليمنية، بما يشمل البطاقة الشخصية ورخصة القيادة وجواز السفر.
         </p>
         <p class="text-muted" style="margin-top:12px; color:#999; font-size:12px;">
-          ⚠️ نموذج أكاديمي — لا يمثل جهة حكومية مخوّلة قانونيًا بإصدار وثائق رسمية.
+          <x-icon name="warning" /> نموذج أكاديمي — لا يمثل جهة حكومية مخوّلة قانونيًا بإصدار وثائق رسمية.
         </p>
       </div>
       <div class="footer-col">
@@ -26,9 +26,9 @@
       </div>
       <div class="footer-col">
         <h4>التواصل والدعم</h4>
-        <a href="#">📞 الدعم الفني</a>
-        <a href="#">✉️ البريد الإلكتروني</a>
-        <a href="#">📍 العنوان الرسمي</a>
+        <a href="#"><x-icon name="phone" /> الدعم الفني</a>
+        <a href="#"><x-icon name="mail" /> البريد الإلكتروني</a>
+        <a href="#"><x-icon name="location" /> العنوان الرسمي</a>
       </div>
     </div>
     <div class="footer-bottom">

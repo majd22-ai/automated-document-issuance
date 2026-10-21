@@ -9,7 +9,7 @@
   <div class="container">
     <nav class="breadcrumb">
       <a href="{{ route('home') }}">الرئيسية</a>
-      <span class="sep">←</span>
+      <span class="sep"><x-icon name="arrow-left" /></span>
       <span>خدمات البطاقة الشخصية</span>
     </nav>
   </div>
@@ -35,11 +35,7 @@
         {{-- Service 1 --}}
         <a href="{{ url('/services/identity/first-issue') }}" class="service-item card-hover">
           <div class="icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="4" width="20" height="16" rx="2"/>
-              <circle cx="8" cy="11" r="2.5"/>
-              <path d="M3.5 18c.8-2.4 2.6-3.5 4.5-3.5s3.7 1.1 4.5 3.5"/>
-            </svg>
+            <x-icon name="identity" size="30" />
           </div>
           <div class="content">
             <h4>إصدار بطاقة شخصية لأول مرة</h4>
@@ -51,10 +47,7 @@
         {{-- Service 2 --}}
         <a href="{{ url('/services/identity/renewal') }}" class="service-item card-hover">
           <div class="icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12a9 9 0 1 1-3-6.7"/>
-              <polyline points="21 3 21 9 15 9"/>
-            </svg>
+            <x-icon name="refresh" size="30" />
           </div>
           <div class="content">
             <h4>تجديد البطاقة الشخصية</h4>
@@ -66,12 +59,7 @@
         {{-- Service 3 --}}
         <a href="{{ url('/services/identity/lost-replacement') }}" class="service-item card-hover">
           <div class="icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2v4"/>
-              <path d="M5 6l-2 3 3 1"/>
-              <circle cx="12" cy="14" r="6"/>
-              <line x1="9" y1="14" x2="15" y2="14"/>
-            </svg>
+            <x-icon name="replace" size="30" />
           </div>
           <div class="content">
             <h4>إصدار بدل فاقد للبطاقة الشخصية</h4>

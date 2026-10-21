@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" role="img" aria-labelledby="title desc">
+  <title id="title">الخيار الرابع: وثائق مترابطة</title>
+  <desc id="desc">شعار يعبّر عن تكامل معاملات الوثائق وإدارتها رقمياً.</desc>
+  <rect width="520" height="160" rx="20" fill="#f5faf9"/>
+  <text x="350" y="72" text-anchor="end" fill="#17433f" font-family="Cairo, Tahoma, sans-serif" font-size="27" font-weight="700">منصة الإصدار الآلي</text>
+  <text x="350" y="103" text-anchor="end" fill="#5a7771" font-family="Cairo, Tahoma, sans-serif" font-size="16">معاملات أوضح، وخدمات أسهل</text>
+  <circle cx="440" cy="80" r="52" fill="#dceee9"/>
+  <rect x="408" y="46" width="43" height="54" rx="7" fill="#fff" stroke="#278273" stroke-width="3"/>
+  <rect x="428" y="60" width="43" height="54" rx="7" fill="#fff" stroke="#d3a94c" stroke-width="3"/>
+  <path d="M437 77h24m-24 9h18m-18 9h14" stroke="#278273" stroke-linecap="round" stroke-width="3"/>
+  <circle cx="414" cy="108" r="12" fill="#278273"/>
+  <path d="m409 108 4 4 7-8" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>
+</svg>

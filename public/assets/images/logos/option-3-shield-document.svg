@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" role="img" aria-labelledby="title desc">
+  <title id="title">الخيار الثالث: وثيقة محمية</title>
+  <desc id="desc">شعار يجمع رمز الحماية مع وثيقة رسمية رقمية.</desc>
+  <rect width="520" height="160" rx="20" fill="#f8f9fc"/>
+  <text x="350" y="72" text-anchor="end" fill="#202e4b" font-family="Cairo, Tahoma, sans-serif" font-size="27" font-weight="700">منصة الإصدار الآلي</text>
+  <text x="350" y="103" text-anchor="end" fill="#69738a" font-family="Cairo, Tahoma, sans-serif" font-size="16">وثائقك في مساحة موثوقة</text>
+  <path d="M440 24 485 41v34c0 30-19 49-45 62-26-13-45-32-45-62V41z" fill="#293b66"/>
+  <path d="M440 35 474 48v27c0 22-13 37-34 49-21-12-34-27-34-49V48z" fill="none" stroke="#d5b65a" stroke-width="3"/>
+  <path d="M426 57h22l9 9v31h-31z" fill="none" stroke="#fff" stroke-linejoin="round" stroke-width="3"/>
+  <path d="M448 58v10h9M432 77h18M432 85h18" fill="none" stroke="#c8d6f3" stroke-linecap="round" stroke-width="2.5"/>
+  <path d="m434 94 5 5 10-11" fill="none" stroke="#e5c66b" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+</svg>

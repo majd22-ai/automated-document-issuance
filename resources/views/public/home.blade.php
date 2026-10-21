@@ -5,7 +5,7 @@
 @section('content')
   <div class="gov-notice-section">
     <div class="gov-container">
-      <a href="{{ asset('demo/index.html') }}">تجربة الواجهات: الطلبات والمواعيد والدفع ومراجعة الموظف ←</a>
+      <a href="{{ asset('demo/index.html') }}">تجربة الواجهات: الطلبات والمواعيد والدفع ومراجعة الموظف <x-icon name="arrow-left" /></a>
       <span> — بيانات تجريبية دون إرسال فعلي.</span>
     </div>
   </div>
@@ -34,7 +34,7 @@
   </a>
 </div>
       </div>
-      <div class="gov-welcome-picture" role="img" aria-label="مشهد من معالم اليمن">
+      <div class="gov-welcome-picture" role="img" aria-label="مجمع الإصدار الآلي من الداخل" style="background-image:linear-gradient(0deg,#0e273099,transparent 60%),url('{{ asset('assets/images/banner/الاصدار الالي من الداخل 2.jfif') }}');">
         <div class="gov-picture-caption">اليمن | نحو خدمات رقمية أسهل</div>
       </div>
     </div>
@@ -50,22 +50,34 @@
       </div>
       <div class="gov-services-grid">
         <a href="{{ url('/services/identity') }}" class="gov-service-card">
-          <div class="gov-service-icon" aria-hidden="true">▣</div>
+          <div class="gov-service-icon" aria-hidden="true"><x-icon name="identity" /></div>
           <h3>بطاقة الهوية الشخصية</h3>
           <p>إصدار لأول مرة، تجديد البطاقة، وإصدار بدل فاقد.</p>
-          <span class="gov-service-more">3 خدمات <span aria-hidden="true">←</span></span>
+          <span class="gov-service-more">3 خدمات <span aria-hidden="true"><x-icon name="arrow-left" /></span></span>
         </a>
         <a href="{{ url('/services/passports') }}" class="gov-service-card">
-          <div class="gov-service-icon" aria-hidden="true">▤</div>
+          <div class="gov-service-icon" aria-hidden="true"><x-icon name="passport" /></div>
           <h3>جواز السفر</h3>
           <p>إصدار جواز سفر لأول مرة وتجديد جواز السفر.</p>
-          <span class="gov-service-more">خدمتان <span aria-hidden="true">←</span></span>
+          <span class="gov-service-more">خدمتان <span aria-hidden="true"><x-icon name="arrow-left" /></span></span>
         </a>
         <a href="{{ url('/services/driving-licenses') }}" class="gov-service-card">
-          <div class="gov-service-icon" aria-hidden="true">◉</div>
+          <div class="gov-service-icon" aria-hidden="true"><x-icon name="car" /></div>
           <h3>رخصة القيادة</h3>
           <p>إصدار رخصة قيادة لأول مرة وتجديد رخصة القيادة.</p>
-          <span class="gov-service-more">خدمتان <span aria-hidden="true">←</span></span>
+          <span class="gov-service-more">خدمتان <span aria-hidden="true"><x-icon name="arrow-left" /></span></span>
+        </a>
+        <a href="{{ route('appointments.book') }}" class="gov-service-card">
+          <div class="gov-service-icon" aria-hidden="true"><x-icon name="calendar" /></div>
+          <h3>خدمات المواعيد</h3>
+          <p>حجز موعد لمراجعة المركز واستكمال إجراءات الخدمة أو استلام الوثيقة.</p>
+          <span class="gov-service-more">حجز موعد <x-icon name="arrow-left" /></span>
+        </a>
+        <a href="{{ route('inquiry.reference') }}" class="gov-service-card">
+          <div class="gov-service-icon" aria-hidden="true"><x-icon name="file" /></div>
+          <h3>خدمات الاستعلام والمتابعة</h3>
+          <p>الاستعلام عن حالة الطلب ومتابعة مراحل إنجاز المعاملة باستخدام الرقم المرجعي.</p>
+          <span class="gov-service-more">الاستعلام عن طلب <x-icon name="arrow-left" /></span>
         </a>
       </div>
     </div>
@@ -81,17 +93,17 @@
         <a class="gov-service-card" href="{{ route('services.identity').'#requirements' }}">
           <h3>متطلبات البطاقة الشخصية</h3>
           <p>متطلبات الإصدار لأول مرة والتجديد وبدل الفاقد.</p>
-          <span class="gov-service-more">عرض المتطلبات ←</span>
+          <span class="gov-service-more">عرض المتطلبات <x-icon name="arrow-left" /></span>
         </a>
         <a class="gov-service-card" href="{{ route('services.passports').'#requirements' }}">
           <h3>متطلبات جواز السفر</h3>
           <p>المستندات المطلوبة لإصدار جواز السفر وتجديده.</p>
-          <span class="gov-service-more">عرض المتطلبات ←</span>
+          <span class="gov-service-more">عرض المتطلبات <x-icon name="arrow-left" /></span>
         </a>
         <a class="gov-service-card" href="{{ route('services.driving-licenses').'#requirements' }}">
           <h3>متطلبات رخصة القيادة</h3>
           <p>المستندات والفحص الطبي ومتطلبات الإصدار والتجديد.</p>
-          <span class="gov-service-more">عرض المتطلبات ←</span>
+          <span class="gov-service-more">عرض المتطلبات <x-icon name="arrow-left" /></span>
         </a>
       </div>
     </div>
@@ -127,4 +139,5 @@
       <p><strong>تنويه:</strong> هذه المنصة نموذج لمشروع تخرج أكاديمي، ولا تمثل جهة حكومية مخوّلة قانونيًا بإصدار الوثائق الرسمية.</p>
     </div>
   </section>
+  @include('components.location-map')
 @endsection

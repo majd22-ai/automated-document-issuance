@@ -7,13 +7,7 @@
   <div class="auth-card">
 
     <div class="auth-logo">
-      <div class="branding-logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-          <path d="M12 2L3 7l9 5 9-5-9-5z"/>
-          <path d="M3 12l9 5 9-5"/>
-          <path d="M3 17l9 5 9-5"/>
-        </svg>
-      </div>
+      <img class="auth-platform-logo" src="{{ asset('assets/images/logos/unified-issuance-logo.png') }}" alt="شعار مركز الإصدار الآلي الموحد">
       <h2>إنشاء حساب جديد</h2>
       <p>سجّل بياناتك للوصول إلى خدمات المنصة</p>
     </div>
@@ -74,6 +68,11 @@
           required
           placeholder="example@email.com"
         >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="phone">رقم الهاتف (اختياري)</label>
+        <input type="tel" id="phone" name="phone" class="form-control" value="{{ old('phone') }}" autocomplete="tel" maxlength="30" dir="ltr">
       </div>
 
       <div class="form-group">

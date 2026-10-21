@@ -75,7 +75,7 @@
         aria-expanded="false"
         aria-controls="gov-navigation"
       >
-        ☰ القائمة
+        <x-icon name="menu" /> القائمة
       </button>
 
       <div class="gov-nav-links" id="gov-navigation">
@@ -96,7 +96,7 @@
               aria-controls="gov-{{ $menu['id'] }}-menu"
             >
               {{ $menu['label'] }}
-              <span class="gov-caret" aria-hidden="true">⌄</span>
+              <span class="gov-caret" aria-hidden="true"><x-icon name="chevron-down" /></span>
             </button>
 
             <div
@@ -116,6 +116,13 @@
           </div>
         @endforeach
 
+        @auth
+          <a class="gov-nav-link" href="{{ route('profile.edit') }}">الملف الشخصي</a>
+          <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button class="gov-nav-link" type="submit">تسجيل الخروج</button>
+          </form>
+        @endauth
       </div>
     </div>
   </nav>

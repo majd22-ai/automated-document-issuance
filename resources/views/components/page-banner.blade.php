@@ -11,7 +11,9 @@
   </div>
   <div class="gov-header-identity">
     <div class="gov-header-logos">
-      <img src="{{ asset('assets/images/banner/yemen-eagle.png') }}" alt="شعار الجمهورية اليمنية">
+      <img class="gov-national-emblem" src="{{ asset('assets/images/banner/yemen-eagle.png') }}" alt="شعار الجمهورية اليمنية">
+      <img class="gov-platform-logo" src="{{ asset('assets/images/logos/unified-issuance-logo.png') }}" alt="شعار مركز الإصدار الآلي الموحد">
+      <img class="gov-ministry-logo" src="{{ asset('assets/images/banner/moi-logo.png') }}" alt="شعار وزارة الداخلية">
     </div>
     <h1 id="gov-banner-title" data-banner-title>{{ $isHome ? 'منصة الإصدار الآلي للوثائق الرسمية' : $pageHeading }}</h1>
     @if($isHome)

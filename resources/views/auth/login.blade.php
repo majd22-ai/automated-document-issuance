@@ -7,13 +7,7 @@
   <div class="auth-card">
 
     <div class="auth-logo">
-      <div class="branding-logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-          <path d="M12 2L3 7l9 5 9-5-9-5z"/>
-          <path d="M3 12l9 5 9-5"/>
-          <path d="M3 17l9 5 9-5"/>
-        </svg>
-      </div>
+      <img class="auth-platform-logo" src="{{ asset('assets/images/logos/unified-issuance-logo.png') }}" alt="شعار مركز الإصدار الآلي الموحد">
       <h2>تسجيل الدخول</h2>
       <p>أدخل بيانات حسابك للوصول إلى خدمات المنصة</p>
     </div>
@@ -33,7 +27,7 @@
       @endif
 
       <div class="form-group">
-        <label class="form-label" for="identifier">الرقم الوطني / اسم المستخدم</label>
+        <label class="form-label" for="identifier">البريد الإلكتروني / الرقم الوطني / اسم المستخدم</label>
         <input
           type="text"
           id="identifier"

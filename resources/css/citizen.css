@@ -69,6 +69,14 @@
 /* Auth form */
 .auth-form { margin-bottom: 20px; }
 
+.auth-logo .auth-platform-logo {
+  display: block;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 12px;
+  object-fit: contain;
+}
+
 /* Links below form */
 .auth-links {
   display: flex;

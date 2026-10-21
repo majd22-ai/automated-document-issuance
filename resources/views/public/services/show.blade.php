@@ -9,9 +9,9 @@
   <div class="container">
     <nav class="breadcrumb">
       <a href="{{ route('home') }}">الرئيسية</a>
-      <span class="sep">←</span>
+      <span class="sep"><x-icon name="arrow-left" /></span>
       <a href="{{ $service->category_url }}">{{ $service->category_name }}</a>
-      <span class="sep">←</span>
+      <span class="sep"><x-icon name="arrow-left" /></span>
       <span>{{ $service->name }}</span>
     </nav>
   </div>

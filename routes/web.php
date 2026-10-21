@@ -2,7 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AdminUserController;
 
 // =====================================================
 // الصفحة الرئيسية وأقسام الخدمات
@@ -309,41 +311,7 @@ Route::get('/login', function () {
     return view('auth.login');
 })->middleware('guest')->name('login');
 
-Route::post('/login', function (Request $request) {
-    $credentials = $request->only('identifier', 'password');
-    $remember = $request->boolean('remember');
-
-    $loginField = filter_var(
-        $credentials['identifier'],
-        FILTER_VALIDATE_EMAIL
-    ) ? 'email' : 'username';
-
-    if (Auth::attempt([
-        $loginField => $credentials['identifier'],
-        'password' => $credentials['password'],
-    ], $remember)) {
-        $request->session()->regenerate();
-
-        $user = Auth::user();
-        $redirect = $request->input('redirect');
-
-        if ($redirect) {
-            return redirect($redirect);
-        }
-
-        return match ($user->role) {
-            'admin' => redirect()->route('admin.dashboard'),
-            'employee' => redirect()->route('employee.dashboard'),
-            default => redirect()->route('citizen.dashboard'),
-        };
-    }
-
-    return back()
-        ->withErrors([
-            'identifier' => 'بيانات الدخول غير صحيحة.',
-        ])
-        ->withInput($request->only('identifier', 'remember'));
-})->middleware('guest')->name('login.post');
+Route::post('/login', [AuthController::class, 'login'])->middleware(['guest', 'throttle:6,1'])->name('login.post');
 
 // =====================================================
 // إنشاء حساب
@@ -353,36 +321,7 @@ Route::get('/register', function () {
     return view('auth.register');
 })->middleware('guest')->name('register');
 
-Route::post('/register', function (Request $request) {
-    $validated = $request->validate([
-        'name' => 'required|string|max:100',
-        'national_id' => 'required|string|max:20|unique:users,username',
-        'email' => 'required|email|unique:users,email',
-        'password' => 'required|min:8|confirmed',
-    ], [
-        'name.required' => 'الاسم الكامل مطلوب.',
-        'national_id.required' => 'الرقم الوطني مطلوب.',
-        'national_id.unique' => 'هذا الرقم الوطني مسجّل مسبقاً.',
-        'email.required' => 'البريد الإلكتروني مطلوب.',
-        'email.unique' => 'هذا البريد الإلكتروني مسجّل مسبقاً.',
-        'password.required' => 'كلمة المرور مطلوبة.',
-        'password.min' => 'يجب أن تكون كلمة المرور 8 أحرف على الأقل.',
-        'password.confirmed' => 'كلمتا المرور غير متطابقتين.',
-    ]);
-
-    $user = \App\Models\User::create([
-        'name' => $validated['name'],
-        'username' => $validated['national_id'],
-        'email' => $validated['email'],
-        'password' => bcrypt($validated['password']),
-        'role' => 'citizen',
-    ]);
-
-    Auth::login($user);
-    $request->session()->regenerate();
-
-    return redirect()->route('citizen.dashboard');
-})->middleware('guest')->name('register.post');
+Route::post('/register', [AuthController::class, 'register'])->middleware(['guest', 'throttle:10,1'])->name('register.post');
 
 // =====================================================
 // استعادة كلمة المرور وتسجيل الخروج
@@ -407,20 +346,15 @@ Route::post('/forgot-password', function (Request $request) {
     );
 })->middleware('guest')->name('password.email');
 
-Route::post('/logout', function (Request $request) {
-    Auth::logout();
-
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
-
-    return redirect()->route('home');
-})->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+Route::get('/profile', [ProfileController::class, 'edit'])->middleware('auth')->name('profile.edit');
+Route::patch('/profile', [ProfileController::class, 'update'])->middleware('auth')->name('profile.update');
 
 // =====================================================
 // صفحات المواطن
 // =====================================================
 
-Route::middleware(['auth'])
+Route::middleware(['auth', 'role:citizen'])
     ->prefix('citizen')
     ->name('citizen.')
     ->group(function () {
@@ -465,7 +399,7 @@ Route::middleware(['auth'])
 // صفحات الموظف
 // =====================================================
 
-Route::middleware(['auth'])
+Route::middleware(['auth', 'role:employee'])
     ->prefix('employee')
     ->name('employee.')
     ->group(function () {
@@ -502,7 +436,7 @@ Route::middleware(['auth'])
 // صفحات المدير
 // =====================================================
 
-Route::middleware(['auth'])
+Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
@@ -511,9 +445,8 @@ Route::middleware(['auth'])
             return view('admin.dashboard');
         })->name('dashboard');
 
-        Route::get('/users', function () {
-            return view('admin.users.index');
-        })->name('users.index');
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
 
         Route::get('/employees', function () {
             return view('admin.employees.index');

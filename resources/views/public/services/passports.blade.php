@@ -9,7 +9,7 @@
   <div class="container">
     <nav class="breadcrumb">
       <a href="{{ route('home') }}">الرئيسية</a>
-      <span class="sep">←</span>
+      <span class="sep"><x-icon name="arrow-left" /></span>
       <span>خدمات جواز السفر</span>
     </nav>
   </div>
@@ -35,11 +35,7 @@
         {{-- Service 1 --}}
         <a href="{{ url('/services/passports/first-issue') }}" class="service-item card-hover">
           <div class="icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="4" y="2" width="16" height="20" rx="2"/>
-              <path d="M9 10h6M9 14h4"/>
-              <circle cx="12" cy="7" r="2"/>
-            </svg>
+            <x-icon name="passport" size="30" />
           </div>
           <div class="content">
             <h4>إصدار جواز سفر لأول مرة</h4>
@@ -51,10 +47,7 @@
         {{-- Service 2 --}}
         <a href="{{ url('/services/passports/renewal') }}" class="service-item card-hover">
           <div class="icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12a9 9 0 1 1-3-6.7"/>
-              <polyline points="21 3 21 9 15 9"/>
-            </svg>
+            <x-icon name="refresh" size="30" />
           </div>
           <div class="content">
             <h4>تجديد جواز السفر</h4>

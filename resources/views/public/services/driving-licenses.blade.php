@@ -9,7 +9,7 @@
   <div class="container">
     <nav class="breadcrumb">
       <a href="{{ route('home') }}">الرئيسية</a>
-      <span class="sep">←</span>
+      <span class="sep"><x-icon name="arrow-left" /></span>
       <span>خدمات رخصة القيادة</span>
     </nav>
   </div>
@@ -35,12 +35,7 @@
         {{-- Service 1 --}}
         <a href="{{ url('/services/driving-licenses/first-issue') }}" class="service-item card-hover">
           <div class="icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="6" width="20" height="14" rx="2"/>
-              <path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-              <circle cx="12" cy="13" r="2"/>
-              <path d="M7 20v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/>
-            </svg>
+            <x-icon name="car" size="30" />
           </div>
           <div class="content">
             <h4>إصدار رخصة قيادة لأول مرة</h4>
@@ -52,10 +47,7 @@
         {{-- Service 2 --}}
         <a href="{{ url('/services/driving-licenses/renewal') }}" class="service-item card-hover">
           <div class="icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12a9 9 0 1 1-3-6.7"/>
-              <polyline points="21 3 21 9 15 9"/>
-            </svg>
+            <x-icon name="refresh" size="30" />
           </div>
           <div class="content">
             <h4>تجديد رخصة القيادة</h4>

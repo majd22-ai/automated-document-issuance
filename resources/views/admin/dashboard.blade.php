@@ -36,27 +36,27 @@
 
     <div class="grid grid-4">
       <a href="{{ route('admin.users.index') }}" class="card card-hover" style="text-align:center; padding:1.5rem; text-decoration:none;">
-        <div style="font-size:1.8rem; margin-bottom:0.5rem;">👤</div>
+        <div style="font-size:1.8rem; margin-bottom:0.5rem;"><x-icon name="user" /></div>
         <strong>إدارة المستخدمين</strong>
       </a>
       <a href="{{ route('admin.employees.index') }}" class="card card-hover" style="text-align:center; padding:1.5rem; text-decoration:none;">
-        <div style="font-size:1.8rem; margin-bottom:0.5rem;">👔</div>
+        <div style="font-size:1.8rem; margin-bottom:0.5rem;"><x-icon name="briefcase" /></div>
         <strong>إدارة الموظفين</strong>
       </a>
       <a href="{{ route('admin.reports.index') }}" class="card card-hover" style="text-align:center; padding:1.5rem; text-decoration:none;">
-        <div style="font-size:1.8rem; margin-bottom:0.5rem;">📊</div>
+        <div style="font-size:1.8rem; margin-bottom:0.5rem;"><x-icon name="chart" /></div>
         <strong>التقارير والإحصائيات</strong>
       </a>
       <a href="{{ route('admin.roles.index') }}" class="card card-hover" style="text-align:center; padding:1.5rem; text-decoration:none;">
-        <div style="font-size:1.8rem; margin-bottom:0.5rem;">🔐</div>
+        <div style="font-size:1.8rem; margin-bottom:0.5rem;"><x-icon name="shield" /></div>
         <strong>إدارة الأدوار</strong>
       </a>
       <a href="{{ route('admin.audit-logs.index') }}" class="card card-hover" style="text-align:center; padding:1.5rem; text-decoration:none;">
-        <div style="font-size:1.8rem; margin-bottom:0.5rem;">📝</div>
+        <div style="font-size:1.8rem; margin-bottom:0.5rem;"><x-icon name="file" /></div>
         <strong>سجلات النظام</strong>
       </a>
       <a href="{{ route('admin.settings.index') }}" class="card card-hover" style="text-align:center; padding:1.5rem; text-decoration:none;">
-        <div style="font-size:1.8rem; margin-bottom:0.5rem;">⚙️</div>
+        <div style="font-size:1.8rem; margin-bottom:0.5rem;"><x-icon name="settings" /></div>
         <strong>إعدادات النظام</strong>
       </a>
     </div>

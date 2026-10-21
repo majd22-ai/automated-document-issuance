@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" role="img" aria-labelledby="title desc">
+  <title id="title">الخيار الثاني: بوابة رقمية</title>
+  <desc id="desc">شعار يرمز إلى بوابة رقمية سهلة الوصول لخدمات الوثائق.</desc>
+  <rect width="520" height="160" rx="20" fill="#fbfaf6"/>
+  <text x="350" y="72" text-anchor="end" fill="#233a35" font-family="Cairo, Tahoma, sans-serif" font-size="27" font-weight="700">منصة الإصدار الآلي</text>
+  <text x="350" y="103" text-anchor="end" fill="#687970" font-family="Cairo, Tahoma, sans-serif" font-size="16">خدماتك تبدأ من هنا</text>
+  <circle cx="440" cy="80" r="53" fill="#e9f0e9"/>
+  <path d="M409 111V73a31 31 0 0 1 62 0v38" fill="none" stroke="#386b55" stroke-linecap="round" stroke-width="8"/>
+  <path d="M420 111V75a20 20 0 0 1 40 0v36" fill="#fff" stroke="#d3a94c" stroke-width="3"/>
+  <path d="M434 91h13m-13 9h13" stroke="#386b55" stroke-linecap="round" stroke-width="3"/>
+  <path d="M396 112h88" stroke="#386b55" stroke-linecap="round" stroke-width="5"/>
+</svg>

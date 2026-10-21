@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="../css/portal-demo-base.css">
   <link rel="stylesheet" href="../css/portal-theme.css">
   <link rel="stylesheet" href="../css/portal-demo.css">
+  <link rel="stylesheet" href="../css/icons.css">
   <script src="../js/portal-theme.js" defer></script>
   <script src="../js/portal-demo.js" defer></script>
 </head>
@@ -24,7 +25,9 @@
   </div>
   <div class="gov-header-identity">
     <div class="gov-header-logos">
-      <img src="../assets/images/banner/yemen-eagle.png" alt="شعار الجمهورية اليمنية">
+      <img class="gov-national-emblem" src="../assets/images/banner/yemen-eagle.png" alt="شعار الجمهورية اليمنية">
+      <img class="gov-platform-logo" src="../assets/images/logos/unified-issuance-logo.png" alt="شعار مركز الإصدار الآلي الموحد">
+      <img class="gov-ministry-logo" src="../assets/images/banner/moi-logo.png" alt="شعار وزارة الداخلية">
     </div>
     <h1 id="gov-banner-title" data-banner-title>نظرة عامة</h1>
       </div>
@@ -47,7 +50,7 @@
         aria-expanded="false"
         aria-controls="gov-navigation"
       >
-        ☰ القائمة
+        <svg class="site-icon" width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../assets/icons/outline.svg#menu"/></svg> القائمة
       </button>
 
       <div class="gov-nav-links" id="gov-navigation">
@@ -66,7 +69,7 @@
               aria-expanded="false"
               aria-controls="gov-services-menu"
             >
-              بوابة الخدمات              <span class="gov-caret" aria-hidden="true">⌄</span>
+              بوابة الخدمات              <span class="gov-caret" aria-hidden="true"><svg class="site-icon" width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../assets/icons/outline.svg#chevron-down"/></svg></span>
             </button>
 
             <div
@@ -98,7 +101,7 @@
               aria-expanded="false"
               aria-controls="gov-requirements-menu"
             >
-              متطلبات الخدمات              <span class="gov-caret" aria-hidden="true">⌄</span>
+              متطلبات الخدمات              <span class="gov-caret" aria-hidden="true"><svg class="site-icon" width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../assets/icons/outline.svg#chevron-down"/></svg></span>
             </button>
 
             <div
@@ -129,7 +132,7 @@
               aria-expanded="false"
               aria-controls="gov-inquiry-menu"
             >
-              الاستعلام              <span class="gov-caret" aria-hidden="true">⌄</span>
+              الاستعلام              <span class="gov-caret" aria-hidden="true"><svg class="site-icon" width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../assets/icons/outline.svg#chevron-down"/></svg></span>
             </button>
 
             <div
@@ -155,7 +158,7 @@
               aria-expanded="false"
               aria-controls="gov-contact-menu"
             >
-              تواصل معنا              <span class="gov-caret" aria-hidden="true">⌄</span>
+              تواصل معنا              <span class="gov-caret" aria-hidden="true"><svg class="site-icon" width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../assets/icons/outline.svg#chevron-down"/></svg></span>
             </button>
 
             <div
@@ -195,7 +198,7 @@
           في الجمهورية اليمنية، بما يشمل البطاقة الشخصية ورخصة القيادة وجواز السفر.
         </p>
         <p class="text-muted" style="margin-top:12px; color:#999; font-size:12px;">
-          ⚠️ نموذج أكاديمي — لا يمثل جهة حكومية مخوّلة قانونيًا بإصدار وثائق رسمية.
+          <svg class="site-icon" width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../assets/icons/outline.svg#warning"/></svg> نموذج أكاديمي — لا يمثل جهة حكومية مخوّلة قانونيًا بإصدار وثائق رسمية.
         </p>
       </div>
       <div class="footer-col">
@@ -213,9 +216,9 @@
       </div>
       <div class="footer-col">
         <h4>التواصل والدعم</h4>
-        <a href="#">📞 الدعم الفني</a>
-        <a href="#">✉️ البريد الإلكتروني</a>
-        <a href="#">📍 العنوان الرسمي</a>
+        <a href="#"><svg class="site-icon" width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../assets/icons/outline.svg#phone"/></svg> الدعم الفني</a>
+        <a href="#"><svg class="site-icon" width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../assets/icons/outline.svg#mail"/></svg> البريد الإلكتروني</a>
+        <a href="#"><svg class="site-icon" width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../assets/icons/outline.svg#location"/></svg> العنوان الرسمي</a>
       </div>
     </div>
     <div class="footer-bottom">

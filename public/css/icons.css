@@ -1,0 +1,9 @@
+.site-icon { display:inline-block; flex-shrink:0; vertical-align:middle; color:#374151; fill:none; stroke:currentColor; stroke-width:1.75; stroke-linecap:round; stroke-linejoin:round; }
+.gov-service-icon, .icon-box, .pd-icon, .stat-icon, .quick-icon, .empty-icon { color:#374151; background:transparent; }
+.gov-service-icon .site-icon, .pd-icon .site-icon { width:30px; height:30px; }
+.gov-caret .site-icon { width:14px; height:14px; }
+.pd-sidebar nav a > .site-icon { width:20px; height:20px; margin-inline-end:10px; }
+.pd-stat > .site-icon { width:24px; height:24px; margin-bottom:8px; }
+.site-footer .site-icon { color:#d1d5db; }
+.auth-logo .branding-logo { background:transparent; border-color:#d1d5db; color:#374151; }
+.stat-card .stat-icon, .quick-card .quick-icon, .empty-state .empty-icon { background:transparent; color:#374151; }

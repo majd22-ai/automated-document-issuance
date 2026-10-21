@@ -48,6 +48,11 @@ function renderSharedComponent(string $file, array $data = []): string
 {
     extract($data, EXTR_SKIP);
     $source = file_get_contents($file);
+    // The standalone demo is an unauthenticated preview.
+    $source = preg_replace('/@auth\b.*?@endauth/s', '', $source);
+    $source = preg_replace_callback('/<x-icon name="([a-z-]+)"\s*\/>/', function (array $match): string {
+        return '<svg class="site-icon" width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="../assets/icons/outline.svg#'.$match[1].'"/></svg>';
+    }, $source);
     $source = str_replace(['@php', '@endphp'], ['<?php', '?>'], $source);
     $source = preg_replace('/@foreach\((.*)\)/', '<?php foreach ($1): ?>', $source);
     $source = preg_replace('/@if\((.*)\)/', '<?php if ($1): ?>', $source);
@@ -78,6 +83,7 @@ $html = <<<HTML
   <link rel="stylesheet" href="../css/portal-demo-base.css">
   <link rel="stylesheet" href="../css/portal-theme.css">
   <link rel="stylesheet" href="../css/portal-demo.css">
+  <link rel="stylesheet" href="../css/icons.css">
   <script src="../js/portal-theme.js" defer></script>
   <script src="../js/portal-demo.js" defer></script>
 </head>
@@ -92,6 +98,6 @@ $html = <<<HTML
 </body>
 </html>
 HTML;
-$html = preg_replace('/[ \t]+$/m', '', $html);
+$html = preg_replace('/[ \t]+(?=\r?$)/m', '', $html);
 file_put_contents($root.'/public/demo/index.html', $html.PHP_EOL);
 echo "Static preview rebuilt from shared header and footer.".PHP_EOL;
