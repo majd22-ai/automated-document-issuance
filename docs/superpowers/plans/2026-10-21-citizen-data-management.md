@@ -1,0 +1,9 @@
+# Citizen data management
+
+Reuse users.name/username/email/phone; username is the existing national identifier, not independently verified civil-registry data. No parallel citizen table. Require name, username and email to open the existing new-application page; phone remains optional under current registration contract. Missing official information must be corrected by a trusted registry/admin process, not citizen input.
+
+Add citizen_documents and citizen_service_requests with restrictive user foreign keys and indexed owner lookups. Requests store service_code using the existing service identifiers; no service catalog duplication or application submission workflow. No seeds or invented live records. Expose owner-scoped read-only data/documents/requests and employee-only paginated search/detail via a User policy. Existing employee role, assigned by an administrator, is the trusted citizen-lookup permission. Admin does not gain employee lookup implicitly.
+
+Implement FormRequest for search, policy for citizen access, completeness middleware on application entry, and private no-store responses. Preserve auth and existing route names. Replace citizen database-facing document/request placeholders with real empty states and records; retain standalone prototype in public/demo. Add links from dashboards to actual data and employee search.
+
+Tests before implementation: self-only records, rejected foreign IDs, guest and cross-role denial, disabled account, search by name/national identifier with pagination and no staff accounts, missing fields blocking entry, optional phone, relationships, foreign-key integrity, and no seeded records. Use isolated transactions and ordinary migrate, never database reset. Run full Laravel, MySQL and frontend tests, Pint and view compilation. Apply additive migrations locally and document limitations.

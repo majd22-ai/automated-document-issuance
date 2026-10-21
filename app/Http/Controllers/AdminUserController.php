@@ -14,10 +14,11 @@ class AdminUserController extends Controller
     public function index(Request $request): View
     {
         $search = $request->validate(['search' => ['nullable', 'string', 'max:100']])['search'] ?? '';
-        $users = User::query()->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
-            $query->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%')
-                ->orWhere('username', 'like', '%'.$search.'%');
-        }))->latest('id')->paginate(15)->withQueryString();
+        $users = User::query()->select(['id', 'name', 'username', 'email', 'role', 'is_active'])
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%')
+                    ->orWhere('username', 'like', '%'.$search.'%');
+            }))->latest('id')->paginate(15)->withQueryString();
 
         return view('admin.users.index', compact('users', 'search'));
     }

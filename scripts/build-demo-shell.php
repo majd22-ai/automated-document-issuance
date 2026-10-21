@@ -18,6 +18,7 @@ function route(string $name): string
 {
     $paths = [
         'home' => '',
+        'services.index' => 'services',
         'services.identity' => 'services/identity',
         'services.passports' => 'services/passports',
         'services.driving-licenses' => 'services/driving-licenses',

@@ -4,6 +4,7 @@
       'id' => 'services',
       'label' => 'بوابة الخدمات',
       'items' => [
+        ['جميع الخدمات الحكومية', route('services.index'), ''],
         ['خدمات بطاقة الهوية', route('services.identity'), ''],
         ['خدمات جواز السفر', route('services.passports'), ''],
         ['خدمات رخصة القيادة', route('services.driving-licenses'), ''],
@@ -117,6 +118,11 @@
         @endforeach
 
         @auth
+          @if(auth()->user()->role === 'citizen')
+            <a class="gov-nav-link" href="{{ route('citizen.data') }}">بياناتي</a>
+          @elseif(auth()->user()->role === 'employee')
+            <a class="gov-nav-link" href="{{ route('employee.citizens.index') }}">بيانات المواطنين</a>
+          @endif
           <a class="gov-nav-link" href="{{ route('profile.edit') }}">الملف الشخصي</a>
           <form method="POST" action="{{ route('logout') }}">
             @csrf

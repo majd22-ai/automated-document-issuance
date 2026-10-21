@@ -242,6 +242,23 @@ class UserAuthenticationTest extends TestCase
         $this->assertSame('admin', $admin->fresh()->role);
     }
 
+    public function test_admin_listing_loads_only_display_fields_and_preserves_search_and_pagination(): void
+    {
+        $admin = $this->user('admin');
+        User::factory()->count(16)->create(['name' => 'Listing match']);
+        $response = $this->actingAs($admin)->get(route('admin.users.index', ['search' => 'Listing match', 'page' => 2]));
+        $response->assertOk();
+        $users = $response->viewData('users');
+        $this->assertSame(16, $users->total());
+        $this->assertSame(2, $users->currentPage());
+        $this->assertCount(1, $users->items());
+        $this->assertStringContainsString('search=Listing', $users->previousPageUrl());
+        $attributes = $users->first()->getAttributes();
+        $this->assertEqualsCanonicalizing(['id', 'name', 'username', 'email', 'role', 'is_active'], array_keys($attributes));
+        $this->assertArrayNotHasKey('password', $attributes);
+        $this->assertArrayNotHasKey('remember_token', $attributes);
+    }
+
     public function test_login_is_rate_limited(): void
     {
         for ($i = 0; $i < 6; $i++) {
