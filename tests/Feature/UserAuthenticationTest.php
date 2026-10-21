@@ -39,6 +39,7 @@ class UserAuthenticationTest extends TestCase
     {
         $user = User::factory()->create();
         $user->forceFill(['role' => $role, 'is_active' => $active, 'username' => 'ID'.$user->id])->save();
+
         return $user;
     }
 
@@ -255,6 +256,7 @@ class UserAuthenticationTest extends TestCase
             $this->get($path)->assertOk();
         }
     }
+
     public function test_empty_immutable_profile_fields_are_rejected(): void
     {
         $user = $this->user();

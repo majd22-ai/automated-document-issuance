@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -32,7 +33,7 @@ class ProfileController extends Controller
             'phone.regex' => 'أدخل رقم هاتف صحيحًا من 7 إلى 15 رقمًا.',
             '*.missing' => 'لا يمكن تعديل هذا الحقل من الملف الشخصي.',
         ]);
-        $user->fill(\Illuminate\Support\Arr::only($data, ['name', 'email', 'phone']));
+        $user->fill(Arr::only($data, ['name', 'email', 'phone']));
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
         }

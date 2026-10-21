@@ -13,6 +13,7 @@ class User extends Authenticatable
     public const ROLES = ['citizen', 'employee', 'admin'];
 
     protected $attributes = ['role' => 'citizen', 'is_active' => true];
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 

@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
+use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\AdminUserController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 // =====================================================
 // الصفحة الرئيسية وأقسام الخدمات
@@ -147,7 +147,7 @@ Route::get('/services/identity/{type}', function ($type) {
         ],
     ];
 
-    if (!array_key_exists($type, $services)) {
+    if (! array_key_exists($type, $services)) {
         abort(404);
     }
 
@@ -220,7 +220,7 @@ Route::get('/services/passports/{type}', function ($type) {
         ],
     ];
 
-    if (!array_key_exists($type, $services)) {
+    if (! array_key_exists($type, $services)) {
         abort(404);
     }
 
@@ -294,7 +294,7 @@ Route::get('/services/driving-licenses/{type}', function ($type) {
         ],
     ];
 
-    if (!array_key_exists($type, $services)) {
+    if (! array_key_exists($type, $services)) {
         abort(404);
     }
 

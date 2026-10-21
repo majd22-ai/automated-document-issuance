@@ -71,6 +71,7 @@ class AuthController extends Controller
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+
             return redirect()->route('login')->withErrors(['identifier' => 'هذا الحساب لا يملك دورًا صالحًا. راجع الإدارة.']);
         }
         $intended = $request->session()->pull('url.intended');
