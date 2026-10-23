@@ -4,14 +4,13 @@
 .service-banner-logos { display:flex; flex-direction:row; align-items:center; justify-content:flex-start; gap:clamp(12px,2vw,28px); margin-bottom:24px; }
 .service-banner-logos img { display:block; object-fit:contain; flex:0 1 auto; min-width:0; height:100px; width:110px; }
 .service-banner-logos .service-banner-platform { width:126px; height:116px; }
-.service-banner-logos .service-banner-traffic { width:184px; height:104px; }
 .service-banner-copy { border-inline-start:3px solid var(--primary-gold,#d9b83f); padding-inline-start:18px; }
 .service-banner-eyebrow { color:#65727a; font-size:12px; margin:0 0 5px; }
 .service-banner h1 { color:#223746; font-size:clamp(25px,2.5vw,36px); font-weight:800; line-height:1.65; margin:0 0 8px; }
 .service-banner-subtitle { color:#59666f; font-size:14px; line-height:1.9; margin:0; }
 .service-banner-document { margin:0; min-width:0; padding:10px; background:#fff; border:1px solid #e0e6e7; border-radius:14px; box-shadow:0 8px 24px #2237460b; }
 .service-banner-document img { display:block; width:100%; height:auto; max-height:300px; object-fit:contain; border-radius:7px; }
-@media(max-width:900px) { .service-banner-grid { gap:24px; } .service-banner-logos { gap:10px; } .service-banner-logos img { width:86px; height:84px; } .service-banner-logos .service-banner-platform { width:100px; height:96px; } .service-banner-logos .service-banner-traffic { width:128px; height:88px; } }
+@media(max-width:900px) { .service-banner-grid { gap:24px; } .service-banner-logos { gap:10px; } .service-banner-logos img { width:86px; height:84px; } .service-banner-logos .service-banner-platform { width:100px; height:96px; } }
 @media(max-width:640px) { .service-banner { padding:24px 0; } .service-banner-grid { grid-template-columns:minmax(0,1fr); gap:24px; } .service-banner-logos { justify-content:center; flex-wrap:wrap; margin-bottom:20px; } .service-banner-copy { text-align:center; border-inline-start:0; padding-inline-start:0; } .service-banner-document { width:100%; max-width:440px; justify-self:center; box-sizing:border-box; } .service-banner h1 { font-size:26px; } }
 
 /* Each service photo forms the banner background, with a quiet reading area in RTL. */
@@ -21,7 +20,6 @@
 .service-banner-background .service-banner-logos { gap:22px; margin-bottom:14px; }
 .service-banner-background .service-banner-logos img { width:94px; height:76px; }
 .service-banner-background .service-banner-logos .service-banner-platform { width:104px; height:90px; }
-.service-banner-background .service-banner-logos .service-banner-traffic { width:160px; height:90px; }
 .service-banner-background h1 { font-size:clamp(25px,2.4vw,32px); margin-bottom:5px; }
 .service-banner-background .service-banner-document { position:absolute; z-index:0; inset:0 auto 0 0; width:65%; max-width:none; border:0; border-radius:0; padding:0; box-shadow:none; background:transparent; }
 .service-banner-background .service-banner-document img { width:100%; height:100%; max-height:none; object-fit:cover; object-position:center 48%; border-radius:0; }
@@ -31,7 +29,6 @@
   .service-banner-background .service-banner-logos { gap:14px; }
   .service-banner-background .service-banner-logos img { width:76px; height:70px; }
   .service-banner-background .service-banner-logos .service-banner-platform { width:90px; height:82px; }
-  .service-banner-background .service-banner-logos .service-banner-traffic { width:128px; height:82px; }
 }
 @media(max-width:640px) {
   .service-banner-background { padding:22px 0; }

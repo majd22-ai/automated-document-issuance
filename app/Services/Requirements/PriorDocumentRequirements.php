@@ -3,14 +3,15 @@
 namespace App\Services\Requirements;
 
 use App\Enums\RequirementState as State;
+use App\Models\CitizenDocument;
 use App\Models\GovernmentService;
 use App\Models\User;
 
 class PriorDocumentRequirements
 {
-    public function evaluate(User $citizen, GovernmentService $service): array
+    public function evaluate(User $citizen, GovernmentService $service, ?CitizenDocument $selected = null): array
     {
-        $documents = $citizen->documents()->where('document_type_code', $service->document_type)->orderByDesc('issued_at')->get();
+        $documents = $citizen->documents()->where('document_type_code', $service->document_type)->when($selected, fn ($q) => $q->whereKey($selected->id))->orderByDesc('issued_at')->get();
         $policy = $service->verification_rules['renewal_validity'] ?? 'any';
         if (! in_array($policy, ['any', 'current', 'expired'], true) || ! $service->renewal_statuses) {
             return [new RequirementResult('previous_document', 'الوثيقة السابقة', State::Unverifiable, 'قواعد حالة الوثيقة أو صلاحيتها للتجديد غير مكتملة.'), null];

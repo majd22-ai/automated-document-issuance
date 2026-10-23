@@ -3,6 +3,7 @@
     [
       'id' => 'services',
       'label' => 'بوابة الخدمات',
+      'icon' => 'briefcase',
       'items' => [
         ['جميع الخدمات الحكومية', route('services.index'), ''],
         ['خدمات بطاقة الهوية', route('services.identity'), ''],
@@ -14,6 +15,7 @@
     [
       'id' => 'requirements',
       'label' => 'متطلبات الخدمات',
+      'icon' => 'clipboard-list',
       'items' => [
         [
           'متطلبات الهوية الوطنية',
@@ -35,6 +37,7 @@
     [
       'id' => 'inquiry',
       'label' => 'الاستعلام',
+      'icon' => 'search',
       'items' => [
         [
           'الاستعلام عن حالة طلب',
@@ -51,6 +54,7 @@
     [
       'id' => 'contact',
       'label' => 'تواصل معنا',
+      'icon' => 'phone',
       'items' => [
         ['تواصل معنا', route('contact.index'), ''],
         ['تقديم بلاغ إلى الجهة المعنية', route('contact.report'), ''],
@@ -85,7 +89,7 @@
           class="gov-nav-link {{ request()->routeIs('home') ? 'is-active' : '' }}"
           href="{{ route('home') }}"
         >
-          الرئيسية
+          <x-icon name="home" /> الرئيسية
         </a>
 
         @foreach($menus as $menu)
@@ -96,7 +100,7 @@
               aria-expanded="false"
               aria-controls="gov-{{ $menu['id'] }}-menu"
             >
-              {{ $menu['label'] }}
+              <x-icon name="{{ $menu['icon'] }}" /> {{ $menu['label'] }}
               <span class="gov-caret" aria-hidden="true"><x-icon name="chevron-down" /></span>
             </button>
 
@@ -119,14 +123,17 @@
 
         @auth
           @if(auth()->user()->role === 'citizen')
-            <a class="gov-nav-link" href="{{ route('citizen.data') }}">بياناتي</a>
+            <a class="gov-nav-link" href="{{ route('citizen.data') }}"><x-icon name="identity" /> بياناتي</a>
+            <a class="gov-nav-link" href="{{ route('citizen.applications.index') }}"><x-icon name="clipboard-list" /> طلباتي</a>
+            <a class="gov-nav-link" href="{{ route('citizen.notifications.index') }}">الإشعارات ({{ auth()->user()->unreadNotifications()->count() }})</a>
           @elseif(auth()->user()->role === 'employee')
-            <a class="gov-nav-link" href="{{ route('employee.citizens.index') }}">بيانات المواطنين</a>
+            <a class="gov-nav-link" href="{{ route('employee.citizens.index') }}"><x-icon name="users" /> بيانات المواطنين</a>
+            <a class="gov-nav-link" href="{{ route('employee.tracking.index') }}">متابعة الطلبات</a>
           @endif
-          <a class="gov-nav-link" href="{{ route('profile.edit') }}">الملف الشخصي</a>
+          <a class="gov-nav-link" href="{{ route('profile.edit') }}"><x-icon name="user" /> الملف الشخصي</a>
           <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button class="gov-nav-link" type="submit">تسجيل الخروج</button>
+            <button class="gov-nav-link" type="submit"><x-icon name="log-out" /> تسجيل الخروج</button>
           </form>
         @endauth
       </div>

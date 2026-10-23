@@ -26,6 +26,32 @@ class User extends Authenticatable
         return $this->hasMany(CitizenServiceRequest::class);
     }
 
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(CitizenAppointment::class);
+    }
+
+    public function examinations(): HasMany
+    {
+        return $this->hasMany(MedicalExamination::class);
+    }
+
+    public function charges(): HasMany
+    {
+        return $this->hasMany(RequestCharge::class);
+    }
+
+    public function reviewPermissions(): HasMany
+    {
+        return $this->hasMany(ServiceReviewPermission::class);
+    }
+
+    public function canReviewService(?int $serviceId, string $ability): bool
+    {
+        return $this->is_active && $this->role === 'employee' && $serviceId && in_array($ability, ['can_review', 'can_approve', 'can_assign', 'can_issue', 'can_deliver'], true)
+            && $this->reviewPermissions()->where('government_service_id', $serviceId)->where($ability, true)->exists();
+    }
+
     public function missingCitizenFields(): array
     {
         $missing = [];

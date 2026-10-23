@@ -101,7 +101,7 @@ class CitizenDataController extends Controller
             return $locked;
         });
 
-        return $this->page($request->user()->role === 'citizen' ? 'citizen.applications.show' : 'employee.reviews.show', compact('application'));
+        return $this->page($request->user()->role === 'citizen' ? 'citizen.applications.show' : 'employee.applications.readonly', compact('application'));
     }
 
     public function search(SearchCitizensRequest $request): Response

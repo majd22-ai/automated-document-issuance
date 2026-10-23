@@ -4,6 +4,8 @@
 .gov-caret .site-icon { width:14px; height:14px; }
 .pd-sidebar nav a > .site-icon { width:20px; height:20px; margin-inline-end:10px; }
 .pd-stat > .site-icon { width:24px; height:24px; margin-bottom:8px; }
+.gov-nav-link .site-icon { color:inherit; width:16px; height:16px; }
+.gov-nav-toggle .site-icon { color:inherit; width:18px; height:18px; }
 .site-footer .site-icon { color:#d1d5db; }
 .auth-logo .branding-logo { background:transparent; border-color:#d1d5db; color:#374151; }
 .stat-card .stat-icon, .quick-card .quick-icon, .empty-state .empty-icon { background:transparent; color:#374151; }

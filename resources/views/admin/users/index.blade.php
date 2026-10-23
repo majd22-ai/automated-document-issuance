@@ -4,6 +4,7 @@
 @section('content')
 <section class="page-hero"><div class="container"><h1>إدارة المستخدمين</h1><p>عرض وإدارة جميع حسابات المستخدمين</p></div></section>
 <section class="section"><div class="container">
+  <p><a class="btn btn-outline" href="{{ route('admin.review-permissions.index') }}">تحديد صلاحيات مراجعة الخدمات واعتمادها</a></p>
   <div style="margin-bottom:1.5rem;"><a href="{{ route('admin.dashboard') }}" style="color:var(--primary);text-decoration:none;"><x-icon name="arrow-left" /> العودة للوحة التحكم</a></div>
   @if(session('status'))
     <div class="alert alert-success" role="status">{{ session('status') }}</div>

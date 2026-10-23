@@ -49,8 +49,8 @@
       ],
       'services.driving-licenses' => [
         'title' => 'خدمات رخصة القيادة', 'subtitle' => 'خدمات إصدار رخصة القيادة اليمنية وتجديدها',
-        'agency' => 'assets/images/services/traffic-logo.png', 'agencyAlt' => 'شعار الإدارة العامة للمرور', 'agencyClass' => 'service-banner-traffic',
-        'agencyWidth' => 1200, 'agencyHeight' => 675,
+        'agency' => 'assets/images/services/traffic-logo.png', 'agencyAlt' => 'شعار الإدارة العامة للمرور',
+        'agencyWidth' => 423, 'agencyHeight' => 405,
         'document' => 'assets/images/services/driving-license.jpg', 'documentAlt' => 'صورة رخصة قيادة يمنية',
         'documentWidth' => 1200, 'documentHeight' => 670,
       ],

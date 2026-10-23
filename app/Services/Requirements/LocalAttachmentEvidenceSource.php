@@ -14,6 +14,22 @@ class LocalAttachmentEvidenceSource implements ServiceEvidenceSource
 
     public function lookup(User $citizen, GovernmentService $service, string $kind, string $key, ?CitizenServiceRequest $request = null): EvidenceLookup
     {
+        if ($kind === 'medical' && $request) {
+            $exam = $request->examinations()->where('user_id', $citizen->id)->where('government_service_id', $service->id)->latest('id')->first();
+            if (! $exam) {
+                return new EvidenceLookup(true);
+            }
+            if ($exam->rules_version !== $service->rules_version) {
+                return new EvidenceLookup;
+            }
+
+            return new EvidenceLookup(true, [[
+                'user_id' => $citizen->id, 'service_id' => $service->id, 'request_id' => $request->id,
+                'trusted' => true, 'source_reference' => $exam->source_reference, 'verified_at' => $exam->recorded_at->toIso8601String(),
+                'result' => $exam->result === 'retest' ? 'failed' : $exam->result,
+                'examined_at' => $exam->examined_at?->toDateString(), 'expires_at' => $exam->expires_at?->toDateString(),
+            ]]);
+        }
         if ($kind !== 'attachment') {
             return $this->otherSources->lookup($citizen, $service, $kind, $key, $request);
         }

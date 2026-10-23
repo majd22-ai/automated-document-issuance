@@ -2,11 +2,16 @@
 
 use App\Http\Controllers\AdminGovernmentServiceController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\ApplicationReviewController;
+use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CitizenAttachmentController;
 use App\Http\Controllers\CitizenDataController;
+use App\Http\Controllers\DocumentIssuanceController;
 use App\Http\Controllers\GovernmentServiceController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RequestOperationsController;
+use App\Http\Controllers\ReviewPermissionController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Middleware\EnsureCitizenDataIsComplete;
 use Illuminate\Http\Request;
@@ -36,13 +41,8 @@ Route::get('/appointments/book', function () {
 // الاستعلام والتواصل — واجهات تجريبية
 // =====================================================
 
-Route::view('/inquiry/request', 'public.inquiry', [
-    'mode' => 'reference',
-])->name('inquiry.reference');
-
-Route::view('/inquiry/my-requests', 'public.inquiry', [
-    'mode' => 'national',
-])->name('inquiry.mine');
+Route::get('/inquiry/request',fn()=>redirect()->route(auth()->user()->role==='employee'?'employee.tracking.index':(auth()->user()->role==='admin'?'admin.dashboard':'citizen.applications.index')))->middleware('auth')->name('inquiry.reference');
+Route::get('/inquiry/my-requests',fn()=>redirect()->route(auth()->user()->role==='employee'?'employee.tracking.index':(auth()->user()->role==='admin'?'admin.dashboard':'citizen.applications.index')))->middleware('auth')->name('inquiry.mine');
 
 Route::view('/contact', 'public.contact', [
     'mode' => 'contact',
@@ -133,7 +133,7 @@ Route::middleware(['auth', 'role:citizen'])
         Route::get('/applications/{id}/attachments', [CitizenAttachmentController::class, 'application'])->name('applications.attachments.index');
         Route::post('/applications/{id}/attachments', [CitizenAttachmentController::class, 'storeForApplication'])->middleware('throttle:20,1')->name('applications.attachments.store');
         Route::delete('/attachments/{attachment}', [CitizenAttachmentController::class, 'destroy'])->name('attachments.destroy');
-        Route::get('/applications', [CitizenDataController::class, 'applications'])->name('applications.index');
+        Route::get('/applications', [\App\Http\Controllers\ApplicationTrackingController::class, 'index'])->name('applications.index');
 
         Route::get('/applications/new', [GovernmentServiceController::class, 'entry'])->middleware(EnsureCitizenDataIsComplete::class)->name('applications.create');
         Route::post('/services/{service}/start', [GovernmentServiceController::class, 'start'])->middleware(EnsureCitizenDataIsComplete::class)->name('services.start');
@@ -142,22 +142,27 @@ Route::middleware(['auth', 'role:citizen'])
         Route::post('/services/{service}/submit', [ServiceRequestController::class, 'submit'])->middleware(EnsureCitizenDataIsComplete::class)->name('services.submit');
         Route::get('/applications/{id}/success', [ServiceRequestController::class, 'success'])->name('applications.success');
 
-        Route::get('/applications/{id}', [CitizenDataController::class, 'application'])->name('applications.show');
+        Route::get('/applications/{id}', [\App\Http\Controllers\ApplicationTrackingController::class, 'show'])->name('applications.show');
+        Route::get('/applications/{id}/correction', [ApplicationReviewController::class, 'correction'])->name('applications.correction');
+        Route::post('/applications/{id}/resubmit', [ApplicationReviewController::class, 'resubmit'])->middleware('throttle:20,1')->name('applications.resubmit');
         Route::post('/applications/{id}/requirements/check', [CitizenDataController::class, 'recheckRequirements'])->name('applications.requirements.check');
 
-        Route::get('/appointments', function () {
-            return view('citizen.appointments.index');
-        })->name('appointments.index');
+        Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index');
+        Route::get('/applications/{id}/operations', [RequestOperationsController::class, 'show'])->name('applications.operations');
+        Route::post('/applications/{id}/appointments', [AppointmentController::class, 'book'])->middleware('throttle:20,1')->name('applications.appointments.store');
+        Route::patch('/appointments/{appointment}', [AppointmentController::class, 'change'])->name('appointments.update');
 
         Route::get('/documents', [CitizenDataController::class, 'documents'])->name('documents.index');
+        Route::get('/documents/{id}', [DocumentIssuanceController::class, 'show'])->name('documents.show');
+        Route::get('/documents/{id}/download', [DocumentIssuanceController::class, 'download'])->name('documents.download');
+        Route::post('/documents/{id}/delivery', [DocumentIssuanceController::class, 'choose'])->name('documents.delivery.choose');
 
-        Route::get('/notifications', function () {
-            return view('citizen.notifications.index');
-        })->name('notifications.index');
+        Route::get('/notifications', [\App\Http\Controllers\CitizenNotificationController::class,'index'])->name('notifications.index');
+        Route::post('/notifications/read-all', [\App\Http\Controllers\CitizenNotificationController::class,'readAll'])->name('notifications.read-all');
+        Route::post('/notifications/{id}/read', [\App\Http\Controllers\CitizenNotificationController::class,'read'])->whereUuid('id')->name('notifications.read');
+        Route::post('/notifications/{id}/open', [\App\Http\Controllers\CitizenNotificationController::class,'open'])->whereUuid('id')->name('notifications.open');
 
-        Route::get('/payments', function () {
-            return view('citizen.payments.index');
-        })->name('payments.index');
+        Route::get('/payments', [RequestOperationsController::class, 'payments'])->name('payments.index');
 
     });
 
@@ -174,23 +179,41 @@ Route::middleware(['auth', 'role:employee'])
             return view('employee.dashboard');
         })->name('dashboard');
 
-        Route::get('/applications', [CitizenDataController::class, 'employeeApplications'])->name('applications.index');
+        Route::get('/applications', [ApplicationReviewController::class, 'index'])->name('applications.index');
+        Route::get('/tracking', [\App\Http\Controllers\ApplicationTrackingController::class,'index'])->name('tracking.index');
+        Route::get('/tracking/{id}', [\App\Http\Controllers\ApplicationTrackingController::class,'show'])->name('tracking.show');
+        Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index');
+        Route::get('/appointment-slots', [AppointmentController::class, 'slots'])->name('appointment-slots.index');
+        Route::post('/appointment-slots', [AppointmentController::class, 'saveSlot'])->name('appointment-slots.store');
+        Route::patch('/appointment-slots/{slot}', [AppointmentController::class, 'saveSlot'])->name('appointment-slots.update');
+        Route::get('/applications/{id}/operations', [RequestOperationsController::class, 'show'])->name('applications.operations');
+        Route::post('/applications/{id}/appointments', [AppointmentController::class, 'book'])->name('applications.appointments.store');
+        Route::patch('/appointments/{appointment}', [AppointmentController::class, 'change'])->name('appointments.update');
+        Route::post('/applications/{id}/examinations', [RequestOperationsController::class, 'examination'])->name('applications.examinations.store');
+        Route::post('/applications/{id}/charges', [RequestOperationsController::class, 'charge'])->name('applications.charges.store');
+        Route::post('/applications/{id}/payments', [RequestOperationsController::class, 'payment'])->name('applications.payments.store');
+        Route::get('/payments', [RequestOperationsController::class, 'payments'])->name('payments.index');
         Route::get('/attachments', [CitizenAttachmentController::class, 'employeeIndex'])->name('attachments.index');
         Route::patch('/attachments/{attachment}/review', [CitizenAttachmentController::class, 'review'])->name('attachments.review');
 
-        Route::get('/applications/{id}/review', [CitizenDataController::class, 'employeeApplication'])->name('applications.review');
+        Route::get('/applications/{id}/review', [ApplicationReviewController::class, 'show'])->name('applications.review');
+        Route::post('/applications/{id}/decisions', [ApplicationReviewController::class, 'decide'])->middleware('throttle:30,1')->name('applications.decisions');
+        Route::post('/applications/{id}/assignment', [ApplicationReviewController::class, 'assign'])->name('applications.assignment');
+        Route::post('/applications/{id}/deficiencies/{deficiency}/resolve', [ApplicationReviewController::class, 'resolve'])->name('applications.deficiencies.resolve');
         Route::post('/applications/{id}/requirements/check', [CitizenDataController::class, 'recheckRequirements'])->name('applications.requirements.check');
 
         Route::get('/citizens', [CitizenDataController::class, 'search'])->name('citizens.index');
         Route::get('/citizens/{citizen}', [CitizenDataController::class, 'employeeShow'])->name('citizens.show');
 
-        Route::get('/issuance', function () {
-            return view('employee.issuance.index');
-        })->name('issuance.index');
-
-        Route::get('/deliveries', function () {
-            return view('employee.deliveries.index');
-        })->name('deliveries.index');
+        Route::get('/issuance', [DocumentIssuanceController::class, 'index'])->name('issuance.index');
+        Route::get('/issuance/{id}', [DocumentIssuanceController::class, 'review'])->name('issuance.review');
+        Route::post('/issuance/{id}', [DocumentIssuanceController::class, 'issue'])->middleware('throttle:20,1')->name('issuance.store');
+        Route::get('/deliveries', [DocumentIssuanceController::class, 'deliveries'])->name('deliveries.index');
+        Route::get('/documents/{id}', [DocumentIssuanceController::class, 'show'])->name('documents.show');
+        Route::get('/documents/{id}/download', [DocumentIssuanceController::class, 'download'])->name('documents.download');
+        Route::post('/documents/{id}/delivery', [DocumentIssuanceController::class, 'choose'])->name('documents.delivery.choose');
+        Route::post('/documents/{id}/delivery-status', [DocumentIssuanceController::class, 'status'])->name('documents.delivery.status');
+        Route::post('/documents/{id}/regenerate', [DocumentIssuanceController::class, 'regenerate'])->name('documents.regenerate');
 
     });
 
@@ -209,6 +232,8 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
         Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+        Route::get('/review-permissions', [ReviewPermissionController::class, 'index'])->name('review-permissions.index');
+        Route::post('/users/{user}/review-permissions', [ReviewPermissionController::class, 'save'])->name('review-permissions.save');
 
         Route::get('/employees', function () {
             return view('admin.employees.index');

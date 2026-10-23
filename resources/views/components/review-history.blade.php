@@ -1,0 +1,11 @@
+@php($staffReview = auth()->user()?->can('viewReview',$application))
+<section class="card" style="padding:1.5rem;margin-block:1rem"><h2>تاريخ المراجعة والقرارات</h2>
+@if($application->status==='requires_correction' && auth()->user()->role==='citizen')<p>استكمل النواقص المسموح بها ثم أعد التقديم. التحقق النهائي من الاستكمال للموظف.</p><a class="btn btn-primary" href="{{ route('citizen.applications.correction',$application->id) }}">استكمال النواقص وإعادة التقديم</a>@endif
+@if($application->status==='approved')<p>اعتمد الطلب تمهيدًا للإصدار؛ قرار الاعتماد وحده لا ينشئ وثيقة.</p>@endif
+@if($application->issuedDocument && auth()->user()->can('view',$application->issuedDocument))<p><a class="btn btn-outline" href="{{ route((auth()->user()->role==='citizen'?'citizen':'employee').'.documents.show',$application->issuedDocument->id) }}">الوثيقة الصادرة وحالة الاستلام</a></p>@elseif(auth()->user()->can('issueDocument',$application) && $application->status==='approved')<p><a class="btn btn-primary" href="{{ route('employee.issuance.review',$application->id) }}">الانتقال لفحص الإصدار</a></p>@endif
+@foreach($application->deficiencies()->orderBy('id')->get() as $deficiency)<article style="padding:0.75rem;border-bottom:1px solid #ddd"><h3>{{ $deficiency->description }}</h3><p>{{ $deficiency->label() }} — {{ $deficiency->target_type }} / {{ $deficiency->target_key }}</p>@if($deficiency->citizen_response)<p>رد الاستكمال: {{ $deficiency->citizen_response }}</p>@endif @if($staffReview && $deficiency->resolution_note)<p>ملاحظة التحقق الداخلية: {{ $deficiency->resolution_note }}</p>@endif</article>@endforeach
+@if(!isset($timeline))
+@forelse($application->reviewDecisions()->with('actor')->latest('id')->get() as $decision)
+@if($staffReview || in_array($decision->action,['start','accept','return','reject','approve','resubmit']))<article style="padding:1rem;border-bottom:1px solid #ddd"><h3>{{ $decision->label() }}</h3><p>{{ $decision->decided_at->format('Y-m-d H:i') }}</p>@if($decision->public_reason)<p>{{ $decision->public_reason }}</p>@endif @if($staffReview)<p>المنفذ: {{ $decision->actor->name }} — {{ $decision->from_status }} ← {{ $decision->to_status }}</p>@if($decision->internal_notes)<p>ملاحظات داخلية: {{ $decision->internal_notes }}</p>@endif @endif</article>@endif
+@empty<p>لا توجد قرارات مراجعة مسجلة.</p>@endforelse
+@endif</section>

@@ -3,18 +3,22 @@
 namespace App\Services;
 
 use App\Enums\RequirementState as State;
+use App\Enums\ServiceRequestStatus;
+use App\Http\Requests\PreviewServiceRequest;
 use App\Models\CitizenServiceRequest;
 use App\Models\GovernmentService;
 use App\Models\User;
+use App\Services\Operations\RequestPrerequisites;
 use App\Services\Requirements\EligibilityResult;
 use App\Services\Requirements\EvidenceRequirements;
 use App\Services\Requirements\PriorDocumentRequirements;
 use App\Services\Requirements\RequirementResult;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class ServiceEligibility
 {
-    public function __construct(private EvidenceRequirements $evidence, private PriorDocumentRequirements $priorDocuments) {}
+    public function __construct(private EvidenceRequirements $evidence, private PriorDocumentRequirements $priorDocuments, private RequestPrerequisites $prerequisites) {}
 
     /** Compatibility for existing callers; structured evaluate() is the single source of truth. */
     public function reasons(User $citizen, GovernmentService $service): array
@@ -22,7 +26,7 @@ class ServiceEligibility
         return $this->evaluate($citizen, $service)->reasons();
     }
 
-    public function evaluate(User $citizen, GovernmentService $service, ?CitizenServiceRequest $request = null): EligibilityResult
+    public function evaluate(User $citizen, GovernmentService $service, ?CitizenServiceRequest $request = null, ?ServiceRequestStatus $target = null): EligibilityResult
     {
         $report = new EligibilityResult;
         if ($request && ($request->user_id !== $citizen->id || $request->government_service_id !== $service->id)) {
@@ -45,6 +49,12 @@ class ServiceEligibility
             }
         }
         $report->add(new RequirementResult('citizen_data', 'بيانات المواطن المطلوبة', $missing ? State::Unmet : State::Met, $missing ? 'البيانات المطلوبة غير مكتملة: '.implode('، ', array_unique($missing)) : 'الحقول الأساسية المطلوبة مكتملة.', 'citizen'));
+        if ($request) {
+            $schema = new GovernmentService;
+            $schema->application_fields = $request->service_snapshot['application_fields'] ?? [];
+            $valid = Validator::make(['data' => $request->request_data ?? [], 'notes' => $request->notes], PreviewServiceRequest::payloadRules($schema))->passes();
+            $report->add(new RequirementResult('request_data', 'بيانات نموذج الطلب', $valid ? State::Met : State::Unmet, $valid ? 'حقول الطلب المسجلة تستوفي النموذج.' : 'بيانات نموذج الطلب الإلزامية ناقصة أو غير صالحة.', 'citizen'));
+        }
         $assessment = $service->assessments()->where('user_id', $citizen->id)->first();
         $current = $assessment && $assessment->rules_version === $service->rules_version
             && filled($assessment->verification_reference) && $assessment->reviewed_by && $assessment->reviewed_at && $assessment->reviewed_at->lte(now());
@@ -103,9 +113,11 @@ class ServiceEligibility
         if (array_key_exists('medical', $rules) && (! is_array($rules['medical']) || ! array_key_exists('required', $rules['medical']) || ! is_bool($rules['medical']['required']))) {
             $report->add(new RequirementResult('medical', 'الفحص الطبي للقيادة', State::Unverifiable, 'قاعدة الفحص الطبي غير مكتملة أو غير صالحة.'));
         } elseif ($rules['medical']['required'] ?? false) {
-            $report->add($service->document_type === 'driving_license'
+            $report->add($service->document_type === 'driving_license' && ! $this->prerequisites->medicalDue($service, $request, $target)
+                ? new RequirementResult('medical', 'الفحص الطبي للقيادة', State::NeedsReview, 'يلزم تسجيل نتيجة فحص موثقة قبل المرحلة المحددة في قواعد الخدمة.', mandatory: false)
+                : ($service->document_type === 'driving_license'
                 ? $this->evidence->medical($citizen, $service, $rules['medical'], $request)
-                : new RequirementResult('medical', 'الفحص الطبي للقيادة', State::Unverifiable, 'قاعدة الفحص الطبي غير متوافقة مع نوع الخدمة.'));
+                : new RequirementResult('medical', 'الفحص الطبي للقيادة', State::Unverifiable, 'قاعدة الفحص الطبي غير متوافقة مع نوع الخدمة.')));
         }
         $requests = $citizen->serviceRequests()->where(function ($query) use ($service) {
             $query->where('government_service_id', $service->id)->orWhereIn('service_code', $service->codes());
@@ -117,6 +129,10 @@ class ServiceEligibility
         $requests->where(fn ($query) => $query->whereNull('status')->orWhereNotIn('status', $terminal));
         $duplicate = $requests->exists();
         $report->add(new RequirementResult('duplicate_request', 'عدم تكرار الطلب', $duplicate ? State::Unmet : State::Met, $duplicate ? 'يوجد طلب قائم للخدمة نفسها؛ راجع طلباتك قبل البدء مجددًا.' : 'لا يوجد طلب قائم آخر يمنع المتابعة.', 'citizen'));
+
+        foreach ($this->prerequisites->checks($service, $request, $target) as $check) {
+            $report->add($check);
+        }
 
         return $report;
     }

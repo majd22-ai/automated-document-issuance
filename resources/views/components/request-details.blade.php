@@ -10,6 +10,8 @@
   @if($application->notes)<dt>الملاحظات</dt><dd>{{ $application->notes }}</dd>@endif
   @if($application->citizen_visible_reason)<dt>سبب الاستكمال أو الرفض المسموح بعرضه</dt><dd>{{ $application->citizen_visible_reason }}</dd>@endif
 </dl>
+@include('components.review-history')
+@if($application->government_service_id)<p><a class="btn btn-primary" href="{{ route((auth()->user()->role==='employee'?'employee':'citizen').'.applications.operations',$application->id) }}">المواعيد والفحوصات والرسوم</a></p>@endif
 <h2>المرفقات المرتبطة بهذا الطلب</h2>
 @include('components.attachment-list', ['attachments' => $application->attachments])
 @if(auth()->user()->role === 'citizen' && $application->government_service_id)<p><a class="btn btn-outline" href="{{ route('citizen.applications.attachments.index', $application->id) }}">عرض وإدارة مرفقات الطلب</a></p>@endif

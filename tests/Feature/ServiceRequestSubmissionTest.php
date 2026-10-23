@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\ServiceRequestStatus;
 use App\Models\GovernmentService;
+use App\Models\ServiceReviewPermission;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -170,6 +171,7 @@ class ServiceRequestSubmissionTest extends TestCase
         $this->get('/citizen/applications?search='.$request->reference)->assertOk()
             ->assertViewHas('applications', fn ($items) => $items->total() === 0);
         $employee = $this->user('employee');
+        (new ServiceReviewPermission)->forceFill(['user_id' => $employee->id, 'government_service_id' => $service->id, 'can_review' => true, 'granted_by' => $this->user('admin')->id])->save();
         $this->actingAs($employee)->get('/employee/applications')->assertOk()->assertSee($request->reference);
         $this->get('/employee/applications/'.$request->id.'/review')->assertOk()->assertSee($request->reference)->assertDontSee('name="status"', false);
         $this->actingAs($owner)->patch('/citizen/applications/'.$request->id, ['status' => 'completed'])->assertStatus(405);

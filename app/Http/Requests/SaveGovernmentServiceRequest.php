@@ -3,8 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Models\GovernmentService;
+use App\Services\Issuance\IssuanceRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Validator;
 
 class SaveGovernmentServiceRequest extends FormRequest
@@ -16,7 +18,7 @@ class SaveGovernmentServiceRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        foreach (['application_fields', 'verification_rules'] as $jsonField) {
+        foreach (['application_fields', 'verification_rules', 'workflow_rules', 'issuance_rules'] as $jsonField) {
             if (is_string($this->input($jsonField))) {
                 try {
                     $decoded = json_decode($this->input($jsonField), true, 32, JSON_THROW_ON_ERROR);
@@ -43,6 +45,17 @@ class SaveGovernmentServiceRequest extends FormRequest
             'document_type' => $editing ? ['missing'] : ['required', Rule::in(array_keys(GovernmentService::DOCUMENT_TYPES))],
             'operation' => $editing ? ['missing'] : ['required', Rule::in(array_keys(GovernmentService::OPERATIONS))],
             'description' => ['nullable', 'string', 'max:10000'],
+            'require_separate_approver' => ['sometimes', 'boolean'],
+            'workflow_rules' => ['nullable', 'array:appointment,medical_stage,payment'],
+            'workflow_rules.appointment' => ['sometimes', 'array:required,stage,statuses'],
+            'workflow_rules.appointment.required' => ['required_with:workflow_rules.appointment', 'boolean'],
+            'workflow_rules.appointment.stage' => ['required_with:workflow_rules.appointment', Rule::in(['accepted', 'approved', 'processing'])],
+            'workflow_rules.appointment.statuses' => ['required_with:workflow_rules.appointment', 'array', 'min:1', 'max:3'],
+            'workflow_rules.appointment.statuses.*' => [Rule::in(['booked', 'confirmed', 'completed'])],
+            'workflow_rules.medical_stage' => ['sometimes', Rule::in(['accepted', 'approved', 'processing'])],
+            'workflow_rules.payment' => ['sometimes', 'array:required,stage'],
+            'workflow_rules.payment.required' => ['required_with:workflow_rules.payment', 'boolean'],
+            'workflow_rules.payment.stage' => ['required_with:workflow_rules.payment', Rule::in(['accepted', 'approved', 'processing'])],
             'verification_rules' => ['nullable', 'array:documents,medical,renewal_validity,document_authenticity_required,restriction_source'],
             'verification_rules.documents' => ['sometimes', 'array', 'max:40'],
             'verification_rules.documents.*' => ['required', 'array:code,name,kind,allowed_mime_types,requires_review,requires_expiry,optional'],
@@ -81,6 +94,7 @@ class SaveGovernmentServiceRequest extends FormRequest
             'renewal_window_days' => ['nullable', 'integer', 'min:0', 'max:36500'],
             'terminal_request_statuses' => ['nullable', 'array', 'max:30'], 'terminal_request_statuses.*' => ['required', 'string', 'max:100'],
             'rules_version' => ['missing'],
+            ...IssuanceRules::validation(),
         ];
     }
 
@@ -88,8 +102,20 @@ class SaveGovernmentServiceRequest extends FormRequest
     {
         return [function (Validator $validator) {
             $service = $this->route('service');
+            $issuance = $this->input('issuance_rules');
+            if (is_array($issuance) && ($issuance['enabled'] ?? false)) {
+                try {
+                    app(IssuanceRules::class)->get($issuance);
+                } catch (ValidationException) {
+                    $validator->errors()->add('issuance_rules', 'أكمل مرجع إعداد الإصدار ومدته ومراكز الاستلام.');
+                }
+            }
             $current = fn ($key, $default = null) => $this->input($key, $service instanceof GovernmentService ? $service->{$key} : $default);
             $verification = $current('verification_rules', []) ?? [];
+            $workflow = $current('workflow_rules', []) ?? [];
+            if (is_array($workflow) && isset($workflow['medical_stage']) && ($current('document_type') !== 'driving_license' || ! is_array($verification) || ! ($verification['medical']['required'] ?? false))) {
+                $validator->errors()->add('workflow_rules', 'تأجيل الفحص يخص خدمة قيادة تشترط فحصًا طبيًا في قواعدها المعتمدة.');
+            }
             if (is_array($verification)) {
                 foreach (is_array($verification['documents'] ?? null) ? $verification['documents'] : [] as $rule) {
                     if (! is_array($rule)) {

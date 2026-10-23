@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactionsManager;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -298,7 +299,7 @@ class CitizenAttachmentsTest extends TestCase
         $migration = require database_path('migrations/2026_10_26_000001_create_citizen_attachments.php');
         $migration->down();
         $migration->up();
-        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasIndex('citizen_attachments', 'attachments_owner_context'));
+        $this->assertTrue(Schema::hasIndex('citizen_attachments', 'attachments_owner_context'));
         $this->assertSame($citizen->id, $file->fresh()->user_id);
         Storage::disk('attachments')->assertExists($file->storage_path);
     }

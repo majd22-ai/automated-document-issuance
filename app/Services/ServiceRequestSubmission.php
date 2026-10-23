@@ -7,6 +7,7 @@ use App\Models\CitizenServiceRequest;
 use App\Models\GovernmentService;
 use App\Models\User;
 use App\Services\Attachments\AttachmentSubmission;
+use App\Services\Operations\RequestCharges;
 use App\Services\Requirements\EligibilityResult;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -90,6 +91,8 @@ class ServiceRequestSubmission
                 ])->save();
 
                 $this->attachments->bind($citizen, $service, $request);
+                app(RequestCharges::class)->ensure($request);
+                app(\App\Services\Notifications\CitizenUpdates::class)->submitted($request);
 
                 return $request;
             }, 3);

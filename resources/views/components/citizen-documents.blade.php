@@ -5,8 +5,8 @@
     <tbody>
       @forelse($documents as $document)
         <tr>
-          <td>{{ $document->document_type }}</td><td>{{ $document->document_number }}</td>
-          <td>{{ $document->status ?? 'غير متوفرة' }}</td>
+          <td>{{ $document->document_type }}</td><td>@if($document->issued_by && auth()->user()->can('view',$document))<a href="{{ route((auth()->user()->role==='citizen'?'citizen':'employee').'.documents.show',$document->id) }}">{{ $document->document_number }}</a>@else{{ $document->document_number }}@endif</td>
+          <td>{{ $document->validityLabel() }}</td>
           <td>{{ $document->issued_at?->format('Y-m-d') ?? 'غير متوفر' }}</td>
           <td>{{ $document->expires_at?->format('Y-m-d') ?? 'غير متوفر' }}</td>
         </tr>

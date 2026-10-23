@@ -12,6 +12,7 @@ return new class extends Migration
             if (! Schema::hasIndex('citizen_attachments', 'attachments_owner_context')) {
                 Schema::table('citizen_attachments', fn (Blueprint $table) => $table->index(['user_id', 'government_service_id', 'citizen_service_request_id'], 'attachments_owner_context'));
             }
+
             return;
         }
         Schema::create('citizen_attachments', function (Blueprint $table) {

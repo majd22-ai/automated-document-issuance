@@ -1,16 +1,10 @@
 @extends('layouts.public')
-@section('title', 'مراجعة الطلبات - منصة الإصدار الآلي')
+@section('title','قائمة مراجعة الطلبات')
 @section('content')
-<section class="section"><div class="container"><h1>طلبات المواطنين — عرض فقط</h1>
-  @include('components.request-filters')
-  <div class="card" style="padding:1.5rem;overflow-x:auto;">
-    <table class="table" style="width:100%;text-align:start;"><thead><tr><th>الرقم المرجعي</th><th>الخدمة</th><th>الحالة</th><th>تاريخ التقديم</th></tr></thead><tbody>
-      @forelse($applications as $application)
-        <tr><td><a href="{{ route('employee.applications.review', $application->id) }}">{{ $application->reference }}</a></td><td>{{ $application->service_name ?? $application->service_code }}</td><td>{{ $application->statusLabel() }}</td><td>{{ $application->submitted_at?->format('Y-m-d') ?? $application->created_at?->format('Y-m-d') }}</td></tr>
-      @empty
-        <tr><td colspan="4">لا توجد طلبات مطابقة ضمن صلاحياتك.</td></tr>
-      @endforelse
-    </tbody></table>{{ $applications->links() }}
-  </div>
-</div></section>
+<section class="section"><div class="container"><h1>قائمة مراجعة الطلبات</h1>@include('operations.messages')<p>تعرض الخدمات المخول لك مراجعتها أو اعتمادها أو إسنادها. نتيجة الاكتمال المحفوظة مرتبطة بوقت الفحص ويعاد التحقق عند القرار.</p>
+<form method="GET" class="card" style="padding:1.5rem"><label for="review-reference">الرقم المرجعي</label><input class="form-control" name="search" id="review-reference" maxlength="100" value="{{ request('search') }}"><label for="review-service">الخدمة</label><select class="form-control" name="service" id="review-service"><option value="">الكل ضمن صلاحياتي</option>@foreach($services as $service)<option value="{{ $service->id }}" @selected((string)request('service')===(string)$service->id)>{{ $service->name }}</option>@endforeach</select>
+<label for="review-state">الحالة</label><select class="form-control" name="status" id="review-state"><option value="">كل الحالات</option>@foreach(\App\Enums\ServiceRequestStatus::cases() as $state)<option value="{{ $state->value }}" @selected(request('status')===$state->value)>{{ $state->label() }}</option>@endforeach</select>
+<label for="review-from">التقديم من</label><input class="form-control" type="date" name="from" id="review-from" value="{{ request('from') }}"><label for="review-to">إلى</label><input class="form-control" type="date" name="to" id="review-to" value="{{ request('to') }}"><label for="review-assigned">معرف الموظف المسؤول</label><input class="form-control" name="assigned_to" type="number" min="1" id="review-assigned" value="{{ request('assigned_to') }}"><label><input type="checkbox" name="mine" value="1" @checked(request('mine'))> المسندة إليّ</label>
+<label for="review-checks">نتيجة التحقق المحفوظة</label><select class="form-control" name="requirements" id="review-checks"><option value="">الكل</option><option value="ready" @selected(request('requirements')==='ready')>مستوفٍ وقت الفحص</option><option value="missing" @selected(request('requirements')==='missing')>غير مستوفٍ وقت الفحص</option><option value="unknown" @selected(request('requirements')==='unknown')>لم يُفحص أو يحتاج إعادة فحص</option></select><button class="btn btn-primary">بحث وتصفية</button></form>
+<div class="card" style="padding:1rem;overflow-x:auto"><table class="table" style="width:100%;text-align:start"><thead><tr><th>الطلب</th><th>المواطن</th><th>الخدمة</th><th>الحالة</th><th>المسؤول</th><th>التقديم والتحديث</th><th>الفحص المحفوظ</th><th>الرسوم</th></tr></thead><tbody>@forelse($applications as $application)<tr><td><a href="{{ route('employee.applications.review',$application->id) }}">{{ $application->reference }}</a></td><td>{{ $application->citizen->name }}</td><td>{{ $application->service_name ?? $application->service_code }}</td><td>{{ $application->statusLabel() }}</td><td>{{ $application->assignee?->name ?? 'غير مسند' }}</td><td>{{ $application->submitted_at?->format('Y-m-d') ?? $application->created_at?->format('Y-m-d') }}<br>{{ $application->updated_at?->format('Y-m-d H:i') }}</td><td>{{ $application->requirements_result===null ? 'غير معروف أو يحتاج إعادة فحص' : ($application->requirements_result['eligible'] ? 'مستوفٍ وقت الفحص' : 'غير مستوفٍ وقت الفحص') }}</td><td>{{ $application->charge?->statusLabel() ?? ($application->service_fee===null?'غير محددة':'لم ينشأ الالتزام بعد') }}</td></tr>@empty<tr><td colspan="8">لا توجد طلبات مطابقة ضمن صلاحياتك.</td></tr>@endforelse</tbody></table>{{ $applications->links() }}</div></div></section>
 @endsection

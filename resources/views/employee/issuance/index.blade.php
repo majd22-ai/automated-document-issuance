@@ -1,5 +1,5 @@
 @extends('layouts.public')
 @section('title', 'إصدار الوثائق - منصة الإصدار الآلي')
 @section('content')
-    @include('components.portal-demo', ['screen' => 'issuance'])
+<section class="section"><div class="container"><h1>إصدار الوثائق</h1>@include('operations.messages')<p>الطلبات المعتمدة ضمن خدماتك المخولة. يعاد فحص الجاهزية عند الإصدار. السجلات والأرقام داخلية للمنصة.</p><form method="GET"><label for="issuance-search">الرقم المرجعي للطلب</label><input class="form-control" id="issuance-search" name="search" value="{{ request('search') }}" maxlength="100"><button class="btn btn-outline">بحث</button></form><div class="card" style="padding:1.5rem;overflow:auto"><table class="table" style="width:100%;text-align:start"><thead><tr><th>الطلب</th><th>المواطن</th><th>الخدمة</th><th>الحالة</th><th>رقم الوثيقة الداخلي</th></tr></thead><tbody>@forelse($applications as $application)<tr><td><a href="{{ route('employee.issuance.review',$application->id) }}">{{ $application->reference }}</a></td><td>{{ $application->citizen->name }}</td><td>{{ $application->service_name }}</td><td>{{ $application->statusLabel() }}</td><td>{{ $application->issuedDocument?->document_number??'لم تصدر' }}</td></tr>@empty<tr><td colspan="5">لا توجد طلبات معتمدة ضمن صلاحيات الإصدار.</td></tr>@endforelse</tbody></table>{{ $applications->links() }}</div></div></section>
 @endsection

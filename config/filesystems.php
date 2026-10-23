@@ -29,6 +29,9 @@ return [
     */
 
     'disks' => [
+        'documents' => [
+            'driver' => 'local', 'root' => storage_path('app/issued-documents'), 'visibility' => 'private', 'serve' => false, 'throw' => true, 'report' => false,
+        ],
 
         'attachments' => [
             'driver' => 'local',
