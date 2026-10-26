@@ -3,19 +3,31 @@
 use App\Http\Controllers\AdminGovernmentServiceController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ApplicationReviewController;
+use App\Http\Controllers\ApplicationTrackingController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CitizenAccountController;
 use App\Http\Controllers\CitizenAttachmentController;
 use App\Http\Controllers\CitizenDataController;
+use App\Http\Controllers\CitizenNotificationController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DocumentIssuanceController;
+use App\Http\Controllers\ElectronicVerificationController;
+use App\Http\Controllers\EmployeeManagementController;
+use App\Http\Controllers\EmployeePasswordController;
 use App\Http\Controllers\GovernmentServiceController;
+use App\Http\Controllers\OperationalReportController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\RequestOperationsController;
 use App\Http\Controllers\ReviewPermissionController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Middleware\EnsureCitizenDataIsComplete;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/reset-password/{token}', [EmployeePasswordController::class, 'form'])->middleware('guest')->name('password.reset');
+Route::post('/reset-password', [EmployeePasswordController::class, 'reset'])->middleware(['guest', 'throttle:6,1'])->name('password.update');
 
 // =====================================================
 // الصفحة الرئيسية وأقسام الخدمات
@@ -41,8 +53,8 @@ Route::get('/appointments/book', function () {
 // الاستعلام والتواصل — واجهات تجريبية
 // =====================================================
 
-Route::get('/inquiry/request',fn()=>redirect()->route(auth()->user()->role==='employee'?'employee.tracking.index':(auth()->user()->role==='admin'?'admin.dashboard':'citizen.applications.index')))->middleware('auth')->name('inquiry.reference');
-Route::get('/inquiry/my-requests',fn()=>redirect()->route(auth()->user()->role==='employee'?'employee.tracking.index':(auth()->user()->role==='admin'?'admin.dashboard':'citizen.applications.index')))->middleware('auth')->name('inquiry.mine');
+Route::get('/inquiry/request', fn () => redirect()->route(auth()->user()->role === 'employee' ? 'employee.tracking.index' : (auth()->user()->role === 'admin' ? 'admin.dashboard' : 'citizen.applications.index')))->middleware('auth')->name('inquiry.reference');
+Route::get('/inquiry/my-requests', fn () => redirect()->route(auth()->user()->role === 'employee' ? 'employee.tracking.index' : (auth()->user()->role === 'admin' ? 'admin.dashboard' : 'citizen.applications.index')))->middleware('auth')->name('inquiry.mine');
 
 Route::view('/contact', 'public.contact', [
     'mode' => 'contact',
@@ -78,11 +90,18 @@ Route::post('/login', [AuthController::class, 'login'])->middleware(['guest', 't
 // إنشاء حساب
 // =====================================================
 
-Route::get('/register', function () {
-    return view('auth.register');
-})->middleware('guest')->name('register');
-
-Route::post('/register', [AuthController::class, 'register'])->middleware(['guest', 'throttle:10,1'])->name('register.post');
+Route::get('/register', [RegistrationController::class, 'show'])->middleware('guest')->name('register');
+Route::post('/register', [RegistrationController::class, 'store'])->middleware(['guest', 'throttle:10,1'])->name('register.post');
+Route::middleware('guest')->controller(RegistrationController::class)->group(function () {
+    Route::get('/register/captcha', 'captcha')->middleware('throttle:30,1')->name('register.captcha');
+    Route::post('/register/captcha/check', 'checkCaptcha')->middleware('throttle:10,1')->name('register.captcha.check');
+    Route::get('/register/verify', 'verifyPage')->name('register.verify');
+    Route::post('/register/verify', 'verify')->middleware('throttle:10,1')->name('register.verify.post');
+    Route::post('/register/resend', 'resend')->middleware('throttle:5,1')->name('register.resend');
+    Route::post('/register/edit', 'edit')->middleware('throttle:10,1')->name('register.edit');
+});
+Route::get('/register/complete', [RegistrationController::class, 'complete'])->name('register.complete');
+Route::view('/terms', 'auth.terms')->name('terms');
 
 // =====================================================
 // استعادة كلمة المرور وتسجيل الخروج
@@ -128,21 +147,23 @@ Route::middleware(['auth', 'role:citizen'])
         })->name('dashboard');
 
         Route::get('/data', [CitizenDataController::class, 'show'])->name('data');
+        Route::get('/account/status', [CitizenAccountController::class, 'status'])->name('account.status');
         Route::get('/services/{service}/attachments', [CitizenAttachmentController::class, 'index'])->name('services.attachments.index');
         Route::post('/services/{service}/attachments', [CitizenAttachmentController::class, 'store'])->middleware('throttle:20,1')->name('services.attachments.store');
         Route::get('/applications/{id}/attachments', [CitizenAttachmentController::class, 'application'])->name('applications.attachments.index');
         Route::post('/applications/{id}/attachments', [CitizenAttachmentController::class, 'storeForApplication'])->middleware('throttle:20,1')->name('applications.attachments.store');
         Route::delete('/attachments/{attachment}', [CitizenAttachmentController::class, 'destroy'])->name('attachments.destroy');
-        Route::get('/applications', [\App\Http\Controllers\ApplicationTrackingController::class, 'index'])->name('applications.index');
+        Route::get('/applications', [ApplicationTrackingController::class, 'index'])->name('applications.index');
 
         Route::get('/applications/new', [GovernmentServiceController::class, 'entry'])->middleware(EnsureCitizenDataIsComplete::class)->name('applications.create');
         Route::post('/services/{service}/start', [GovernmentServiceController::class, 'start'])->middleware(EnsureCitizenDataIsComplete::class)->name('services.start');
         Route::post('/services/{service}/preview', [ServiceRequestController::class, 'preview'])->middleware(EnsureCitizenDataIsComplete::class)->name('services.preview');
         Route::get('/applications/preview/{token}', [ServiceRequestController::class, 'review'])->whereUuid('token')->name('applications.preview');
         Route::post('/services/{service}/submit', [ServiceRequestController::class, 'submit'])->middleware(EnsureCitizenDataIsComplete::class)->name('services.submit');
+        Route::get('/applications/{id}/verifications', [ElectronicVerificationController::class, 'show'])->name('verifications.show');
         Route::get('/applications/{id}/success', [ServiceRequestController::class, 'success'])->name('applications.success');
 
-        Route::get('/applications/{id}', [\App\Http\Controllers\ApplicationTrackingController::class, 'show'])->name('applications.show');
+        Route::get('/applications/{id}', [ApplicationTrackingController::class, 'show'])->name('applications.show');
         Route::get('/applications/{id}/correction', [ApplicationReviewController::class, 'correction'])->name('applications.correction');
         Route::post('/applications/{id}/resubmit', [ApplicationReviewController::class, 'resubmit'])->middleware('throttle:20,1')->name('applications.resubmit');
         Route::post('/applications/{id}/requirements/check', [CitizenDataController::class, 'recheckRequirements'])->name('applications.requirements.check');
@@ -157,10 +178,10 @@ Route::middleware(['auth', 'role:citizen'])
         Route::get('/documents/{id}/download', [DocumentIssuanceController::class, 'download'])->name('documents.download');
         Route::post('/documents/{id}/delivery', [DocumentIssuanceController::class, 'choose'])->name('documents.delivery.choose');
 
-        Route::get('/notifications', [\App\Http\Controllers\CitizenNotificationController::class,'index'])->name('notifications.index');
-        Route::post('/notifications/read-all', [\App\Http\Controllers\CitizenNotificationController::class,'readAll'])->name('notifications.read-all');
-        Route::post('/notifications/{id}/read', [\App\Http\Controllers\CitizenNotificationController::class,'read'])->whereUuid('id')->name('notifications.read');
-        Route::post('/notifications/{id}/open', [\App\Http\Controllers\CitizenNotificationController::class,'open'])->whereUuid('id')->name('notifications.open');
+        Route::get('/notifications', [CitizenNotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/read-all', [CitizenNotificationController::class, 'readAll'])->name('notifications.read-all');
+        Route::post('/notifications/{id}/read', [CitizenNotificationController::class, 'read'])->whereUuid('id')->name('notifications.read');
+        Route::post('/notifications/{id}/open', [CitizenNotificationController::class, 'open'])->whereUuid('id')->name('notifications.open');
 
         Route::get('/payments', [RequestOperationsController::class, 'payments'])->name('payments.index');
 
@@ -180,8 +201,13 @@ Route::middleware(['auth', 'role:employee'])
         })->name('dashboard');
 
         Route::get('/applications', [ApplicationReviewController::class, 'index'])->name('applications.index');
-        Route::get('/tracking', [\App\Http\Controllers\ApplicationTrackingController::class,'index'])->name('tracking.index');
-        Route::get('/tracking/{id}', [\App\Http\Controllers\ApplicationTrackingController::class,'show'])->name('tracking.show');
+        Route::get('/reports', [OperationalReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/export', [OperationalReportController::class, 'export'])->middleware('throttle:10,1')->name('reports.export');
+        Route::get('/applications/{id}/verifications', [ElectronicVerificationController::class, 'show'])->name('verifications.show');
+        Route::post('/applications/{id}/verifications', [ElectronicVerificationController::class, 'start'])->middleware('throttle:10,1')->name('verifications.start');
+        Route::get('/verifications', [ElectronicVerificationController::class, 'index'])->name('verifications.index');
+        Route::get('/tracking', [ApplicationTrackingController::class, 'index'])->name('tracking.index');
+        Route::get('/tracking/{id}', [ApplicationTrackingController::class, 'show'])->name('tracking.show');
         Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index');
         Route::get('/appointment-slots', [AppointmentController::class, 'slots'])->name('appointment-slots.index');
         Route::post('/appointment-slots', [AppointmentController::class, 'saveSlot'])->name('appointment-slots.store');
@@ -202,6 +228,9 @@ Route::middleware(['auth', 'role:employee'])
         Route::post('/applications/{id}/deficiencies/{deficiency}/resolve', [ApplicationReviewController::class, 'resolve'])->name('applications.deficiencies.resolve');
         Route::post('/applications/{id}/requirements/check', [CitizenDataController::class, 'recheckRequirements'])->name('applications.requirements.check');
 
+        Route::get('/accounts', [CitizenAccountController::class, 'index'])->name('accounts.index');
+        Route::get('/accounts/{citizen}', [CitizenAccountController::class, 'show'])->name('accounts.show');
+        Route::post('/accounts/{citizen}/confirm', [CitizenAccountController::class, 'confirm'])->middleware('throttle:10,1')->name('accounts.confirm');
         Route::get('/citizens', [CitizenDataController::class, 'search'])->name('citizens.index');
         Route::get('/citizens/{citizen}', [CitizenDataController::class, 'employeeShow'])->name('citizens.show');
 
@@ -226,18 +255,22 @@ Route::middleware(['auth', 'role:admin'])
     ->name('admin.')
     ->group(function () {
 
-        Route::get('/dashboard', function () {
-            return view('admin.dashboard');
-        })->name('dashboard');
+        Route::get('/dashboard', [OperationalReportController::class, 'index'])->name('dashboard');
 
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
         Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
         Route::get('/review-permissions', [ReviewPermissionController::class, 'index'])->name('review-permissions.index');
         Route::post('/users/{user}/review-permissions', [ReviewPermissionController::class, 'save'])->name('review-permissions.save');
 
-        Route::get('/employees', function () {
-            return view('admin.employees.index');
-        })->name('employees.index');
+        Route::get('/employees', [EmployeeManagementController::class, 'index'])->name('employees.index');
+        Route::get('/employees/create', [EmployeeManagementController::class, 'create'])->name('employees.create');
+        Route::post('/employees', [EmployeeManagementController::class, 'store'])->name('employees.store');
+        Route::get('/employees/{employee}', [EmployeeManagementController::class, 'show'])->name('employees.show');
+        Route::patch('/employees/{employee}', [EmployeeManagementController::class, 'update'])->name('employees.update');
+        Route::post('/employees/{employee}/reset-password', [EmployeeManagementController::class, 'resetPassword'])->middleware('throttle:6,1')->name('employees.reset-password');
+        Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
+        Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
+        Route::patch('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
 
         Route::get('/services', [AdminGovernmentServiceController::class, 'index'])->name('services.index');
         Route::get('/services/create', [AdminGovernmentServiceController::class, 'create'])->name('services.create');
@@ -246,17 +279,16 @@ Route::middleware(['auth', 'role:admin'])
         Route::patch('/services/{service}', [AdminGovernmentServiceController::class, 'update'])->name('services.update');
         Route::post('/services/{service}/assessments', [AdminGovernmentServiceController::class, 'assessment'])->name('services.assessments.store');
 
-        Route::get('/reports', function () {
-            return view('admin.reports.index');
-        })->name('reports.index');
+        Route::get('/integrations', [ElectronicVerificationController::class, 'administration'])->name('integrations.index');
+        Route::get('/reports', [OperationalReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/export', [OperationalReportController::class, 'export'])->middleware('throttle:10,1')->name('reports.export');
 
         Route::get('/roles', function () {
-            return view('admin.roles.index');
+            return redirect()->route('admin.users.index');
         })->name('roles.index');
 
-        Route::get('/audit-logs', function () {
-            return view('admin.audit-logs.index');
-        })->name('audit-logs.index');
+        Route::get('/audit-logs', [OperationalReportController::class, 'audit'])->name('audit-logs.index');
+        Route::get('/audit-logs/export', [OperationalReportController::class, 'exportAudit'])->middleware('throttle:6,1')->name('audit-logs.export');
 
         Route::get('/settings', function () {
             return view('admin.settings.index');

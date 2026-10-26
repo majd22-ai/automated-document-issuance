@@ -1,0 +1,4 @@
+@php($integrationRules=old('integration_rules',$service->integration_rules??[]))
+<div class="form-group"><label class="form-label" for="integration-rules">متطلبات التحقق الخارجي — JSON</label>
+<p>اترك {} أو [] عند عدم الاشتراط. الأنواع identity وdocument وmedical وpayment؛ لكل نوع required وprovider (مفتاح مزود معتمد) وmax_age_minutes (1 إلى 10080). التحقق الإلزامي يمنع الاعتماد والإصدار حتى توافر نتيجة موثوقة وحديثة. لا يؤكد التقييم اليدوي نجاح تحقق خارجي. تغيير المصدر الإلزامي للطلبات السابقة يحتاج معالجة سياسة موثقة ولا يتجاوز تلقائيًا السياسة التاريخية.</p>
+<textarea class="form-control" id="integration-rules" name="integration_rules" dir="ltr" rows="5">{{ is_array($integrationRules)?json_encode($integrationRules,JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT):$integrationRules }}</textarea></div>

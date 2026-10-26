@@ -8,6 +8,9 @@ use App\Http\Requests\PreviewServiceRequest;
 use App\Models\CitizenServiceRequest;
 use App\Models\GovernmentService;
 use App\Models\User;
+use App\Services\Integrations\IntegrationManager;
+use App\Services\Integrations\IntegrationRequirements;
+use App\Services\Integrations\IntegrationRules;
 use App\Services\Operations\RequestPrerequisites;
 use App\Services\Requirements\EligibilityResult;
 use App\Services\Requirements\EvidenceRequirements;
@@ -15,6 +18,7 @@ use App\Services\Requirements\PriorDocumentRequirements;
 use App\Services\Requirements\RequirementResult;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class ServiceEligibility
 {
@@ -39,12 +43,22 @@ class ServiceEligibility
         if (! $active) {
             return $report;
         }
+        if (! $citizen->allowsCitizenService($service)) {
+            $report->add(new RequirementResult('initial_account_scope', 'صلاحيات الحساب والتفعيل', State::Unmet, $citizen->registration_status === 'initial_account' ? 'الحساب الأولي يتيح طلب إصدار بطاقة شخصية لأول مرة فقط إلى حين التحقق من الهوية لدى السجل المدني.' : 'يلزم الحضور لتفعيل الحساب واستكمال توثيق الهوية لدى الموظف المخوّل قبل بدء الخدمات المقيدة.', 'citizen'));
+
+            return $report;
+        }
         $report->add(new RequirementResult('service_active', 'توفر الخدمة', $service->is_active ? State::Met : State::Unmet, $service->is_active ? 'الخدمة مفعّلة.' : 'الخدمة غير مفعّلة حاليًا.'));
         $approved = $service->rules_approved && filled($service->source_reference);
         $report->add(new RequirementResult('service_rules', 'اعتماد قواعد الخدمة', $approved ? State::Met : State::NeedsReview, $approved ? 'بيانات الخدمة معتمدة في المنصة.' : 'شروط الخدمة لم تعتمد بعد من الجهة المختصة.'));
         $missing = $citizen->missingCitizenFields();
         foreach ($service->required_fields ?? [] as $field) {
-            if (! in_array($field, ['name', 'username', 'email', 'phone'], true) || ! filled($citizen->{$field})) {
+            $value = $field === 'username' ? $citizen->nationalIdentity() : $citizen->{$field};
+            // The first-issue workflow must not invent a national ID for an initial account.
+            if ($field === 'username' && $citizen->registration_status === 'initial_account' && $service->code === 'identity-first-issue') {
+                continue;
+            }
+            if (! in_array($field, ['name', 'username', 'email', 'phone'], true) || ! filled($value)) {
                 $missing[] = ['phone' => 'رقم الهاتف', 'name' => 'الاسم', 'username' => 'الرقم الوطني', 'email' => 'البريد الإلكتروني'][$field] ?? 'حقل معتمد للخدمة';
             }
         }
@@ -86,10 +100,25 @@ class ServiceEligibility
             $report->add(new RequirementResult('restrictions', 'التحقق من الموانع', State::Unverifiable, 'نوع مصدر الموانع غير معرّف بصورة صحيحة.'));
         }
         if ($service->operation === 'renewal') {
-            [$check, $document] = $this->priorDocuments->evaluate($citizen, $service);
+            $selected = null;
+            try {
+                $externalRules = $request ? app(IntegrationRules::class)->effective($request) : ($service->integration_rules ?? []);
+                if ($request && ($externalRules['document']['required'] ?? false)) {
+                    $external = app(IntegrationManager::class)->status($request, 'document');
+                    if ($external['status'] === 'verified' && $external['target_document_id']) {
+                        $selected = $citizen->documents()->find($external['target_document_id']);
+                    }
+                }
+            } catch (ValidationException) {
+                $externalRules = [];
+            }
+            [$check, $document] = $this->priorDocuments->evaluate($citizen, $service, $selected);
             $report->add($check);
             if ($rules['document_authenticity_required'] ?? false) {
-                $report->add($this->evidence->authenticity($citizen, $service, $document, $request));
+                $deferred = ($externalRules['document']['required'] ?? false) && ! IntegrationRequirements::due($request, $target);
+                $report->add($deferred
+                    ? new RequirementResult('document_authenticity', 'أصالة الوثيقة السابقة', State::NeedsReview, 'يلزم التحقق الخارجي من الوثيقة السابقة بعد التقديم وقبل الاعتماد والإصدار.', 'staff', false)
+                    : $this->evidence->authenticity($citizen, $service, $document, $request));
             }
         }
         $documentRules = $rules['documents'] ?? [];
@@ -131,6 +160,10 @@ class ServiceEligibility
         $report->add(new RequirementResult('duplicate_request', 'عدم تكرار الطلب', $duplicate ? State::Unmet : State::Met, $duplicate ? 'يوجد طلب قائم للخدمة نفسها؛ راجع طلباتك قبل البدء مجددًا.' : 'لا يوجد طلب قائم آخر يمنع المتابعة.', 'citizen'));
 
         foreach ($this->prerequisites->checks($service, $request, $target) as $check) {
+            $report->add($check);
+        }
+
+        foreach (app(IntegrationRequirements::class)->checks($service, $request, $target) as $check) {
             $report->add($check);
         }
 

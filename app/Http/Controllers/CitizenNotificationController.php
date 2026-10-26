@@ -1,33 +1,55 @@
 <?php
+
 namespace App\Http\Controllers;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+
 class CitizenNotificationController extends Controller
 {
     public function index(Request $request)
     {
-        $filters=$request->validate(['read'=>['nullable','in:read,unread'],'page'=>['sometimes','integer','min:1']]);
-        $notifications=$request->user()->notifications()->when(($filters['read']??null)==='read',fn($q)=>$q->whereNotNull('read_at'))->when(($filters['read']??null)==='unread',fn($q)=>$q->whereNull('read_at'))->orderByDesc('id')->paginate(20)->withQueryString();
-        $unread=$request->user()->unreadNotifications()->count();
-        return response()->view('citizen.notifications.index',compact('notifications','unread'))->header('Cache-Control','no-store, private');
+        $filters = $request->validate(['read' => ['nullable', 'in:read,unread'], 'page' => ['sometimes', 'integer', 'min:1']]);
+        $notifications = $request->user()->notifications()->when(($filters['read'] ?? null) === 'read', fn ($q) => $q->whereNotNull('read_at'))->when(($filters['read'] ?? null) === 'unread', fn ($q) => $q->whereNull('read_at'))->orderByDesc('id')->paginate(20)->withQueryString();
+        $unread = $request->user()->unreadNotifications()->count();
+
+        return response()->view('citizen.notifications.index', compact('notifications', 'unread'))->header('Cache-Control', 'no-store, private');
     }
-    public function read(Request $request,string $id)
+
+    public function read(Request $request, string $id)
     {
-        $request->user()->notifications()->findOrFail($id)->markAsRead(); return back()->with('status','تم تعليم الإشعار كمقروء.');
+        $request->user()->notifications()->findOrFail($id)->markAsRead();
+
+        return back()->with('status', 'تم تعليم الإشعار كمقروء.');
     }
+
     public function readAll(Request $request)
     {
-        $request->user()->unreadNotifications()->update(['read_at'=>now()]); return back()->with('status','تم تعليم إشعاراتك الحالية كمقروءة.');
+        $request->user()->unreadNotifications()->update(['read_at' => now()]);
+
+        return back()->with('status', 'تم تعليم إشعاراتك الحالية كمقروءة.');
     }
-    public function open(Request $request,string $id)
+
+    public function open(Request $request, string $id)
     {
-        $notification=$request->user()->notifications()->findOrFail($id);
-        $application=$notification->request_id ? $request->user()->serviceRequests()->findOrFail($notification->request_id) : null;
-        $document=$notification->document_id ? $request->user()->documents()->findOrFail($notification->document_id) : null;
-        if($application) { Gate::authorize('track',$application); }
-        if($document) { Gate::authorize('view',$document); abort_if($application && $document->citizen_service_request_id!==$application->id,404); }
-        abort_unless($document || $application,404);
+        $notification = $request->user()->notifications()->findOrFail($id);
+        if (($notification->data['kind'] ?? null) === 'account_status' && ! $notification->request_id && ! $notification->document_id) {
+            $notification->markAsRead();
+
+            return redirect()->route('citizen.account.status');
+        }
+        $application = $notification->request_id ? $request->user()->serviceRequests()->findOrFail($notification->request_id) : null;
+        $document = $notification->document_id ? $request->user()->documents()->findOrFail($notification->document_id) : null;
+        if ($application) {
+            Gate::authorize('track', $application);
+        }
+        if ($document) {
+            Gate::authorize('view', $document);
+            abort_if($application && $document->citizen_service_request_id !== $application->id, 404);
+        }
+        abort_unless($document || $application, 404);
         $notification->markAsRead();
-        return $document?redirect()->route('citizen.documents.show',$document->id):redirect()->route('citizen.applications.show',$application->id);
+
+        return $document ? redirect()->route('citizen.documents.show', $document->id) : redirect()->route('citizen.applications.show', $application->id);
     }
 }

@@ -10,8 +10,12 @@
     <p role="status">الحقول الأساسية المطلوبة مكتملة.</p>
   @endif
   <dl>
+    @if($citizen->registration_status !== null)
+    <dt>معرّف الحساب الداخلي (ليس رقم هوية)</dt><dd>{{ $citizen->id }}</dd>
+    <dt>حالة التسجيل</dt><dd>{{ $citizen->accountStatusLabel() }}</dd>
+    @endif
     <dt>الاسم الكامل</dt><dd>{{ filled($citizen->name) ? $citizen->name : 'غير مسجل' }}</dd>
-    <dt>الرقم الوطني</dt><dd>{{ filled($citizen->username) ? $citizen->username : 'غير مسجل' }}</dd>
+    <dt>الرقم الوطني</dt><dd>{{ filled($citizen->nationalIdentity()) ? $citizen->nationalIdentity() : 'غير مسجل' }}</dd>
     <dt>البريد الإلكتروني</dt><dd>{{ filled($citizen->email) ? $citizen->email : 'غير مسجل' }}</dd>
     <dt>رقم الهاتف</dt><dd>{{ $citizen->phone ?? 'غير مسجل (اختياري)' }}</dd>
   </dl>

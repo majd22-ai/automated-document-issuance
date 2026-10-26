@@ -11,6 +11,8 @@
   @if($application->citizen_visible_reason)<dt>سبب الاستكمال أو الرفض المسموح بعرضه</dt><dd>{{ $application->citizen_visible_reason }}</dd>@endif
 </dl>
 @include('components.review-history')
+@include('components.integration-status')
+@can('viewVerification',$application)<p><a class="btn btn-outline" href="{{ route(auth()->user()->role==='citizen'?'citizen.verifications.show':'employee.verifications.show',$application->id) }}">حالة التحقق الإلكتروني ومصدره</a></p>@endcan
 @if($application->government_service_id)<p><a class="btn btn-primary" href="{{ route((auth()->user()->role==='employee'?'employee':'citizen').'.applications.operations',$application->id) }}">المواعيد والفحوصات والرسوم</a></p>@endif
 <h2>المرفقات المرتبطة بهذا الطلب</h2>
 @include('components.attachment-list', ['attachments' => $application->attachments])

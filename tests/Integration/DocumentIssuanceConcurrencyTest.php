@@ -12,10 +12,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
+use Tests\Support\CleansAuditFixtures;
 use Tests\TestCase;
 
 class DocumentIssuanceConcurrencyTest extends TestCase
 {
+    use CleansAuditFixtures;
+
     private array $users = [];
 
     private array $services = [];
@@ -29,10 +32,12 @@ class DocumentIssuanceConcurrencyTest extends TestCase
             $this->markTestSkipped('Explicit MySQL testing database required');
         }
         $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $this->beginAuditFixtures();
     }
 
     protected function tearDown(): void
     {
+        $this->cleanAuditFixtures();
         if ($this->ownerId) {
             $ids = DB::table('citizen_documents')->where('user_id', $this->ownerId)->pluck('id');
             DB::table('document_events')->whereIn('citizen_document_id', $ids)->delete();
@@ -54,6 +59,7 @@ class DocumentIssuanceConcurrencyTest extends TestCase
             DB::table('government_services')->where('id', $service->id)->delete();
         }
         DB::table('users')->whereIn('id', $this->users)->delete();
+        $this->cleanAuditFixtures();
         parent::tearDown();
     }
 
@@ -138,7 +144,7 @@ class DocumentIssuanceConcurrencyTest extends TestCase
         $results = array_column($this->race([$people[1], $people[2]], $requests, $previous), 'result');
         sort($results);
         $this->assertSame(['blocked', 'saved'], $results);
-        $this->assertSame(1,CitizenDocument::where('previous_document_id',$previous->id)->count());
-        $this->assertSame('superseded',$previous->fresh()->status);
+        $this->assertSame(1, CitizenDocument::where('previous_document_id', $previous->id)->count());
+        $this->assertSame('superseded', $previous->fresh()->status);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\GovernmentService;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SaveServiceAssessmentRequest extends FormRequest
 {
@@ -15,7 +16,8 @@ class SaveServiceAssessmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username' => ['required', 'string', 'max:255'],
+            'username' => ['nullable', 'required_without:citizen_account_id', Rule::prohibitedIf($this->filled('citizen_account_id')), 'string', 'max:255'],
+            'citizen_account_id' => ['nullable', 'required_without:username', Rule::prohibitedIf($this->filled('username')), 'integer', 'min:1'],
             'identity_verified' => ['required', 'boolean'], 'conditions_met' => ['required', 'boolean'],
             'age_requirement_met' => ['sometimes', 'boolean'], 'driving_requirements_met' => ['sometimes', 'boolean'],
             'is_blocked' => ['required', 'boolean'],

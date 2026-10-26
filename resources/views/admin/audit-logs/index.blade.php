@@ -1,14 +1,5 @@
-
 @extends('layouts.public')
-@section('title', 'سجلات النظام - لوحة المدير')
-@section('content')
-<section class="page-hero"><div class="container"><h1>سجلات النظام</h1><p>مراقبة وتتبع جميع العمليات على المنصة</p></div></section>
-<section class="section"><div class="container">
-  <div style="margin-bottom:1.5rem;"><a href="{{ route('admin.dashboard') }}" style="color:var(--primary);text-decoration:none;"><x-icon name="arrow-left" /> العودة للوحة التحكم</a></div>
-  <div class="card" style="text-align:center;padding:3rem;">
-    <div style="font-size:3rem;margin-bottom:1rem;"><x-icon name="file" /></div>
-    <h3>لا توجد سجلات</h3>
-    <p style="color:var(--text-muted);">ستظهر سجلات نشاط النظام هنا بعد ربط قاعدة البيانات.</p>
-  </div>
-</div></section>
-@endsection
+@section('title','سجل التدقيق')
+@section('content')<section class="section"><div class="container"><h1>سجل التدقيق المركزي</h1><p>سجل يبدأ من تفعيل هذه الوحدة؛ لا يمثل تاريخًا أعيد إنشاؤه. القيم الحساسة غير مدرجة، ولا يتاح تعديل السجلات أو حذفها.</p>
+<form method="GET" class="card" style="padding:1rem">@foreach(['actor_id'=>'معرف المنفذ','event'=>'نوع الحدث','subject_type'=>'نوع السجل','from'=>'من تاريخ','to'=>'إلى تاريخ'] as $key=>$label)<label>{{ $label }}<input class="form-control" name="{{ $key }}" value="{{ request($key) }}" type="{{ in_array($key,['from','to'])?'date':'text' }}"></label>@endforeach<label>النتيجة<select class="form-control" name="result"><option value="">الكل</option><option value="success" @selected(request('result')==='success')>نجاح</option><option value="failed" @selected(request('result')==='failed')>فشل</option></select></label><button class="btn btn-primary">بحث</button></form>
+<p><a class="btn btn-outline" href="{{ route('admin.audit-logs.export',request()->except('page')) }}">تصدير النتائج المفلترة إلى CSV</a></p><div style="overflow-x:auto"><table class="table"><thead><tr><th>الوقت</th><th>الحدث</th><th>المنفذ</th><th>القسم وقت الحدث</th><th>السجل</th><th>النتيجة</th><th>التغييرات الآمنة</th><th>التتبع</th></tr></thead><tbody>@forelse($events as $event)<tr><td>{{ $event->occurred_at }}</td><td>{{ $event->event }}</td><td>{{ $event->actor?->name??'النظام / محاولة غير مصادق عليها' }}</td><td>{{ $event->department?->name??'غير معين' }}</td><td>{{ $event->subject_type }} #{{ $event->subject_id }}</td><td>{{ $event->result }}</td><td><pre>{{ json_encode($event->changes,JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT) }}</pre></td><td>{{ $event->trace_id }}</td></tr>@empty<tr><td colspan="8">لا توجد أحداث مطابقة.</td></tr>@endforelse</tbody></table></div>{{ $events->links() }}</div></section>@endsection

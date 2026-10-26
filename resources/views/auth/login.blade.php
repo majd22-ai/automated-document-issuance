@@ -27,7 +27,8 @@
       @endif
 
       <div class="form-group">
-        <label class="form-label" for="identifier">البريد الإلكتروني / الرقم الوطني / اسم المستخدم</label>
+        <label class="form-label" for="identifier">الرقم الوطني أو اسم المستخدم</label>
+        <small>يمكن للحسابات الحالية الاستمرار باستخدام البريد الإلكتروني أيضًا.</small>
         <input
           type="text"
           id="identifier"

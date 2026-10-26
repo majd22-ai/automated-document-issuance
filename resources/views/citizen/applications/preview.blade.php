@@ -8,7 +8,7 @@
     <dt>الخدمة</dt><dd>{{ $service->name }}</dd>
     <dt>نوع الطلب</dt><dd>{{ \App\Models\GovernmentService::OPERATIONS[$service->operation] }}</dd>
     <dt>المواطن</dt><dd>{{ auth()->user()->name }}</dd>
-    <dt>الرقم الوطني</dt><dd>{{ auth()->user()->username }}</dd>
+    <dt>الرقم الوطني</dt><dd>{{ auth()->user()->nationalIdentity() }}</dd>
     <dt>الرسوم المسجلة</dt><dd>{{ $service->fee !== null ? $service->fee.' '.$service->currency : 'لم تحدّد' }} — لم يتم تحصيل رسوم ضمن هذه الخطوة.</dd>
     @foreach($service->application_fields ?? [] as $field)
       <dt>{{ $field['label'] }}</dt><dd>{{ $preview['payload']['data'][$field['key']] ?? 'غير مسجل' }}</dd>

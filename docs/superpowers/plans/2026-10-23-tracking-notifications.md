@@ -11,9 +11,9 @@ Tracking: extend citizen filters and add scoped employee tracking routes with pe
 Expiry: explicit config offsets (default empty), statuses active, expired policy skip(default)/once. Closest reached threshold avoids backfill spam; unique document/date/threshold key. Owner→document locks recheck status/expiry/account; exclude superseded/cancelled regardless config. Chunk processing and scheduled withoutOverlapping plus unique DB constraint; manual command and scheduler/worker instructions. No expiry dates invented.
 
 Tasks:
-- [ ] RED functional tests ownership, real event notifications, replay, timeline privacy/chronology, filters/read/open.
-- [ ] Add additive native notification schema, channel/event notification composer and transactional business hooks.
-- [ ] Implement safe optional mail job, dispatch recovery/retry and email trust checks; fake transport tests.
-- [ ] Implement configurable expiry command, scheduler and idempotent tests.
-- [ ] Add native inbox/read counter and scoped paginated timeline/filter screens.
-- [ ] Full SQLite/MySQL suites sequentially, existing/new concurrency, independent review, Pint/Blade/frontend; additive main migration and exact report.
+- [x] RED functional tests ownership, real event notifications, replay, timeline privacy/chronology, filters/read/open.
+- [x] Add additive native notification schema, channel/event notification composer and transactional business hooks.
+- [x] Implement safe optional mail job, dispatch recovery/retry and email trust checks; fake transport tests.
+- [x] Implement configurable expiry command, scheduler and idempotent tests.
+- [x] Add native inbox/read counter and scoped paginated timeline/filter screens.
+- [x] Full SQLite/MySQL suites sequentially, existing/new concurrency, independent review, Pint/Blade/frontend; additive main migration and exact report.

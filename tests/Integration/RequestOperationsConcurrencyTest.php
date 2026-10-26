@@ -12,10 +12,13 @@ use App\Services\Operations\RequestCharges;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
+use Tests\Support\CleansAuditFixtures;
 use Tests\TestCase;
 
 class RequestOperationsConcurrencyTest extends TestCase
 {
+    use CleansAuditFixtures;
+
     private ?GovernmentService $service = null;
 
     private array $users = [];
@@ -27,10 +30,12 @@ class RequestOperationsConcurrencyTest extends TestCase
             $this->markTestSkipped('Explicit MySQL testing database required.');
         }
         $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $this->beginAuditFixtures();
     }
 
     protected function tearDown(): void
     {
+        $this->cleanAuditFixtures();
         if ($this->service) {
             $requestIds = DB::table('citizen_service_requests')->where('government_service_id', $this->service->id)->pluck('id');
             $chargeIds = DB::table('request_charges')->whereIn('citizen_service_request_id', $requestIds)->pluck('id');
@@ -42,6 +47,7 @@ class RequestOperationsConcurrencyTest extends TestCase
             DB::table('government_services')->where('id', $this->service->id)->delete();
         }
         DB::table('users')->whereIn('id', $this->users)->delete();
+        $this->cleanAuditFixtures();
         parent::tearDown();
     }
 

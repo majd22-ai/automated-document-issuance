@@ -8,10 +8,13 @@ use App\Services\ServiceRequestSubmission;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
+use Tests\Support\CleansAuditFixtures;
 use Tests\TestCase;
 
 class ServiceRequestConcurrencyTest extends TestCase
 {
+    use CleansAuditFixtures;
+
     private ?GovernmentService $service = null;
 
     private array $fixtureUsers = [];
@@ -23,10 +26,12 @@ class ServiceRequestConcurrencyTest extends TestCase
             $this->markTestSkipped('Explicit MySQL testing database required for parallel process tests.');
         }
         $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        $this->beginAuditFixtures();
     }
 
     protected function tearDown(): void
     {
+        $this->cleanAuditFixtures();
         // Only remove committed fixtures created by this test, never pre-existing records.
         if ($this->service) {
             DB::table('citizen_service_requests')->where('government_service_id', $this->service->id)->delete();
@@ -36,6 +41,7 @@ class ServiceRequestConcurrencyTest extends TestCase
         foreach ($this->fixtureUsers as $id) {
             DB::table('users')->where('id', $id)->delete();
         }
+        $this->cleanAuditFixtures();
         parent::tearDown();
     }
 

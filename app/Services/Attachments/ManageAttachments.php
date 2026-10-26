@@ -23,6 +23,7 @@ class ManageAttachments
     public function assertUploadContext(User $citizen, GovernmentService $service, ?CitizenServiceRequest $application): void
     {
         abort_unless($citizen->is_active && $citizen->role === 'citizen', 403);
+        abort_unless($citizen->allowsCitizenService($service), 403, 'يلزم استيفاء نطاق الحساب وتفعيله وتوثيق هويته لهذه الخدمة؛ الحساب الأولي لإصدار البطاقة لأول مرة فقط.');
         abort_unless($service->is_active && $service->rules_approved && filled($service->source_reference), 403, 'الخدمة غير متاحة للرفع حاليًا.');
         if ($application) {
             abort_unless($application->user_id === $citizen->id && $application->government_service_id === $service->id, 404);

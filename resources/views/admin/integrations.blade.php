@@ -1,0 +1,8 @@
+@extends('layouts.public')
+@section('title','إعدادات التكامل الإلكتروني')
+@section('content')
+<section class="section"><div class="container"><h1>التكامل والتحقق الإلكتروني</h1><p>تدار جهات الاتصال وأسرارها من إعدادات النشر بعد توفير وثائق API واعتماد المزود. لا تتيح هذه الصفحة إدخال عنوان خارجي أو تزوير نتيجة.</p>
+@forelse($providers as $provider)<p>{{ $provider['label'] }} ({{ $provider['key'] }}) — {{ $provider['configured']?'المحول معتمد ومفعّل في الإعدادات؛ لا يعني ذلك نجاح الاتصال':'خدمة التحقق غير مهيأة' }}</p>@empty<p>لا يوجد مزود خارجي معتمد مهيأ. لم ينفذ تحقق رسمي.</p>@endforelse
+<p><a href="{{ route('admin.services.index') }}">تحديد متطلبات التحقق حسب الخدمة</a> — <a href="{{ route('admin.review-permissions.index') }}">منح صلاحية التحقق للموظف حسب الخدمة</a></p>
+<h2>سجل العمليات المنقح</h2><div class="card" style="padding:1rem;overflow-x:auto"><table class="table"><thead><tr><th>المحاولة</th><th>الطلب</th><th>النوع</th><th>المصدر</th><th>الحالة</th><th>رمز تقني منقح</th><th>HTTP</th><th>عدد المحاولات</th><th>وقت التنفيذ</th></tr></thead><tbody>@forelse($attempts as $attempt)<tr><td>{{ $attempt->id }}</td><td>{{ $attempt->citizen_service_request_id }}</td><td>{{ $attempt->kind }}</td><td>{{ $attempt->provider }}</td><td>{{ \App\Enums\VerificationStatus::tryFrom($attempt->status)?->label() }}</td><td>{{ $attempt->error_code??'—' }}</td><td>{{ $attempt->http_status??'—' }}</td><td>{{ $attempt->attempts }}</td><td>{{ $attempt->started_at }}</td></tr>@empty<tr><td colspan="9">لا توجد عمليات مسجلة.</td></tr>@endforelse</tbody></table>{{ $attempts->links() }}</div></div></section>
+@endsection

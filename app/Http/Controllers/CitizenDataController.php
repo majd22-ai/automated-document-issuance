@@ -111,9 +111,11 @@ class CitizenDataController extends Controller
         if ($search !== '') {
             // Escape LIKE wildcards using a portable escape character, not raw SQL input.
             $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search).'%';
-            $citizens = User::query()->select(['id', 'name', 'username'])
+            $citizens = User::query()->select(['id', 'name', 'username', 'national_id', 'registration_status'])
                 ->where('role', 'citizen')->where(function ($query) use ($pattern, $search) {
-                    $query->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])->orWhere('username', $search);
+                    $query->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])->orWhere('national_id', $search)->orWhere(function ($legacy) use ($search) {
+                        $legacy->whereNull('registration_status')->where('username', $search);
+                    });
                 })->orderBy('id')->paginate(15)->withQueryString();
         }
 

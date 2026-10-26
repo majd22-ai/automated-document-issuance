@@ -10,7 +10,7 @@ class ServiceReviewPermission extends Model
 
     protected function casts(): array
     {
-        return ['can_review' => 'boolean', 'can_approve' => 'boolean', 'can_assign' => 'boolean', 'can_issue' => 'boolean', 'can_deliver' => 'boolean'];
+        return ['can_review' => 'boolean', 'can_approve' => 'boolean', 'can_assign' => 'boolean', 'can_issue' => 'boolean', 'can_deliver' => 'boolean', 'can_verify' => 'boolean', 'can_activate' => 'boolean'];
     }
 
     public function employee()

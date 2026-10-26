@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\GovernmentService;
+use App\Services\Integrations\IntegrationRules;
 use App\Services\Issuance\IssuanceRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -18,7 +19,7 @@ class SaveGovernmentServiceRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        foreach (['application_fields', 'verification_rules', 'workflow_rules', 'issuance_rules'] as $jsonField) {
+        foreach (['application_fields', 'verification_rules', 'workflow_rules', 'issuance_rules', 'integration_rules'] as $jsonField) {
             if (is_string($this->input($jsonField))) {
                 try {
                     $decoded = json_decode($this->input($jsonField), true, 32, JSON_THROW_ON_ERROR);
@@ -94,7 +95,7 @@ class SaveGovernmentServiceRequest extends FormRequest
             'renewal_window_days' => ['nullable', 'integer', 'min:0', 'max:36500'],
             'terminal_request_statuses' => ['nullable', 'array', 'max:30'], 'terminal_request_statuses.*' => ['required', 'string', 'max:100'],
             'rules_version' => ['missing'],
-            ...IssuanceRules::validation(),
+            ...IssuanceRules::validation(), ...IntegrationRules::validation(),
         ];
     }
 

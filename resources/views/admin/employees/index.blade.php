@@ -1,17 +1,9 @@
-
 @extends('layouts.public')
-@section('title', 'إدارة الموظفين - لوحة المدير')
+@section('title','إدارة الموظفين')
 @section('content')
-<section class="page-hero"><div class="container"><h1>إدارة الموظفين</h1><p>عرض وإدارة حسابات الموظفين</p></div></section>
-<section class="section"><div class="container">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
-    <a href="{{ route('admin.dashboard') }}" style="color:var(--primary);text-decoration:none;"><x-icon name="arrow-left" /> العودة للوحة التحكم</a>
-    <button class="btn btn-primary">+ إضافة موظف جديد</button>
-  </div>
-  <div class="card" style="text-align:center;padding:3rem;">
-    <div style="font-size:3rem;margin-bottom:1rem;"><x-icon name="briefcase" /></div>
-    <h3>لا يوجد موظفون مسجلون</h3>
-    <p style="color:var(--text-muted);">ستظهر قائمة الموظفين هنا بعد ربط قاعدة البيانات.</p>
-  </div>
+<section class="section"><div class="container"><h1>إدارة الموظفين</h1>@include('admin.oversight-feedback')
+<p><a class="btn btn-primary" href="{{ route('admin.employees.create') }}">إضافة موظف</a> <a href="{{ route('admin.departments.index') }}">الأقسام</a> — <a href="{{ route('admin.review-permissions.index') }}">منح صلاحيات الخدمات</a> — <a href="{{ route('admin.dashboard') }}">لوحة الإدارة</a></p>
+<form method="GET" class="card" style="padding:1rem"><label>الاسم أو اسم المستخدم أو البريد أو رقم الموظف<input class="form-control" name="search" value="{{ request('search') }}" maxlength="100"></label><label>القسم<select class="form-control" name="department_id"><option value="">الكل</option>@foreach($departments as $d)<option value="{{ $d->id }}" @selected(request('department_id')==$d->id)>{{ $d->name }}</option>@endforeach</select></label><label>الدور<select name="role" class="form-control"><option value="">الكل</option><option value="employee" @selected(request('role')==='employee')>موظف</option><option value="admin" @selected(request('role')==='admin')>مدير</option></select></label><label>الحالة<select name="is_active" class="form-control"><option value="">الكل</option><option value="1" @selected(request('is_active')==='1')>نشط</option><option value="0" @selected(request('is_active')==='0')>معطل</option></select></label><button class="btn btn-outline">بحث</button></form>
+<div style="overflow-x:auto"><table class="table"><thead><tr><th>الاسم</th><th>رقم الموظف</th><th>القسم</th><th>الدور</th><th>الحالة</th><th>التفاصيل</th></tr></thead><tbody>@forelse($employees as $employee)<tr><td>{{ $employee->name }}</td><td>{{ $employee->employee_number??'غير معين' }}</td><td>{{ $employee->department?->name??'غير معين' }}</td><td>{{ $employee->role==='admin'?'مدير':'موظف' }}</td><td>{{ $employee->is_active?'نشط':'معطل' }}</td><td><a href="{{ route('admin.employees.show',$employee) }}">عرض وتعديل</a></td></tr>@empty<tr><td colspan="6">لا توجد حسابات مطابقة.</td></tr>@endforelse</tbody></table></div>{{ $employees->links() }}
 </div></section>
 @endsection

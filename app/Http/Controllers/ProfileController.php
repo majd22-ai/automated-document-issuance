@@ -25,6 +25,8 @@ class ProfileController extends Controller
             'role' => ['missing'], 'is_active' => ['missing'],
             'id' => ['missing'], 'user_id' => ['missing'], 'username' => ['missing'],
             'national_id' => ['missing'], 'email_verified_at' => ['missing'], 'password' => ['missing'],
+            'registration_status' => ['missing'], 'identity_path' => ['missing'], 'phone_verified_at' => ['missing'],
+            'account_activated_at' => ['missing'], 'identity_verified_at' => ['missing'],
         ], [
             'name.required' => 'الاسم الكامل مطلوب.',
             'email.required' => 'البريد الإلكتروني مطلوب.',
@@ -36,6 +38,9 @@ class ProfileController extends Controller
         $user->fill(Arr::only($data, ['name', 'email', 'phone']));
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
+        }
+        if ($user->isDirty('phone')) {
+            $user->phone_verified_at = null;
         }
         $user->save();
 

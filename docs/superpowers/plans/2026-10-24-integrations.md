@@ -1,0 +1,23 @@
+# Requirement 11 — integration design and implementation plan
+
+User explicitly requests inline implementation from detailed specification. Build on existing workspace, preserve previous requirements; no provider credentials/API contracts supplied. Native execution, no deployment or external calls. Chosen design: registered provider adapters, strict normalized result and HTTPS transport, append-only attempt outcomes with short-lived per-request/kind claim, required service rules and read-only presentation. Alternatives rejected: invented universal government API/schema, treating local receipts/exams as externally verified, rebuilding existing financial/history tables.
+
+## Interfaces and decisions
+
+- `IntegrationProvider::verify(VerificationContext $context, array $settings): VerificationResult` is implemented only by documented adapters. No production adapter is registered initially. Test adapter lives exclusively under tests and uses Http::fake. Transport enforces configured HTTPS host/paths, no redirects, bounded connection/request timeout, one attempt by default. Only read-only queries; optional bounded retry on 429/5xx, no payment-creation or webhook assumptions.
+- `IntegrationManager::start(User, CitizenServiceRequest, kind, UUID): IntegrationAttempt` authorizes explicit per-service `can_verify`; citizen can only read own safe status. Claim transaction owner→service→request; external I/O outside locks; final transaction rechecks input/policy fingerprint and invalidates stale results. UUID replay returns same attempt without I/O. Active claim prevents parallel dispatch, uncertain stale claim becomes unknown and releases slot without pretending failure/verification.
+- Kinds identity/document/medical/payment. Minimal input context from server-owned request records only. Identity requires national ID, never name-only. Document uses selected prior-document metadata (never uploaded images); medical only examination source reference/date (no diagnoses); payment existing local receipt reference/charge amount/currency, no local paid-state mutation. Missing data is explicit unknown. HMAC fingerprint includes authoritative input and rules; no raw input/output stored in attempt log.
+- `integration_rules` JSON on existing service, included in snapshot/version. Required boolean, configured provider key, max_age_minutes mandatory per rule; effective rules preserve required snapshot policy and current mandatory policy, incompatible policy changes fail closed. Non-required services unchanged. Required checks deferred until approval/processing, optional informational earlier. Existing Eligibility enforces before approval/issuance; result changes included in review fingerprint.
+- `integration_attempts`: UUID, request/user/actor FK, kind/provider, status enum string, nullable unique active key and per-request idempotency hash, hidden fingerprint, start/end/expiry timestamps, numeric HTTP status/attempts/duration, fixed safe error code; no secrets/raw response/PII. Old attempts retained. Read pages paginated. Admin provider settings read-only from config, rules through existing service admin, permission through existing grants. No runtime URL/secret editing.
+
+## Tasks
+
+- [x] Write failing feature tests for unconfigured provider, own/scoped read and explicit verification permission, replay, valid/rejected/mismatch/invalid/unavailable responses, freshness/input changes, required gates and unchanged services.
+- [x] Add additive schema, statuses/model/contracts/context/result/transport and manager, with test-only HTTP adapter proving response binding.
+- [x] Integrate rules validation/admin editor/snapshots, Eligibility/ReviewSnapshot and explicit permission grant.
+- [x] Add authorized web endpoints, safe Arabic result/history and admin configuration view; preserve local evidence labels and links.
+- [x] Extend tests privacy, medical/payment, TLS/redirect/config validation, bounded retries, concurrency and no external payment effects; independent review.
+- [x] Run SQLite/MySQL full suites sequentially, concurrency, Pint/Blade/JS; additive main migration with before/after counts; document configuration and external prerequisites.
+
+
+Verified: SQLite and isolated MySQL each 211 tests / 1471 assertions; MySQL concurrency 14 / 84; JS 5; scoped Pint, Blade and diff checks passed. Main additive migration applied with unchanged business-row counts. Independent review fixes covered by regressions: active different UUID returns 409; selected verified prior document drives renewal eligibility and issuance. No production provider or real outbound connection configured. See docs/integrations.md.

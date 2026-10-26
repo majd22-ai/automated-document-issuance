@@ -8,6 +8,7 @@
 <section class="page-hero">
   <div class="container">
     <h1>لوحة تحكم المدير</h1>
+    <p><a href="{{ route('admin.integrations.index') }}">إعدادات التكامل وسجل التحقق الإلكتروني</a></p>
     <p>مرحباً {{ auth()->user()->name }} — إدارة شاملة للنظام</p>
   </div>
 </section>

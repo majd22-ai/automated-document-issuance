@@ -1,27 +1,19 @@
-
 @extends('layouts.public')
-@section('title', 'التقارير - لوحة المدير')
+@section('title','التقارير والرقابة')
 @section('content')
-<section class="page-hero"><div class="container"><h1>التقارير والإحصائيات</h1><p>تحليل شامل لأداء المنصة</p></div></section>
-<section class="section"><div class="container">
-  <div style="margin-bottom:1.5rem;"><a href="{{ route('admin.dashboard') }}" style="color:var(--primary);text-decoration:none;"><x-icon name="arrow-left" /> العودة للوحة التحكم</a></div>
-  <div class="grid grid-3">
-    <div class="card" style="padding:2rem;text-align:center;">
-      <div style="font-size:2.5rem;font-weight:700;color:var(--primary);">0</div>
-      <p style="color:var(--text-muted);">إجمالي الطلبات هذا الشهر</p>
-    </div>
-    <div class="card" style="padding:2rem;text-align:center;">
-      <div style="font-size:2.5rem;font-weight:700;color:var(--success,#2ecc71);">0</div>
-      <p style="color:var(--text-muted);">وثائق صادرة هذا الشهر</p>
-    </div>
-    <div class="card" style="padding:2rem;text-align:center;">
-      <div style="font-size:2.5rem;font-weight:700;color:var(--warning,#f39c12);">0</div>
-      <p style="color:var(--text-muted);">طلبات معلقة</p>
-    </div>
-  </div>
-  <div class="card" style="text-align:center;padding:3rem;margin-top:1rem;">
-    <div style="font-size:3rem;margin-bottom:1rem;"><x-icon name="chart" /></div>
-    <p style="color:var(--text-muted);">ستظهر الرسوم البيانية والتقارير التفصيلية هنا بعد ربط قاعدة البيانات.</p>
-  </div>
+<section class="page-hero"><div class="container"><h1>{{ $dashboard?'لوحة الإدارة والرقابة':'التقارير والإحصائيات' }}</h1><p>مؤشرات من سجلات المنصة الفعلية</p></div></section>
+<section class="section"><div class="container">@include('admin.oversight-feedback')
+@if(auth()->user()->role==='admin')<p><a href="{{ route('admin.employees.index') }}">الموظفون</a> — <a href="{{ route('admin.departments.index') }}">الأقسام</a> — <a href="{{ route('admin.users.index') }}">المستخدمون والأدوار</a> — <a href="{{ route('admin.review-permissions.index') }}">صلاحيات الخدمات</a> — <a href="{{ route('admin.services.index') }}">الخدمات</a> — <a href="{{ route('admin.integrations.index') }}">التكاملات</a> — <a href="{{ route('admin.audit-logs.index') }}">التدقيق</a></p>@endif
+<form method="GET" class="card" style="padding:1rem"><label>الفترة<select class="form-control" name="period">@foreach(['today'=>'اليوم','7days'=>'آخر سبعة أيام','30days'=>'آخر ثلاثين يومًا','month'=>'الشهر الحالي','custom'=>'فترة مخصصة'] as $value=>$label)<option value="{{ $value }}" @selected(request('period','30days')===$value)>{{ $label }}</option>@endforeach</select></label><label>من<input class="form-control" type="date" name="from" value="{{ request('from') }}"></label><label>إلى<input class="form-control" type="date" name="to" value="{{ request('to') }}"></label>
+<label>القسم<select class="form-control" name="department_id"><option value="">{{ auth()->user()->role==='admin'?'الكل':'قسمك فقط' }}</option>@foreach($departments as $d)<option value="{{ $d->id }}" @selected(request('department_id')==$d->id)>{{ $d->name }}</option>@endforeach</select></label><label>معرف الموظف<input class="form-control" type="number" name="employee_id" value="{{ request('employee_id') }}" min="1"></label>
+<label>الخدمة<select class="form-control" name="service_id"><option value="">الكل</option>@foreach($services as $s)<option value="{{ $s->id }}" @selected(request('service_id')==$s->id)>{{ $s->name }}</option>@endforeach</select></label><label>حالة الطلب<select name="status" class="form-control"><option value="">الكل</option>@foreach(\App\Enums\ServiceRequestStatus::cases() as $status)<option value="{{ $status->value }}" @selected(request('status')===$status->value)>{{ $status->label() }}</option>@endforeach</select></label><button class="btn btn-primary">تطبيق الفلاتر</button></form>
+<p>الفترة: {{ $report['filters']['from_at']->format('Y-m-d H:i') }} — {{ $report['filters']['to_at']->format('Y-m-d H:i') }} ({{ config('app.timezone') }}). القسم: {{ $report['filters']['scope_department']??'الكل' }}.</p>
+<div class="grid grid-4">@foreach(['total_requests'=>'طلبات أُنشئت في الفترة','open_requests'=>'المفتوحة من مجموعة الإنشاء','closed_in_period'=>'طلبات اكتملت في الفترة','documents'=>'وثائق أُصدرت في الفترة','active_employees'=>'الموظفون النشطون حاليًا','departments'=>'الأقسام النشطة حاليًا','payment_count'=>'إيصالات مطابقة','verification_total'=>'محاولات التحقق'] as $key=>$label)<article class="card" style="padding:1.5rem"><strong>{{ $report[$key] }}</strong><p>{{ $label }}</p></article>@endforeach</div>
+@foreach(['request_statuses'=>'طلبات الخدمات بحسب الحالة','request_services'=>'طلبات الخدمات بحسب الخدمة','document_statuses'=>'الوثائق بحسب الحالة','document_services'=>'الإصدارات بحسب معرف الخدمة','charge_statuses'=>'الرسوم المنشأة في الفترة بحسب الحالة','verification_statuses'=>'التحقق بحسب الحالة المسجلة','verification_kinds'=>'التحقق بحسب النوع','verification_providers'=>'التحقق بحسب المزود','verification_origins'=>'مصدر التحقق: configured_provider مهيأ / simulation محاكاة / unknown غير موثق'] as $key=>$label)<h2>{{ $label }}</h2><table class="table"><thead><tr><th>التصنيف</th><th>العدد</th></tr></thead><tbody>@forelse($report[$key] as $row)<tr><td>{{ $row['key']??'غير مصنف' }}</td><td>{{ $row['total'] }}</td></tr>@empty<tr><td colspan="2">لا توجد بيانات خلال الفترة والفلاتر المحددة.</td></tr>@endforelse</tbody></table>@endforeach
+<h2>الإيصالات المحلية المطابقة حسب العملة</h2><p>عدد الإيصالات التي تحتاج مراجعة: {{ $report['payment_reconciliation'] }}. لا تشمل هذه المجاميع الرسوم المستحقة أو المبالغ المستردة، ولا تدعي اتصالًا ببوابة دفع.</p><table class="table"><thead><tr><th>العملة</th><th>الإيصالات</th><th>المبلغ</th></tr></thead><tbody>@forelse($report['payments'] as $row)<tr><td>{{ $row['currency'] }}</td><td>{{ $row['total'] }}</td><td>{{ $row['amount'] }}</td></tr>@empty<tr><td colspan="3">لا توجد إيصالات مطابقة.</td></tr>@endforelse</tbody></table>
+@include('admin.report-activity')
+@include('admin.recent-audit')
+<h2>تعريف المؤشرات</h2><ul><li>معدل إكمال مجموعة الإنشاء: {{ $report['completion_rate']===null?'غير متاح':$report['completion_rate'].'%' }}. المكتملة حاليًا من الطلبات المنشأة في الفترة / إجمالي المجموعة.</li><li>معدل رفض مجموعة الإنشاء: {{ $report['rejection_rate']===null?'غير متاح':$report['rejection_rate'].'%' }}، وبالمقام نفسه.</li><li>متوسط معالجة الطلبات المكتملة في الفترة: {{ $report['average_processing_seconds']===null?'غير متاح':$report['average_processing_seconds'].' ثانية' }}، من إنشاء الطلب إلى completed_at، للتواريخ الصحيحة فقط.</li><li>نجاح التحقق المهيأ: {{ $report['verification_rate']===null?'غير متاح':$report['verification_rate'].'%' }}؛ حالات verified من configured_provider / جميع المحاولات، بما فيها غير المتاحة والمحاكاة. الحالة هنا تاريخية، وليست حكمًا بصلاحية الاعتماد الحالية.</li><li>التأخير: غير متاح لعدم وجود مدة مستهدفة معتمدة.</li><li>تصفية القسم تستخدم ارتباط الموظف الحالي: طلبات حسب المسؤول الحالي، ووثائق حسب المُصدر، وإيصالات حسب المسجل، وقرارات ومحاولات حسب المنفذ. لا تعيد بناء توزيع تاريخي غير مسجل. يمكن اختيار القسم لعرض مؤشراته منفردة.</li><li>عدد القرارات لا يقيس جودة أداء الموظف. قد يظهر الطلب نفسه في نشاط عدة موظفين؛ لا تجمع أعداد طلباتهم للحصول على إجمالي المنصة.</li></ul>
+@if(auth()->user()->role==='admin'||auth()->user()->can_export_reports)<h2>تصدير CSV</h2>@foreach(['requests'=>'الطلبات','employees'=>'النشاط','documents'=>'الوثائق','payments'=>'المدفوعات','integrations'=>'التحقق','departments'=>'القسم'] as $key=>$label)<a class="btn btn-outline" href="{{ route(auth()->user()->role==='admin'?'admin.reports.export':'employee.reports.export',array_merge(request()->except('page'),['report'=>$key])) }}">{{ $label }}</a> @endforeach @endif
 </div></section>
 @endsection

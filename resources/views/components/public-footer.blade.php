@@ -21,7 +21,7 @@
         <h4>روابط سريعة</h4>
         <a href="{{ route('home') }}">الصفحة الرئيسية</a>
         <a href="{{ route('home').'#service-requirements' }}">متطلبات الخدمات</a>
-        <a href="{{ asset('demo/index.html').'#requests' }}">تتبع الطلب</a>
+        <a href="{{ route('inquiry.reference') }}">تتبع الطلب</a>
         <a href="{{ route('home').'#faq' }}">الأسئلة الشائعة</a>
       </div>
       <div class="footer-col">

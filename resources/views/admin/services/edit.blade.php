@@ -34,6 +34,7 @@
       @endforeach
       @php($verificationRules = old('verification_rules', $service->verification_rules ?? []))
       @php($workflowRules = old('workflow_rules', $service->workflow_rules ?? []))
+      @include('components.integration-rules-editor')
       @php($issuanceRules=old('issuance_rules',$service->issuance_rules??null))
       <div class="form-group"><label class="form-label" for="issuance-rules">إعدادات الإصدار والاستلام المعتمدة بصيغة JSON</label><p>تحتاج مرجعًا موثوقًا. لا تُفترض مدة قانونية. المفاتيح: enabled، source_reference، expiry:{required,validity_days}، number_prefix (اختياري؛ الرقم يبدأ دائمًا INT)، include_year، electronic_copy (internal_html أو none)، citizen_download، delivery:{methods:[pickup أو address],centers:[أسماء المراكز]}، completion_stage (issuance أو delivery). عند required=false لا يحسب تاريخ انتهاء. ترك الإعداد فارغًا يمنع الإصدار. النسخة الإلكترونية الداخلية HTML قابلة للطباعة وليست وثيقة رسمية.</p><textarea class="form-control" id="issuance-rules" name="issuance_rules" rows="7" dir="ltr">{{ is_array($issuanceRules)?json_encode($issuanceRules,JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT):(is_string($issuanceRules)?$issuanceRules:'') }}</textarea></div>
       <input type="hidden" name="require_separate_approver" value="0"><label><input type="checkbox" name="require_separate_approver" value="1" @checked(old('require_separate_approver',$service->require_separate_approver))> يجب أن يختلف المعتمد النهائي عن الموظف الذي قبل الطلب</label>
@@ -57,7 +58,10 @@
       <form method="POST" action="{{ route('admin.services.assessments.store', $service) }}">
         @csrf
         <input type="hidden" name="expected_rules_version" value="{{ $service->rules_version }}">
-        <div class="form-group"><label class="form-label" for="assessment-username">الرقم الوطني للمواطن</label><input class="form-control" id="assessment-username" name="username" value="{{ old('username') }}" maxlength="255" required></div>
+        <div class="form-group"><label class="form-label" for="assessment-username">الرقم الوطني للمواطن</label><input class="form-control" id="assessment-username" name="username" value="{{ old('username') }}" maxlength="255"></div>
+        @if($service->code === 'identity-first-issue')
+        <div class="form-group"><label class="form-label" for="assessment-account-id">أو معرّف الحساب الأولي الداخلي دون رقم هوية</label><input class="form-control" id="assessment-account-id" type="number" name="citizen_account_id" min="1" value="{{ old('citizen_account_id') }}"><small>أدخل أحد الحقلين فقط. المعرّف الداخلي ظاهر في بيانات المواطن؛ لا يُعد رقمًا وطنيًا ولا يعفي من التحقق الرسمي.</small></div>
+        @endif
         <div class="form-group"><label class="form-label" for="assessment-reference">مرجع التحقق من الجهة المختصة</label><input class="form-control" id="assessment-reference" name="verification_reference" value="{{ old('verification_reference') }}" maxlength="255" required></div>
         @foreach(['identity_verified' => 'الهوية وارتباط الحساب موثّقان', 'conditions_met' => 'تم التحقق من استيفاء الشروط المسجلة', 'age_requirement_met' => 'تم التحقق من شرط العمر المحدد للخدمة، إن وجد', 'driving_requirements_met' => 'تم اعتماد متطلبات القيادة، إن كانت مطلوبة', 'is_blocked' => 'يوجد مانع رسمي معتمد'] as $field => $label)
           <div class="form-group"><input type="hidden" name="{{ $field }}" value="0"><label for="assessment-{{ $field }}"><input id="assessment-{{ $field }}" type="checkbox" name="{{ $field }}" value="1" @checked(old($field, false))> {{ $label }}</label></div>

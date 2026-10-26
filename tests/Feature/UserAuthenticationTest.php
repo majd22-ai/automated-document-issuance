@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Contracts\RegistrationSms;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -9,6 +10,8 @@ use Tests\TestCase;
 
 class UserAuthenticationTest extends TestCase
 {
+    private object $sms;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -24,13 +27,24 @@ class UserAuthenticationTest extends TestCase
             $connection->rollBack();
             $connection->disconnect();
         });
+        $this->sms = new class implements RegistrationSms
+        {
+            public string $code = '';
+
+            public function send(string $phone, string $code): void
+            {
+                $this->code = $code;
+            }
+        };
+        $this->app->instance(RegistrationSms::class, $this->sms);
+        $this->withSession(['registration_captcha' => ['hash' => Hash::make('ABC234'), 'expires' => now()->addMinutes(5)->timestamp]]);
     }
 
     private function registration(array $overrides = []): array
     {
         return array_merge([
-            'name' => 'مواطن تجريبي', 'national_id' => '1000000001',
-            'email' => 'citizen@example.test', 'phone' => '+967777123456',
+            'name' => 'مواطن تجريبي', 'national_id' => '1000000001', 'username' => 'citizen_test', 'identity_path' => 'has_identity',
+            'email' => 'citizen@example.test', 'phone' => '777123456', 'confirmed_phone' => '777123456', 'terms' => '1', 'captcha' => 'ABC234',
             'password' => 'SecurePassword123!', 'password_confirmation' => 'SecurePassword123!',
         ], $overrides);
     }
@@ -45,12 +59,15 @@ class UserAuthenticationTest extends TestCase
 
     public function test_citizen_registration_hashes_password_and_preserves_session_login(): void
     {
-        $this->post(route('register.post'), $this->registration())->assertRedirect(route('citizen.dashboard'));
+        $this->post(route('register.post'), $this->registration())->assertRedirect(route('register.verify'));
+        $this->assertGuest();
+        $this->post(route('register.verify.post'), ['code' => $this->sms->code])->assertRedirect(route('register.complete'));
         $user = User::where('email', 'citizen@example.test')->firstOrFail();
         $this->assertSame('citizen', $user->role);
         $this->assertTrue($user->is_active);
         $this->assertSame('+967777123456', $user->phone);
-        $this->assertSame('1000000001', $user->username);
+        $this->assertSame('citizen_test', $user->username);
+        $this->assertSame('1000000001', $user->national_id);
         $this->assertNotSame('SecurePassword123!', $user->password);
         $this->assertTrue(Hash::check('SecurePassword123!', $user->password));
         $this->assertArrayNotHasKey('password', $user->toArray());
@@ -61,6 +78,7 @@ class UserAuthenticationTest extends TestCase
     public function test_registration_rejects_duplicate_email_and_national_id(): void
     {
         $this->post(route('register.post'), $this->registration());
+        $this->post(route('register.verify.post'), ['code' => $this->sms->code]);
         auth()->logout();
         $this->post(route('register.post'), $this->registration())
             ->assertSessionHasErrors(['email', 'national_id']);
@@ -269,9 +287,15 @@ class UserAuthenticationTest extends TestCase
 
     public function test_existing_public_pages_remain_accessible(): void
     {
-        foreach (['/', '/login', '/register', '/services/identity', '/services/passports', '/services/driving-licenses', '/appointments/book', '/inquiry/request', '/contact'] as $path) {
+        foreach (['/', '/login', '/register', '/services/identity', '/services/passports', '/services/driving-licenses', '/appointments/book', '/contact'] as $path) {
             $this->get($path)->assertOk();
         }
+    }
+
+    public function test_real_request_tracking_requires_authentication(): void
+    {
+        $this->get('/inquiry/request')->assertRedirect(route('login'));
+        $this->get('/inquiry/my-requests')->assertRedirect(route('login'));
     }
 
     public function test_empty_immutable_profile_fields_are_rejected(): void

@@ -10,6 +10,8 @@ use App\Models\DocumentDelivery;
 use App\Models\DocumentEvent;
 use App\Models\GovernmentService;
 use App\Models\User;
+use App\Services\Integrations\IntegrationManager;
+use App\Services\Integrations\IntegrationRules;
 use App\Services\Operations\LockedRequest;
 use App\Services\Requirements\EvidenceRequirements;
 use App\Services\Requirements\PriorDocumentRequirements;
@@ -51,6 +53,13 @@ class IssueDocuments
                         $authenticity = app(EvidenceRequirements::class)->authenticity($owner, $service, $previous, $request);
                         if ($authenticity->state !== RequirementState::Met) {
                             throw ValidationException::withMessages(['previous_document_id' => $authenticity->message]);
+                        }
+                    }
+                    $externalRule = app(IntegrationRules::class)->effective($request)['document'] ?? null;
+                    if ($externalRule['required'] ?? false) {
+                        $external = app(IntegrationManager::class)->status($request, 'document');
+                        if ($external['status'] !== 'verified' || $external['target_document_id'] !== $previous->id) {
+                            throw ValidationException::withMessages(['previous_document_id' => 'يلزم تحقق خارجي حديث للوثيقة السابقة المختارة نفسها.']);
                         }
                     }
                 } elseif ($service->operation !== 'issue' || isset($data['previous_document_id'])) {

@@ -58,11 +58,20 @@ class AdminGovernmentServiceController extends Controller
             if ((int) $request->validated('expected_rules_version') !== $service->rules_version) {
                 throw ValidationException::withMessages(['expected_rules_version' => 'تغيرت شروط الخدمة منذ فتح النموذج. حدّث الصفحة وأعد التحقق من الشروط الحالية.']);
             }
-            $citizen = User::where('role', 'citizen')->where('username', $request->validated('username'))->first();
+            $citizen = $request->filled('citizen_account_id')
+                ? User::where('role', 'citizen')->where('registration_status', 'initial_account')->whereKey($request->validated('citizen_account_id'))->first()
+                : User::where('role', 'citizen')->where(function ($query) use ($request) {
+                    $query->where('national_id', $request->validated('username'))->orWhere(function ($legacy) use ($request) {
+                        $legacy->whereNull('registration_status')->where('username', $request->validated('username'));
+                    });
+                })->first();
+            if ($request->filled('citizen_account_id') && $service->code !== 'identity-first-issue') {
+                throw ValidationException::withMessages(['citizen_account_id' => 'تقييم الحساب الأولي بمعرّفه الداخلي متاح لإصدار البطاقة لأول مرة فقط.']);
+            }
             if (! $citizen) {
                 throw ValidationException::withMessages(['username' => 'لا يوجد حساب مواطن مطابق لهذا الرقم الوطني.']);
             }
-            $data = $request->safe()->except(['username', 'expected_rules_version']);
+            $data = $request->safe()->except(['username', 'citizen_account_id', 'expected_rules_version']);
             $data['age_requirement_met'] = $request->boolean('age_requirement_met');
             $data['driving_requirements_met'] = $request->boolean('driving_requirements_met');
             $data['rules_version'] = $service->rules_version;

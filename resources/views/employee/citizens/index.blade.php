@@ -23,7 +23,7 @@
         <thead><tr><th>الاسم</th><th>الرقم الوطني</th><th>البيانات</th></tr></thead>
         <tbody>
           @forelse($citizens as $citizen)
-            <tr><td>{{ $citizen->name }}</td><td>{{ $citizen->username ?? 'غير مسجل' }}</td><td><a href="{{ route('employee.citizens.show', $citizen) }}">عرض بيانات المواطن</a></td></tr>
+            <tr><td>{{ $citizen->name }}</td><td>{{ $citizen->nationalIdentity() ?? 'غير مسجل' }}</td><td><a href="{{ route('employee.citizens.show', $citizen) }}">عرض بيانات المواطن</a></td></tr>
           @empty
             <tr><td colspan="3">لم يتم العثور على مواطن مطابق للبحث.</td></tr>
           @endforelse

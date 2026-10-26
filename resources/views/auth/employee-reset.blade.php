@@ -1,0 +1,4 @@
+@extends('layouts.public')
+@section('title','استعادة كلمة المرور')
+@section('content')<section class="section"><div class="container"><h1>استعادة كلمة مرور الموظف</h1>@include('admin.oversight-feedback')
+<form method="POST" action="{{ route('password.update') }}">@csrf<input type="hidden" name="token" value="{{ $token }}"><label>البريد الإلكتروني<input class="form-control" type="email" name="email" value="{{ $email }}" required></label><label>كلمة المرور الجديدة<input class="form-control" type="password" name="password" minlength="12" required autocomplete="new-password"></label><label>تأكيد كلمة المرور<input class="form-control" type="password" name="password_confirmation" required autocomplete="new-password"></label><button class="btn btn-primary">تغيير كلمة المرور</button></form></div></section>@endsection

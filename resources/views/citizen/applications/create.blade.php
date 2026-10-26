@@ -13,7 +13,7 @@
     <p>الخدمة المحددة: {{ $service->name }} — الرمز: {{ $service->code }}</p>
     <p role="status">لم يتم إنشاء طلب بعد. أدخل البيانات ثم راجع الملخص وأقر بصحتها قبل الإرسال.</p>
     @if($errors->any())<div class="alert alert-danger" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-    <p>مقدم الطلب: {{ auth()->user()->name }} — الرقم الوطني: {{ auth()->user()->username }}</p>
+    <p>مقدم الطلب: {{ auth()->user()->name }} — الرقم الوطني: {{ auth()->user()->nationalIdentity() }}</p>
     <form method="POST" action="{{ route('citizen.services.preview', $service) }}">
       @csrf
       @foreach($service->application_fields ?? [] as $field)

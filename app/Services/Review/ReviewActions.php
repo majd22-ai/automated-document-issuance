@@ -6,6 +6,7 @@ use App\Enums\ServiceRequestStatus;
 use App\Models\CitizenServiceRequest;
 use App\Models\ReviewDecision;
 use App\Models\User;
+use App\Services\Notifications\CitizenUpdates;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -52,7 +53,7 @@ class ReviewActions
     {
         $decision = (new ReviewDecision)->forceFill(['citizen_service_request_id' => $request->id, 'actor_id' => $actor->id, 'action' => $action, 'from_status' => $from, 'to_status' => $request->status, 'decision_token' => $context['decision_token'] ?? (string) Str::uuid(), 'command_hash' => $this->commandHash($action, $reason, $context), 'review_version' => $request->review_version, 'public_reason' => $reason, 'internal_notes' => $context['internal_notes'] ?? null, 'details' => $details, 'requirements_result' => $report, 'decided_at' => now()]);
         $decision->save();
-        app(\App\Services\Notifications\CitizenUpdates::class)->review($decision);
+        app(CitizenUpdates::class)->review($decision);
 
         return $decision;
     }

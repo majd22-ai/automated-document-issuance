@@ -32,7 +32,8 @@
 
 <body class="{{ request()->routeIs('home') ? 'gov-home-page' : 'gov-inner-page' }}">
   @php
-    $serviceBanner = match (request()->route()?->getName()) {
+    $bannerRoute = request()->routeIs('register.*') ? 'register' : request()->route()?->getName();
+    $serviceBanner = match ($bannerRoute) {
       'services.identity' => [
         'title' => 'خدمات البطاقة الشخصية', 'subtitle' => 'إصدار الهوية الشخصية وتجديدها واستبدالها',
         'agency' => 'assets/images/banner/الاحوال المدنية.png', 'agencyAlt' => 'شعار مصلحة الأحوال المدنية والسجل المدني',
@@ -55,14 +56,14 @@
         'documentWidth' => 1200, 'documentHeight' => 670,
       ],
       'appointments.book', 'inquiry.reference', 'inquiry.mine', 'login', 'register' => [
-        'title' => match (request()->route()->getName()) {
+        'title' => match ($bannerRoute) {
           'appointments.book' => 'خدمات المواعيد',
           'inquiry.mine' => 'الاستعلام عن جميع طلباتي',
           'login' => 'تسجيل الدخول',
           'register' => 'التسجيل لأول مرة',
           default => 'الاستعلام عن حالة الطلب',
         },
-        'subtitle' => match (request()->route()->getName()) {
+        'subtitle' => match ($bannerRoute) {
           'appointments.book' => 'حجز المواعيد لمراجعة المركز واستكمال إجراءات الخدمة',
           'login' => 'سجّل الدخول إلى حسابك للوصول إلى خدمات المنصة ومتابعة طلباتك',
           'register' => 'أنشئ حسابك للاستفادة من خدمات المنصة وتقديم طلباتك إلكترونيًا',
@@ -84,7 +85,7 @@
   @include('components.public-header')
 
   <main id="main-content"
-        class="{{ request()->routeIs('login', 'register', 'password.*') ? 'auth-page-wrapper' : '' }}">
+        class="{{ request()->routeIs('login', 'register', 'register.*', 'password.*') ? 'auth-page-wrapper' : '' }}">
     @yield('content')
   </main>
 

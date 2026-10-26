@@ -7,6 +7,7 @@ use App\Models\GovernmentService;
 use App\Models\ManualPayment;
 use App\Models\RequestCharge;
 use App\Models\User;
+use App\Services\Notifications\CitizenUpdates;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -43,7 +44,7 @@ class RequestCharges
             }
             $charge = (new RequestCharge)->forceFill(['user_id' => $application->user_id, 'government_service_id' => $application->government_service_id, 'citizen_service_request_id' => $application->id, 'amount' => $amount, 'currency' => $application->service_currency, 'status' => $amount === '0.00' ? 'not_required' : 'due', 'source_reference' => $application->service_snapshot['source_reference'] ?? null]);
             $charge->save();
-            app(\App\Services\Notifications\CitizenUpdates::class)->charge($charge);
+            app(CitizenUpdates::class)->charge($charge);
 
             return $charge;
         });

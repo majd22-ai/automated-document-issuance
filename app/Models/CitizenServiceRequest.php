@@ -153,6 +153,11 @@ class CitizenServiceRequest extends Model
         return $this->hasMany(ReviewDecision::class);
     }
 
+    public function integrationAttempts(): HasMany
+    {
+        return $this->hasMany(IntegrationAttempt::class);
+    }
+
     public function deficiencies(): HasMany
     {
         return $this->hasMany(RequestDeficiency::class);
@@ -178,7 +183,7 @@ class CitizenServiceRequest extends Model
                 $request->service_fee = $service->fee;
                 $request->service_currency = $service->currency;
                 $request->service_rules_version = $service->rules_version;
-                $request->service_snapshot = $service->only(['code', 'name', 'document_type', 'operation', 'description', 'conditions', 'required_documents', 'required_fields', 'application_fields', 'verification_rules', 'workflow_rules', 'require_separate_approver', 'source_reference', 'fee', 'currency', 'estimated_duration', 'rules_version', 'minimum_age', 'renewal_statuses', 'renewal_window_days', 'requires_driving_clearance', 'terminal_request_statuses']);
+                $request->service_snapshot = $service->only(['code', 'name', 'document_type', 'operation', 'description', 'conditions', 'required_documents', 'required_fields', 'application_fields', 'verification_rules', 'workflow_rules', 'integration_rules', 'require_separate_approver', 'source_reference', 'fee', 'currency', 'estimated_duration', 'rules_version', 'minimum_age', 'renewal_statuses', 'renewal_window_days', 'requires_driving_clearance', 'terminal_request_statuses']);
             }
         });
         static::updating(function (self $request) {

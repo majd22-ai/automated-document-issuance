@@ -5,6 +5,7 @@ namespace App\Services\Issuance;
 use App\Models\CitizenDocument;
 use App\Models\DocumentEvent;
 use App\Models\User;
+use App\Services\Notifications\CitizenUpdates;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -39,7 +40,7 @@ class DocumentAudit
     {
         $event = (new DocumentEvent)->forceFill(['citizen_document_id' => $document->id, 'actor_id' => $actor->id, 'action' => $action, 'from_status' => $from, 'to_status' => $to, 'operation_token' => $data['operation_token'] ?? (string) Str::uuid(), 'command_hash' => $this->hash($action, $data), 'reason' => $data['reason'] ?? null, 'details' => $details, 'occurred_at' => now()]);
         $event->save();
-        app(\App\Services\Notifications\CitizenUpdates::class)->document($event);
+        app(CitizenUpdates::class)->document($event);
 
         return $event;
     }

@@ -7,6 +7,7 @@ use App\Models\CitizenAttachment;
 use App\Models\CitizenServiceRequest;
 use App\Models\GovernmentService;
 use App\Models\User;
+use App\Services\Integrations\IntegrationManager;
 
 class LocalAttachmentEvidenceSource implements ServiceEvidenceSource
 {
@@ -14,6 +15,19 @@ class LocalAttachmentEvidenceSource implements ServiceEvidenceSource
 
     public function lookup(User $citizen, GovernmentService $service, string $kind, string $key, ?CitizenServiceRequest $request = null): EvidenceLookup
     {
+        if ($kind === 'document' && $request && $request->user_id === $citizen->id && $request->government_service_id === $service->id) {
+            $state = app(IntegrationManager::class)->status($request, 'document');
+            if ($state['status'] === 'verified' && (string) $state['target_document_id'] === $key) {
+                $attempt = $request->integrationAttempts()->find($state['attempt_id']);
+
+                return new EvidenceLookup(true, [[
+                    'user_id' => $citizen->id, 'service_id' => $service->id, 'request_id' => $request->id,
+                    'document_id' => $state['target_document_id'], 'trusted' => true, 'result' => 'verified',
+                    'source_reference' => 'integration:'.$attempt->id,
+                    'verified_at' => $attempt->finished_at->toIso8601String(), 'valid_until' => $attempt->expires_at->toIso8601String(),
+                ]]);
+            }
+        }
         if ($kind === 'medical' && $request) {
             $exam = $request->examinations()->where('user_id', $citizen->id)->where('government_service_id', $service->id)->latest('id')->first();
             if (! $exam) {

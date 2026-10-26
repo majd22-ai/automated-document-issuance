@@ -27,7 +27,8 @@
           <label class="form-label" for="profile-phone">رقم الهاتف (اختياري)</label>
           <input class="form-control" type="tel" id="profile-phone" name="phone" value="{{ old('phone', $user->phone) }}" maxlength="30" autocomplete="tel" dir="ltr">
         </div>
-        <p>الرقم الوطني / اسم المستخدم: {{ $user->username ?? 'غير مسجل' }}</p>
+        <p>اسم المستخدم: {{ $user->username ?? 'غير مسجل' }}</p>
+        <p>رقم الهوية: {{ $user->nationalIdentity() ?? 'غير مسجل' }}</p>
         <button class="btn btn-primary" type="submit">حفظ التغييرات</button>
         <a class="btn btn-outline" href="{{ route(auth()->user()->role.'.dashboard') }}">لوحة التحكم</a>
       </form>

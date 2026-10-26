@@ -24,7 +24,7 @@ class GovernmentService extends Model
             'application_fields' => 'array',
             'verification_rules' => 'array',
             'workflow_rules' => 'array',
-            'issuance_rules' => 'array',
+            'issuance_rules' => 'array', 'integration_rules' => 'array',
             'require_separate_approver' => 'boolean',
             'renewal_statuses' => 'array', 'terminal_request_statuses' => 'array',
             'fee' => 'decimal:2', 'is_active' => 'boolean', 'rules_approved' => 'boolean',
@@ -39,7 +39,7 @@ class GovernmentService extends Model
             if ($service->isDirty(['code', 'document_type', 'operation'])) {
                 throw ValidationException::withMessages(['code' => 'رمز الخدمة ونوع الوثيقة والعملية ثابتة لحماية الطلبات السابقة. أنشئ خدمة مستقلة عند تغييرها.']);
             }
-            if ($service->isDirty(['conditions', 'required_documents', 'required_fields', 'application_fields', 'verification_rules', 'workflow_rules', 'issuance_rules', 'require_separate_approver', 'minimum_age', 'requires_driving_clearance', 'renewal_statuses', 'renewal_window_days', 'terminal_request_statuses', 'rules_approved', 'source_reference'])) {
+            if ($service->isDirty(['conditions', 'required_documents', 'required_fields', 'application_fields', 'verification_rules', 'workflow_rules', 'issuance_rules', 'integration_rules', 'require_separate_approver', 'minimum_age', 'requires_driving_clearance', 'renewal_statuses', 'renewal_window_days', 'terminal_request_statuses', 'rules_approved', 'source_reference'])) {
                 $service->rules_version = $service->getOriginal('rules_version') + 1;
             }
         });

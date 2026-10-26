@@ -7,6 +7,7 @@ use App\Models\CitizenServiceRequest;
 use App\Models\GovernmentService;
 use App\Models\User;
 use App\Services\Attachments\AttachmentSubmission;
+use App\Services\Notifications\CitizenUpdates;
 use App\Services\Operations\RequestCharges;
 use App\Services\Requirements\EligibilityResult;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -22,7 +23,12 @@ class ServiceRequestSubmission
 
     public static function citizenFingerprint(User $citizen): string
     {
-        return hash('sha256', json_encode($citizen->only(['name', 'username', 'email', 'phone']), JSON_THROW_ON_ERROR));
+        $data = $citizen->only(['name', 'username', 'email', 'phone']);
+        if ($citizen->registration_status !== null) {
+            $data += $citizen->only(['national_id', 'registration_status', 'identity_path', 'account_activated_at', 'identity_verified_at']);
+        }
+
+        return hash('sha256', json_encode($data, JSON_THROW_ON_ERROR));
     }
 
     public function preview(User $citizen, GovernmentService $service, array $payload): array
@@ -92,7 +98,7 @@ class ServiceRequestSubmission
 
                 $this->attachments->bind($citizen, $service, $request);
                 app(RequestCharges::class)->ensure($request);
-                app(\App\Services\Notifications\CitizenUpdates::class)->submitted($request);
+                app(CitizenUpdates::class)->submitted($request);
 
                 return $request;
             }, 3);

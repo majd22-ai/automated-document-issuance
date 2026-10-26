@@ -8,16 +8,36 @@ use App\Models\User;
 
 class CitizenServiceRequestPolicy
 {
-    public function create(User $user): bool
+    public function verifyExternal(User $user, CitizenServiceRequest $application): bool
     {
-        return $user->is_active && $user->role === 'citizen';
+        return $user->canReviewService($application->government_service_id, 'can_verify');
     }
 
-    public function track(User $user,CitizenServiceRequest $application): bool
+    public function viewVerification(User $user, CitizenServiceRequest $application): bool
     {
-        if(!$user->is_active) { return false; }
-        if($user->role==='citizen') { return $application->user_id===$user->id; }
-        foreach(['can_review','can_approve','can_assign','can_issue','can_deliver'] as $ability) { if($user->canReviewService($application->government_service_id,$ability)) { return true; } }
+        return ($user->is_active && $user->role === 'citizen' && $application->user_id === $user->id)
+            || $this->verifyExternal($user, $application);
+    }
+
+    public function create(User $user): bool
+    {
+        return $user->is_active && $user->role === 'citizen' && (! $user->needsCitizenActivation());
+    }
+
+    public function track(User $user, CitizenServiceRequest $application): bool
+    {
+        if (! $user->is_active) {
+            return false;
+        }
+        if ($user->role === 'citizen') {
+            return $application->user_id === $user->id;
+        }
+        foreach (['can_review', 'can_approve', 'can_assign', 'can_issue', 'can_deliver'] as $ability) {
+            if ($user->canReviewService($application->government_service_id, $ability)) {
+                return true;
+            }
+        }
+
         return false;
     }
 

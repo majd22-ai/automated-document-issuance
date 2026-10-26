@@ -3,49 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Auth\Events\Failed;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function register(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'national_id' => ['required', 'string', 'max:20', 'unique:users,username'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['nullable', 'string', 'max:30', 'regex:/^\+?[0-9]{7,15}$/'],
-            'password' => ['required', 'string', 'min:8', 'max:255', 'confirmed'],
-            'role' => ['missing'], 'is_active' => ['missing'],
-        ], [
-            'name.required' => 'الاسم الكامل مطلوب.',
-            'national_id.required' => 'الرقم الوطني مطلوب.',
-            'national_id.unique' => 'هذا الرقم الوطني مسجّل مسبقًا.',
-            'email.required' => 'البريد الإلكتروني مطلوب.',
-            'email.email' => 'أدخل بريدًا إلكترونيًا صحيحًا.',
-            'email.unique' => 'هذا البريد الإلكتروني مسجّل مسبقًا.',
-            'phone.regex' => 'أدخل رقم هاتف صحيحًا من 7 إلى 15 رقمًا، مع رمز الدولة اختياريًا.',
-            'password.required' => 'كلمة المرور مطلوبة.',
-            'password.min' => 'يجب أن تكون كلمة المرور 8 أحرف على الأقل.',
-            'password.confirmed' => 'كلمتا المرور غير متطابقتين.',
-            'role.prohibited' => 'لا يمكن اختيار الدور من نموذج التسجيل.',
-            'is_active.prohibited' => 'لا يمكن تحديد حالة الحساب من نموذج التسجيل.',
-        ]);
-
-        $user = new User([
-            'name' => $validated['name'], 'username' => $validated['national_id'],
-            'email' => $validated['email'], 'phone' => $validated['phone'] ?? null,
-            'password' => Hash::make($validated['password']),
-        ]);
-        $user->forceFill(['role' => 'citizen', 'is_active' => true])->save();
-        Auth::login($user);
-        $request->session()->regenerate();
-
-        return redirect()->route('citizen.dashboard');
-    }
-
     public function login(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -54,18 +18,29 @@ class AuthController extends Controller
             'remember' => ['sometimes', 'boolean'],
             'redirect' => ['nullable', 'string', 'max:2048'],
         ], [
-            'identifier.required' => 'أدخل البريد الإلكتروني أو الرقم الوطني أو اسم المستخدم.',
+            'identifier.required' => 'أدخل الرقم الوطني أو اسم المستخدم.',
             'password.required' => 'كلمة المرور مطلوبة.',
         ]);
         $field = filter_var($validated['identifier'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-        if (! Auth::attempt([
-            $field => $validated['identifier'], 'password' => $validated['password'], 'is_active' => true,
+        $accounts = User::where(fn ($query) => $field === 'email'
+            ? $query->where('email', $validated['identifier'])
+            : $query->where('username', $validated['identifier'])->orWhere('national_id', $validated['identifier']))->limit(2)->get(['id']);
+        if ($accounts->count() !== 1) {
+            event(new Failed(config('auth.defaults.guard'), null, []));
+        }
+        if ($accounts->count() !== 1 || ! Auth::attempt([
+            'id' => $accounts->first()->id, 'password' => $validated['password'], 'is_active' => true,
         ], $request->boolean('remember'))) {
-            return back()->withErrors(['identifier' => 'بيانات الدخول غير صحيحة أو الحساب غير مفعّل.'])
+            return back()->withErrors(['identifier' => 'بيانات الدخول غير صحيحة أو الحساب غير متاح.'])
                 ->withInput($request->only('identifier', 'remember'));
         }
 
         $request->session()->regenerate();
+        if ($request->user()->needsCitizenActivation()) {
+            $request->session()->forget('url.intended');
+
+            return redirect()->route('citizen.account.status');
+        }
         $role = $request->user()->role;
         if (! in_array($role, User::ROLES, true)) {
             Auth::logout();

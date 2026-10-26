@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class ReviewPermissionController extends Controller
 {
@@ -25,9 +26,12 @@ class ReviewPermissionController extends Controller
     public function save(Request $request, User $user)
     {
         abort_unless($request->user()->role === 'admin' && $request->user()->is_active, 403);
-        $data = $request->validate(['government_service_id' => ['required', 'integer', 'exists:government_services,id'], 'can_review' => ['required', 'boolean'], 'can_approve' => ['required', 'boolean'], 'can_assign' => ['required', 'boolean'], 'can_issue' => ['sometimes', 'boolean'], 'can_deliver' => ['sometimes', 'boolean']]);
+        $data = $request->validate(['government_service_id' => ['required', 'integer', 'exists:government_services,id'], 'can_review' => ['required', 'boolean'], 'can_approve' => ['required', 'boolean'], 'can_assign' => ['required', 'boolean'], 'can_issue' => ['sometimes', 'boolean'], 'can_deliver' => ['sometimes', 'boolean'], 'can_verify' => ['sometimes', 'boolean'], 'can_activate' => ['sometimes', 'boolean']]);
         DB::transaction(function () use ($request, $user, $data) {
-            GovernmentService::whereKey($data['government_service_id'])->lockForUpdate()->firstOrFail();
+            $service = GovernmentService::whereKey($data['government_service_id'])->lockForUpdate()->firstOrFail();
+            if (($data['can_activate'] ?? false) && $service->code !== 'identity-first-issue') {
+                throw ValidationException::withMessages(['can_activate' => 'صلاحية تفعيل المواطن تمنح ضمن خدمة إصدار البطاقة لأول مرة فقط.']);
+            }
             abort_unless($request->user()->fresh()?->role === 'admin' && $request->user()->fresh()?->is_active, 403);
             $target = $user->fresh();
             abort_unless($target->role === 'employee' && $target->is_active, 422, 'الصلاحية لموظف نشط فقط.');
