@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\GovernmentService;
 use App\Models\ServiceReviewPermission;
 use App\Models\User;
+use App\Services\Registration\ActivationRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -36,7 +37,11 @@ class ReviewPermissionController extends Controller
             $target = $user->fresh();
             abort_unless($target->role === 'employee' && $target->is_active, 422, 'الصلاحية لموظف نشط فقط.');
             $permission = ServiceReviewPermission::where('user_id', $target->id)->where('government_service_id', $data['government_service_id'])->first() ?? new ServiceReviewPermission;
+            $hadActivation = (bool) $permission->can_activate;
             $permission->forceFill(array_merge($data, ['user_id' => $target->id, 'granted_by' => $request->user()->id]))->save();
+            if (! $hadActivation && $permission->can_activate) {
+                app(ActivationRequests::class)->permissionGranted($target);
+            }
             DB::afterCommit(function () use ($permission, $request) {
                 try {
                     Log::info('review_permissions_changed', ['permission_id' => $permission->id, 'actor_id' => $request->user()->id]);

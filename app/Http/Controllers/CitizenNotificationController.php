@@ -10,7 +10,7 @@ class CitizenNotificationController extends Controller
     public function index(Request $request)
     {
         $filters = $request->validate(['read' => ['nullable', 'in:read,unread'], 'page' => ['sometimes', 'integer', 'min:1']]);
-        $notifications = $request->user()->notifications()->when(($filters['read'] ?? null) === 'read', fn ($q) => $q->whereNotNull('read_at'))->when(($filters['read'] ?? null) === 'unread', fn ($q) => $q->whereNull('read_at'))->orderByDesc('id')->paginate(20)->withQueryString();
+        $notifications = $request->user()->notifications()->when(($filters['read'] ?? null) === 'read', fn ($q) => $q->whereNotNull('read_at'))->when(($filters['read'] ?? null) === 'unread', fn ($q) => $q->whereNull('read_at'))->latest('created_at')->latest('id')->paginate(20)->withQueryString();
         $unread = $request->user()->unreadNotifications()->count();
 
         return response()->view('citizen.notifications.index', compact('notifications', 'unread'))->header('Cache-Control', 'no-store, private');
@@ -33,6 +33,19 @@ class CitizenNotificationController extends Controller
     public function open(Request $request, string $id)
     {
         $notification = $request->user()->notifications()->findOrFail($id);
+        if (in_array($notification->data['kind'] ?? '', ['employee_account', 'employee_permission'], true) && ! $notification->request_id && ! $notification->document_id) {
+            abort_unless((int) ($notification->data['target_user_id'] ?? $request->user()->id) === (int) $request->user()->id, 403);
+            $notification->markAsRead();
+
+            return redirect()->route('profile.edit');
+        }
+        if (($notification->data['kind'] ?? '') === 'attachment_update' && ! $notification->request_id && ! $notification->document_id) {
+            $attachment = $request->user()->attachments()->findOrFail($notification->data['attachment_id'] ?? 0);
+            Gate::authorize('view', $attachment);
+            $notification->markAsRead();
+
+            return redirect()->route('citizen.services.attachments.index', $attachment->government_service_id);
+        }
         if (($notification->data['kind'] ?? null) === 'account_status' && ! $notification->request_id && ! $notification->document_id) {
             $notification->markAsRead();
 

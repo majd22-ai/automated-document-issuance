@@ -51,6 +51,11 @@ class User extends Authenticatable
         return $this->hasMany(ServiceReviewPermission::class);
     }
 
+    public function activationRequest()
+    {
+        return $this->hasOne(CitizenActivationRequest::class);
+    }
+
     public function canReviewService(?int $serviceId, string $ability): bool
     {
         return $this->is_active && $this->role === 'employee' && $serviceId && in_array($ability, ['can_review', 'can_approve', 'can_assign', 'can_issue', 'can_deliver', 'can_verify', 'can_activate'], true)

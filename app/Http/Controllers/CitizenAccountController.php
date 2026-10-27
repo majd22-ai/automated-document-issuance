@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ConfirmCitizenAccountRequest;
 use App\Models\User;
+use App\Services\Registration\ActivationRequests;
 use App\Services\Registration\CitizenAccountActivation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -13,14 +14,22 @@ class CitizenAccountController extends Controller
 {
     public function status(Request $request)
     {
-        return response()->view('citizen.account-status', ['citizen' => $request->user()])->header('Cache-Control', 'no-store, private');
+        return response()->view('citizen.account-status', ['citizen' => $request->user(), 'activationRequest' => $request->user()->activationRequest])->header('Cache-Control', 'no-store, private');
+    }
+
+    public function submit(Request $request, ActivationRequests $requests)
+    {
+        $request->validate(['acknowledged' => ['required', 'accepted']], ['acknowledged.required' => 'أكد مراجعة بياناتك وتعليمات التفعيل.', 'acknowledged.accepted' => 'أكد مراجعة بياناتك وتعليمات التفعيل.']);
+        $requests->submit($request->user());
+
+        return redirect()->route('citizen.account.status')->with('status', 'تم تسجيل طلب التفعيل وإتاحته للموظفين المخوّلين. إذا سبق إرساله فلن يُكرر.');
     }
 
     public function index(Request $request)
     {
         Gate::authorize('manageCitizenActivation', User::class);
-        $data = $request->validate(['search' => ['nullable', 'string', 'max:100'], 'state' => ['nullable', 'in:initial_account,identity_verification_pending,active,review_required'], 'page' => ['sometimes', 'integer', 'min:1']]);
-        $citizens = User::where('role', 'citizen')->when($data['search'] ?? null, fn ($q, $search) => $q->where(fn ($q) => $q->where('username', $search)->orWhere('national_id', $search)->orWhere('name', $search)))
+        $data = $request->validate(['submitted' => ['sometimes', 'boolean'], 'search' => ['nullable', 'string', 'max:100'], 'state' => ['nullable', 'in:initial_account,identity_verification_pending,active,review_required'], 'page' => ['sometimes', 'integer', 'min:1']]);
+        $citizens = User::where('role', 'citizen')->with('activationRequest')->when($request->boolean('submitted'), fn ($q) => $q->whereHas('activationRequest', fn ($q) => $q->where('status', 'pending')))->when($data['search'] ?? null, fn ($q, $search) => $q->where(fn ($q) => $q->where('username', $search)->orWhere('national_id', $search)->orWhere('name', $search)))
             ->when($data['state'] ?? null, fn ($q, $state) => $q->where('registration_status', $state))->orderBy('id')->paginate(15)->withQueryString();
 
         return response()->view('employee.accounts.index', compact('citizens', 'data'))->header('Cache-Control', 'no-store, private');

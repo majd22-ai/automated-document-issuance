@@ -1,17 +1,17 @@
 @extends('layouts.public')
 @section('title', 'إعداد الخدمة - لوحة المدير')
 @section('content')
-<section class="section"><div class="container">
-  <h1>{{ $service->exists ? 'تعديل الخدمة' : 'إضافة خدمة' }}</h1>
+<section class="ops-section"><div class="container">
+  <div class="ops-page-head"><h1>{{ $service->exists ? 'تعديل الخدمة' : 'إضافة خدمة' }}</h1></div>
   <a href="{{ route('admin.services.index') }}">العودة إلى إدارة الخدمات</a>
   @if(session('status'))<div class="alert alert-success" role="status">{{ session('status') }}</div>@endif
   @if($errors->any())<div class="alert alert-danger" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-  <div class="card" style="padding:1.5rem;margin-top:1rem;">
+  <div class="card ops-card" style="padding:1.5rem;margin-top:1rem;">
     <p>لا تدخل رسومًا أو شروطًا أو مددًا تقديرية دون مرجع موثوق. الحقول الفارغة تُعرض كبيانات غير متوفرة. تغيير قواعد الأهلية يتطلب تحديث تقييمات المواطنين.</p>
     <form method="POST" action="{{ $service->exists ? route('admin.services.update', $service) : route('admin.services.store') }}">
       @csrf
       @if($service->exists)@method('PATCH')@endif
-      <div class="form-group"><label class="form-label" for="service-name">اسم الخدمة</label><input class="form-control" id="service-name" name="name" value="{{ old('name', $service->name) }}" maxlength="200" required></div>
+      <h2>تعريف الخدمة</h2><div class="form-group"><label class="form-label" for="service-name">اسم الخدمة</label><input class="form-control" id="service-name" name="name" value="{{ old('name', $service->name) }}" maxlength="200" required></div>
       @if($service->exists)
         <p>الرمز الثابت: {{ $service->code }} — {{ \App\Models\GovernmentService::DOCUMENT_TYPES[$service->document_type] }} — {{ \App\Models\GovernmentService::OPERATIONS[$service->operation] }}</p>
       @else
@@ -20,7 +20,7 @@
         <div class="form-group"><label class="form-label" for="service-operation">نوع العملية</label><select class="form-control" id="service-operation" name="operation">@foreach(\App\Models\GovernmentService::OPERATIONS as $value => $label)<option value="{{ $value }}" @selected(old('operation') === $value)>{{ $label }}</option>@endforeach</select></div>
       @endif
       <div class="form-group"><label class="form-label" for="service-description">وصف الخدمة</label><textarea class="form-control" id="service-description" name="description" maxlength="10000">{{ old('description', $service->description) }}</textarea></div>
-      @php($applicationFields = old('application_fields', $service->application_fields ?? []))
+      <h2>نموذج الطلب ومتطلباته</h2>@php($applicationFields = old('application_fields', $service->application_fields ?? []))
       <div class="form-group"><label class="form-label" for="service-application-fields">حقول نموذج الطلب بصيغة JSON (اختياري)</label>
         <p>اترك [] عند عدم الحاجة. مثال بنيوي: [{"key":"address","label":"العنوان","type":"text","required":true,"max_length":200}]. الأنواع: text وtextarea وinteger وdate. لا تضف متطلبًا إلا وفق قواعد الخدمة المعتمدة.</p>
         <textarea class="form-control" id="service-application-fields" name="application_fields" dir="ltr" rows="5">{{ is_array($applicationFields) ? json_encode($applicationFields, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) : $applicationFields }}</textarea>
@@ -29,10 +29,10 @@
         @php($fieldValue = old($field, $service->{$field} ?? []))
         <div class="form-group"><label class="form-label" for="service-{{ $field }}">{{ $label }} — عنصر في كل سطر</label><textarea class="form-control" id="service-{{ $field }}" name="{{ $field }}">{{ is_array($fieldValue) ? implode("\n", $fieldValue) : $fieldValue }}</textarea></div>
       @endforeach
-      @foreach(['fee' => 'الرسوم (فارغة إن لم تعتمد)', 'currency' => 'العملة', 'estimated_duration' => 'المدة التقديرية المعتمدة', 'minimum_age' => 'الحد الأدنى للعمر (فقط عند وجود قاعدة معتمدة)', 'renewal_window_days' => 'السماح بالتجديد قبل الانتهاء بعدد أيام (فارغ إن لم توجد قاعدة)', 'source_reference' => 'مرجع اعتماد بيانات وقواعد الخدمة'] as $field => $label)
+      <h2>الرسوم والمرجع المعتمد</h2>@foreach(['fee' => 'الرسوم (فارغة إن لم تعتمد)', 'currency' => 'العملة', 'estimated_duration' => 'المدة التقديرية المعتمدة', 'minimum_age' => 'الحد الأدنى للعمر (فقط عند وجود قاعدة معتمدة)', 'renewal_window_days' => 'السماح بالتجديد قبل الانتهاء بعدد أيام (فارغ إن لم توجد قاعدة)', 'source_reference' => 'مرجع اعتماد بيانات وقواعد الخدمة'] as $field => $label)
         <div class="form-group"><label class="form-label" for="service-{{ $field }}">{{ $label }}</label><input class="form-control" id="service-{{ $field }}" name="{{ $field }}" value="{{ old($field, $service->{$field}) }}" @if(in_array($field, ['fee', 'minimum_age', 'renewal_window_days'])) type="number" min="0" step="{{ $field === 'fee' ? '0.01' : '1' }}" @else type="text" maxlength="255" @endif></div>
       @endforeach
-      @php($verificationRules = old('verification_rules', $service->verification_rules ?? []))
+      <h2>قواعد الأهلية والتحقق والإصدار</h2>@php($verificationRules = old('verification_rules', $service->verification_rules ?? []))
       @php($workflowRules = old('workflow_rules', $service->workflow_rules ?? []))
       @include('components.integration-rules-editor')
       @php($issuanceRules=old('issuance_rules',$service->issuance_rules??null))
@@ -52,7 +52,7 @@
     </form>
   </div>
   @if($service->exists)
-    <div class="card" style="padding:1.5rem;margin-top:1rem;">
+    <div class="card ops-card" style="padding:1.5rem;margin-top:1rem;">
       <h2>تسجيل تقييم أهلية موثّق لمواطن</h2>
       <p>للمسؤول المخوّل فقط وبعد التحقق من المرجع الرسمي. هذا إدخال يدوي موثّق وليس تحققًا حكوميًا آليًا. الإصدار الحالي للشروط: {{ $service->rules_version }}.</p>
       <form method="POST" action="{{ route('admin.services.assessments.store', $service) }}">

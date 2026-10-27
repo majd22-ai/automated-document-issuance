@@ -3,6 +3,7 @@
 namespace App\Services\Registration;
 
 use App\Models\CitizenAccountConfirmation;
+use App\Models\CitizenActivationRequest;
 use App\Models\GovernmentService;
 use App\Models\ServiceReviewPermission;
 use App\Models\User;
@@ -72,6 +73,12 @@ class CitizenAccountActivation
                 $citizen->save();
             }
             app(AuditTrail::class)->record($conflict ? 'citizen_account.identity_conflict' : 'citizen_account.confirmed', 'user', $citizen->id, $actor, $conflict ? 'conflict' : 'success', ['action' => $data['action'], 'status' => $citizen->registration_status]);
+            if ($conflict || $citizen->hasActivatedIdentity()) {
+                CitizenActivationRequest::where('user_id', $citizen->id)->whereIn('status', ['pending', 'review_required'])->update([
+                    'status' => $conflict ? 'review_required' : 'approved', 'reviewed_by' => $actor->id,
+                    'reviewed_at' => now(), 'confirmation_id' => $record->id, 'updated_at' => now(),
+                ]);
+            }
             app(CitizenUpdates::class)->accountConfirmation($citizen, $record);
 
             return $record;

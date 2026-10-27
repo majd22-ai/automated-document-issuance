@@ -25,7 +25,11 @@ class CitizenUpdates
         if (! $citizen->is_active || $citizen->role !== 'citizen') {
             return;
         }
-        $citizen->notifyNow(new CitizenActivity($key, ['kind' => $kind, 'title' => $title, 'body' => Str::limit($body, 600)], $request, $document, $email));
+        $payload = ['kind' => $kind, 'title' => $title, 'body' => Str::limit($body, 600), 'occurred_at' => now()->toIso8601String()];
+        if ($request !== null) {
+            $payload['request_reference'] = CitizenServiceRequest::whereKey($request)->value('reference');
+        }
+        $citizen->notifyNow(new CitizenActivity($key, $payload, $request, $document, $email));
     }
 
     public function submitted(CitizenServiceRequest $request): void

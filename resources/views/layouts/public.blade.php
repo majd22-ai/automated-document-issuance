@@ -1,3 +1,6 @@
+@php
+  $operationsWorkspace = auth()->check() && in_array(auth()->user()->role, ['admin','employee'], true) && request()->routeIs('admin.*','employee.*','profile.*','integrations.civil-registry-demo*');
+@endphp
  <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -26,6 +29,9 @@
           defer></script>
 
   @stack('styles')
+  @if($operationsWorkspace)
+  <link rel="stylesheet" href="{{ asset('css/operations-workspace.css') }}?v={{ filemtime(public_path('css/operations-workspace.css')) }}">
+  @endif
   <link rel="stylesheet" href="{{ asset('css/service-banner.css') }}?v={{ filemtime(public_path('css/service-banner.css')) }}">
   <link rel="stylesheet" href="{{ asset('css/icons.css') }}?v={{ filemtime(public_path('css/icons.css')) }}">
 </head>
@@ -86,11 +92,23 @@
 
   <main id="main-content"
         class="{{ request()->routeIs('login', 'register', 'register.*', 'password.*') ? 'auth-page-wrapper' : '' }}">
-    @yield('content')
+    @if($operationsWorkspace)
+    <div class="ops-shell">
+      @include('components.operations-sidebar')
+      <div class="ops-content">
+        <div class="ops-location"><a href="{{ route(auth()->user()->role.'.dashboard') }}">{{ auth()->user()->role === 'admin' ? 'مساحة الإدارة' : 'مساحة الموظف' }}</a><span aria-hidden="true">/</span><span>@yield('title')</span></div>
+        @yield('content')
+      </div>
+    </div>
+    @else
+      @yield('content')
+    @endif
   </main>
 
   @include('components.public-footer')
 
   @stack('scripts')
+  @if($operationsWorkspace)<script src="{{ asset('js/operations-workspace.js') }}?v={{ filemtime(public_path('js/operations-workspace.js')) }}" defer></script>@endif
+  @auth<script src="{{ asset('js/notification-count.js') }}?v={{ filemtime(public_path('js/notification-count.js')) }}" data-count-url="{{ route('notifications.unread-count') }}" defer></script>@endauth
 </body>
 </html>

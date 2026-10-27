@@ -17,6 +17,7 @@
         {{ $errors->first() }}
       </div>
     @endif
+    @if(session('status'))<div class="alert alert-success" role="status">{{ session('status') }}</div>@endif
 
     <form method="POST" action="{{ url('/login') }}" class="auth-form" data-validate>
       @csrf

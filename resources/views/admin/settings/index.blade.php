@@ -1,21 +1,12 @@
-
 @extends('layouts.public')
-@section('title', 'إعدادات النظام - لوحة المدير')
+@section('title', 'إعدادات النظام')
 @section('content')
-<section class="page-hero"><div class="container"><h1>إعدادات النظام</h1><p>تكوين وضبط إعدادات منصة الإصدار الآلي</p></div></section>
-<section class="section"><div class="container">
-  <div style="margin-bottom:1.5rem;"><a href="{{ route('admin.dashboard') }}" style="color:var(--primary);text-decoration:none;"><x-icon name="arrow-left" /> العودة للوحة التحكم</a></div>
-  <div class="grid grid-2">
-    <div class="card" style="padding:2rem;">
-      <h4 style="margin-bottom:1rem;"><x-icon name="settings" /> الإعدادات العامة</h4>
-      <div class="form-group"><label class="form-label">اسم المنصة</label><input type="text" class="form-control" value="منصة الإصدار الآلي" disabled></div>
-      <div class="form-group"><label class="form-label">البريد الإلكتروني للدعم</label><input type="email" class="form-control" placeholder="support@platform.gov.ye" disabled></div>
-      <button class="btn btn-primary" disabled>حفظ التغييرات</button>
-    </div>
-    <div class="card" style="padding:2rem;">
-      <h4 style="margin-bottom:1rem;"><x-icon name="lock" /> إعدادات الأمان</h4>
-      <p style="color:var(--text-muted);font-size:0.9rem;">ستتوفر خيارات الأمان هنا بعد اكتمال التطوير.</p>
-    </div>
-  </div>
-</div></section>
+<section class="ops-section"><div class="container">
+<div class="ops-page-head"><h1>إعدادات النظام</h1><p>معلومات المنصة وروابط إدارة التكوين المتاح.</p></div>
+<div class="ops-grid">
+<article class="card ops-card"><h2>معلومات المنصة</h2><dl><dt>اسم التطبيق</dt><dd>{{ config('app.name') }}</dd><dt>المنطقة الزمنية</dt><dd dir="ltr">{{ config('app.timezone') }}</dd></dl><p class="ops-help">هذه المعلومات للعرض. لا تتوفر حاليًا خاصية تعديل الإعدادات العامة من هذه الصفحة.</p></article>
+<article class="card ops-card"><h2>التكامل والتحقق</h2><p>استعرض حالة مزودي التحقق وسجل المحاولات ومتطلبات التحقق للخدمات.</p><a class="btn btn-primary" href="{{ route('admin.integrations.index') }}">فتح إعدادات التكامل</a></article>
+<article class="card ops-card"><h2>التحكم في الوصول</h2><p>إدارة الأدوار وحالة الحسابات والصلاحيات الممنوحة لكل خدمة.</p><div class="ops-toolbar"><a class="btn btn-outline" href="{{ route('admin.users.index') }}">الحسابات والأدوار</a><a class="btn btn-outline" href="{{ route('admin.review-permissions.index') }}">صلاحيات الخدمات</a></div></article>
+<article class="card ops-card"><h2>المراجعة والتدقيق</h2><p>راجع العمليات الإدارية والتشغيلية المسجلة في المنصة.</p><a class="btn btn-outline" href="{{ route('admin.audit-logs.index') }}">فتح سجل التدقيق</a></article>
+</div></div></section>
 @endsection

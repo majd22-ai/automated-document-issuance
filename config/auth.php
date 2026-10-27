@@ -112,6 +112,7 @@ return [
     |
     */
 
+    'local_password_recovery' => env('LOCAL_PASSWORD_RECOVERY', false),
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
 ];

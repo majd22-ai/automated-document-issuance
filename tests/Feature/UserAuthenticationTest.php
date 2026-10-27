@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Contracts\RegistrationSms;
 use App\Models\User;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -38,6 +40,93 @@ class UserAuthenticationTest extends TestCase
         };
         $this->app->instance(RegistrationSms::class, $this->sms);
         $this->withSession(['registration_captcha' => ['hash' => Hash::make('ABC234'), 'expires' => now()->addMinutes(5)->timestamp]]);
+    }
+
+    public function test_login_page_is_never_cached_with_an_old_csrf_token(): void
+    {
+        $this->get('/login')->assertOk()->assertHeader('Cache-Control', 'no-store, private')->assertSee('name="_token"', false);
+    }
+
+    public function test_local_recovery_requires_code_then_password_confirmation_and_returns_to_login(): void
+    {
+        $this->app['env'] = 'local';
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+        config(['auth.local_password_recovery' => true]);
+        $user = $this->user();
+        $version = $user->auth_version;
+        $this->from('/forgot-password')->post('/forgot-password', ['email' => $user->email])->assertRedirect('/forgot-password');
+        $encrypted = session('local_recovery_preview');
+        $this->assertNotEmpty($encrypted);
+        $preview = json_decode(Crypt::decryptString($encrypted), true);
+        $this->assertSame($user->email, $preview['email']);
+        $this->assertTrue(Hash::check('password', $user->fresh()->password));
+        $this->get('/forgot-password')->assertOk()->assertSee($preview['code'])->assertSee('recovery-preview')->assertHeader('Cache-Control', 'no-store, private');
+        $this->get('/forgot-password')->assertDontSee('id="recovery-preview"', false);
+        $password = 'NewLocalPassword123!';
+        $this->post('/forgot-password/local/reset', ['password' => $password, 'password_confirmation' => $password])->assertSessionHasErrors('recovery');
+        $this->post('/forgot-password/local/verify', ['code' => $preview['code']])->assertRedirect('/forgot-password');
+        $this->get('/forgot-password')->assertSee('name="password_confirmation"', false);
+        $this->post('/forgot-password/local/reset', ['password' => $password, 'password_confirmation' => 'Different'])->assertSessionHasErrors('password');
+        $this->post('/forgot-password/local/reset', ['password' => $password, 'password_confirmation' => $password])->assertRedirect('/login');
+        $this->assertTrue(Hash::check($password, $user->fresh()->password));
+        $this->assertFalse(Hash::check('password', $user->fresh()->password));
+        $this->assertGreaterThan($version, $user->fresh()->auth_version);
+        $this->assertNull(session('local_recovery'));
+        $this->post('/forgot-password/local/reset', ['password' => 'OtherLocalPassword123!', 'password_confirmation' => 'OtherLocalPassword123!'])->assertSessionHasErrors('recovery');
+        $this->post(route('login.post'), ['identifier' => $user->email, 'password' => 'password'])->assertSessionHasErrors('identifier');
+        $this->post(route('login.post'), ['identifier' => $user->email, 'password' => $password])->assertRedirect(route('citizen.dashboard'));
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_production_never_displays_or_resets_local_password_even_with_flag_enabled(): void
+    {
+        $this->app['env'] = 'production';
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+        config(['auth.local_password_recovery' => true]);
+        $user = $this->user();
+        $original = $user->password;
+        $this->post('/forgot-password', ['email' => $user->email])->assertRedirect();
+        $this->assertNull(session('local_recovery_password'));
+        $this->assertNull(session('local_recovery_preview'));
+        $this->post('/forgot-password/local/verify', ['code' => '123456'])->assertNotFound();
+        $this->assertSame($original, $user->fresh()->password);
+    }
+
+    public function test_local_recovery_does_not_enable_disabled_or_missing_accounts(): void
+    {
+        $this->app['env'] = 'local';
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+        config(['auth.local_password_recovery' => true]);
+        $user = $this->user('citizen', false);
+        $original = $user->password;
+        foreach ([$user->email, 'not-found@example.test'] as $email) {
+            $this->post('/forgot-password', ['email' => $email])->assertRedirect();
+            $this->assertNull(session('local_recovery_password'));
+            $this->assertNull(session('local_recovery'));
+        }
+        $this->assertSame($original, $user->fresh()->password);
+    }
+
+    public function test_local_recovery_rejects_expired_and_incorrect_codes_without_changing_password(): void
+    {
+        $this->app['env'] = 'local';
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+        config(['auth.local_password_recovery' => true]);
+        $user = $this->user();
+        $original = $user->password;
+        $this->post('/forgot-password', ['email' => $user->email]);
+        $preview = json_decode(Crypt::decryptString(session('local_recovery_preview')), true);
+        $wrong = $preview['code'] === '111111' ? '222222' : '111111';
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/forgot-password/local/verify', ['code' => $wrong])->assertSessionHasErrors('code');
+        }
+        $this->assertNull(session('local_recovery'));
+        $this->travel(2)->minutes();
+        $this->post('/forgot-password', ['email' => $user->email]);
+        $preview = json_decode(Crypt::decryptString(session('local_recovery_preview')), true);
+        $this->travel(11)->minutes();
+        $this->post('/forgot-password/local/verify', ['code' => $preview['code']])->assertSessionHasErrors('recovery');
+        $this->assertSame($original, $user->fresh()->password);
     }
 
     private function registration(array $overrides = []): array

@@ -5,6 +5,7 @@ namespace App\Services\Operations;
 use App\Models\CitizenServiceRequest;
 use App\Models\GovernmentService;
 use App\Models\User;
+use App\Services\Notifications\OperationalNotifications;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
@@ -22,7 +23,7 @@ class LockedRequest
             abort_unless($actor, 403);
             Gate::forUser($actor)->authorize($ability, $request);
 
-            return $work($actor, $owner, $service, $request);
+            return app(OperationalNotifications::class)->asActor($actor, fn () => $work($actor, $owner, $service, $request));
         });
     }
 

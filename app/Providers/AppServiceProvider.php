@@ -19,6 +19,8 @@ use App\Models\ReviewDecision;
 use App\Models\ServiceReviewPermission;
 use App\Models\User;
 use App\Observers\OperationalAuditObserver;
+use App\Observers\OperationalNotificationObserver;
+use App\Services\Notifications\OperationalNotifications;
 use App\Services\Oversight\AuditTrail;
 use App\Services\Registration\LocalSms;
 use App\Services\Registration\UnavailableSms;
@@ -37,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->scoped(OperationalNotifications::class);
         $this->app->bind(ServiceEvidenceSource::class, LocalAttachmentEvidenceSource::class);
         $this->app->bind(RegistrationSms::class, fn () => LocalSms::enabled() ? new LocalSms : new UnavailableSms);
     }
@@ -48,6 +51,7 @@ class AppServiceProvider extends ServiceProvider
     {
         foreach ([User::class, Department::class, CitizenServiceRequest::class, ReviewDecision::class, DocumentEvent::class, CitizenDocument::class, ManualPayment::class, RequestCharge::class, IntegrationAttempt::class, ServiceReviewPermission::class, GovernmentService::class, MedicalExamination::class, CitizenAppointment::class, CitizenAttachment::class] as $model) {
             $model::observe(OperationalAuditObserver::class);
+            $model::observe(OperationalNotificationObserver::class);
         }
         Event::listen(Login::class, function ($event) {
             if (Schema::hasColumn('users', 'last_login_at')) {

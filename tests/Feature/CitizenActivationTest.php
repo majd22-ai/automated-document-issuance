@@ -8,6 +8,7 @@ use App\Models\CitizenDocument;
 use App\Models\GovernmentService;
 use App\Models\ServiceReviewPermission;
 use App\Models\User;
+use App\Notifications\CitizenActivity;
 use App\Services\Oversight\AuditTrail;
 use App\Services\Registration\CitizenAccountActivation;
 use App\Services\Tracking\ApplicationTimeline;
@@ -63,6 +64,136 @@ class CitizenActivationTest extends TestCase
         (new CitizenDocument)->forceFill(['user_id' => $user->id, 'government_service_id' => $request->government_service_id, 'citizen_service_request_id' => $request->id, 'document_type' => 'بطاقة شخصية', 'document_type_code' => 'identity', 'document_number' => 'TEST-INTERNAL-'.Str::uuid(), 'status' => 'active', 'issued_at' => today(), 'issued_by' => $employee->id, 'issued_recorded_at' => now()])->save();
 
         return $request->fresh();
+    }
+
+    public function test_employee_dropdown_contains_actions_but_notifications_and_profile_stay_outside(): void
+    {
+        $staff = $this->employee();
+        $html = $this->actingAs($staff)->get('/')->assertOk()->getContent();
+        $dom = new \DOMDocument;
+        @$dom->loadHTML('<?xml encoding="UTF-8">'.$html);
+        $xpath = new \DOMXPath($dom);
+        $this->assertSame(1, $xpath->query('//*[@id="gov-account-menu"]')->length);
+        foreach (['employee.accounts.index', 'employee.citizens.index', 'employee.tracking.index', 'employee.verifications.index'] as $route) {
+            $this->assertSame(1, $xpath->query('//*[@id="gov-account-menu"]//a[@href="'.route($route).'"]')->length);
+        }
+        foreach (['employee.notifications.index', 'profile.edit'] as $route) {
+            $this->assertSame(0, $xpath->query('//*[@id="gov-account-menu"]//a[@href="'.route($route).'"]')->length);
+            $this->assertSame(1, $xpath->query('//*[@id="gov-navigation"]//a[@href="'.route($route).'"]')->length);
+        }
+        $staff->reviewPermissions()->update(['can_activate' => false]);
+        $this->get('/')->assertDontSee('href="'.route('employee.accounts.index').'"', false);
+    }
+
+    public function test_citizen_dropdown_only_shows_own_actions(): void
+    {
+        $html = $this->actingAs($this->citizen())->get('/')->assertOk()->getContent();
+        $dom = new \DOMDocument;
+        @$dom->loadHTML('<?xml encoding="UTF-8">'.$html);
+        $xpath = new \DOMXPath($dom);
+        foreach (['citizen.account.status', 'citizen.data', 'citizen.applications.index'] as $route) {
+            $this->assertSame(1, $xpath->query('//*[@id="gov-account-menu"]//a[@href="'.route($route).'"]')->length);
+        }
+        $this->assertSame(0, $xpath->query('//*[@id="gov-account-menu"]//a[@href="'.route('citizen.notifications.index').'"]')->length);
+        $this->assertSame(0, $xpath->query('//*[@id="gov-account-menu"]//a[@href="'.route('employee.citizens.index').'"]')->length);
+    }
+
+    public function test_staff_notification_page_orders_by_date_and_filters_unread(): void
+    {
+        $staff = $this->employee();
+        $staff->notifyNow(new CitizenActivity('older', ['kind' => 'activation_permission', 'title' => 'Older message', 'body' => 'Old']));
+        $older = $staff->notifications()->first();
+        $older->forceFill(['created_at' => now()->subDays(2), 'read_at' => now()])->save();
+        $staff->notifyNow(new CitizenActivity('newer', ['kind' => 'activation_permission', 'title' => 'Newer message', 'body' => 'New']));
+        $this->actingAs($staff)->get('/employee/notifications')->assertOk()->assertSeeInOrder(['Newer message', 'Older message'])->assertSee(now()->subDays(2)->format('Y-m-d'));
+        $this->get('/employee/notifications?read=unread')->assertOk()->assertSee('Newer message')->assertDontSee('Older message');
+    }
+
+    public function test_citizen_submits_activation_request_once_and_notifies_only_granted_staff(): void
+    {
+        $citizen = $this->citizen();
+        $staff = $this->employee();
+        $other = $this->employee(false);
+        $this->actingAs($citizen)->post('/citizen/account/activation-request', ['acknowledged' => '1', 'user_id' => $other->id])->assertRedirect(route('citizen.account.status'));
+        $this->post('/citizen/account/activation-request', ['acknowledged' => '1'])->assertRedirect();
+        $this->assertDatabaseCount('citizen_activation_requests', 1);
+        $this->assertDatabaseHas('citizen_activation_requests', ['user_id' => $citizen->id, 'status' => 'pending']);
+        $this->assertSame(1, $staff->notifications()->count());
+        $this->assertSame(0, $other->notifications()->count());
+        $this->assertNull($citizen->fresh()->account_activated_at);
+    }
+
+    public function test_activation_request_requires_acknowledgment_and_citizen_role(): void
+    {
+        $this->actingAs($this->citizen())->post('/citizen/account/activation-request', [])->assertSessionHasErrors('acknowledged');
+        $this->actingAs($this->employee(false))->post('/citizen/account/activation-request', ['acknowledged' => '1'])->assertForbidden();
+        $this->assertDatabaseCount('citizen_activation_requests', 0);
+    }
+
+    public function test_request_approval_updates_queue_and_notifies_citizen_without_new_account(): void
+    {
+        $citizen = $this->citizen();
+        $staff = $this->employee();
+        $this->actingAs($citizen)->post('/citizen/account/activation-request', ['acknowledged' => '1'])->assertRedirect();
+        $this->actingAs($staff)->post(route('employee.accounts.confirm', $citizen), $this->proof($citizen))->assertRedirect();
+        $this->assertDatabaseHas('citizen_activation_requests', ['user_id' => $citizen->id, 'status' => 'approved', 'reviewed_by' => $staff->id]);
+        $this->assertTrue($citizen->fresh()->hasActivatedIdentity());
+        $this->assertSame(1, $citizen->notifications()->count());
+    }
+
+    public function test_employee_inbox_is_owner_scoped_and_open_rechecks_permission(): void
+    {
+        $citizen = $this->citizen();
+        $staff = $this->employee();
+        $other = $this->employee(false);
+        $this->actingAs($citizen)->post('/citizen/account/activation-request', ['acknowledged' => '1']);
+        $notification = $staff->notifications()->firstOrFail();
+        $this->actingAs($other)->post('/employee/notifications/'.$notification->id.'/open')->assertNotFound();
+        $this->actingAs($staff)->get('/employee/notifications')->assertOk();
+        $this->post('/employee/notifications/'.$notification->id.'/open')->assertRedirect(route('employee.accounts.show', $citizen));
+        $staff->reviewPermissions()->update(['can_activate' => false]);
+        $this->post('/employee/notifications/'.$notification->id.'/open')->assertForbidden();
+    }
+
+    public function test_new_activation_grant_notifies_employee_only_on_change(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $staff = $this->employee(false);
+        $data = ['government_service_id' => GovernmentService::where('code', 'identity-first-issue')->value('id'), 'can_review' => 0, 'can_approve' => 0, 'can_assign' => 0, 'can_activate' => 1];
+        $this->actingAs($admin)->post(route('admin.review-permissions.save', $staff), $data)->assertRedirect();
+        $this->post(route('admin.review-permissions.save', $staff), $data)->assertRedirect();
+        $this->assertSame(1, $staff->notifications()->count());
+        $this->assertSame('activation_permission', $staff->notifications()->first()->data['kind']);
+    }
+
+    public function test_partial_activation_keeps_submitted_request_pending(): void
+    {
+        $citizen = $this->citizen();
+        $staff = $this->employee();
+        $this->actingAs($citizen)->post('/citizen/account/activation-request', ['acknowledged' => 1]);
+        $this->actingAs($staff)->post(route('employee.accounts.confirm', $citizen), $this->proof($citizen, ['identity_confirmed' => false]))->assertRedirect();
+        $this->assertDatabaseHas('citizen_activation_requests', ['user_id' => $citizen->id, 'status' => 'pending', 'reviewed_by' => null]);
+        $this->assertFalse($citizen->fresh()->hasActivatedIdentity());
+    }
+
+    public function test_initial_account_without_identity_and_fully_activated_account_cannot_submit(): void
+    {
+        $initial = $this->citizen('initial_account');
+        $this->actingAs($initial)->post('/citizen/account/activation-request', ['acknowledged' => 1])->assertSessionHasErrors('activation');
+        $active = $this->citizen();
+        $active->forceFill(['registration_status' => 'active', 'account_activated_at' => now(), 'identity_verified_at' => now()])->save();
+        $this->actingAs($active)->post('/citizen/account/activation-request', ['acknowledged' => 1])->assertSessionHasErrors('activation');
+        $this->assertDatabaseCount('citizen_activation_requests', 0);
+    }
+
+    public function test_submitted_queue_only_contains_requested_accounts_and_status_is_private(): void
+    {
+        $citizen = $this->citizen();
+        $notSubmitted = $this->citizen();
+        $staff = $this->employee();
+        $this->actingAs($citizen)->post('/citizen/account/activation-request', ['acknowledged' => 1]);
+        $this->actingAs($notSubmitted)->get(route('citizen.account.status'))->assertViewHas('activationRequest', null);
+        $this->actingAs($staff)->get(route('employee.accounts.index', ['submitted' => 1]))->assertOk()->assertViewHas('citizens', fn ($citizens) => $citizens->count() === 1 && $citizens->first()->id === $citizen->id);
     }
 
     public function test_national_id_and_username_authenticate_same_pending_account_without_activating_it(): void

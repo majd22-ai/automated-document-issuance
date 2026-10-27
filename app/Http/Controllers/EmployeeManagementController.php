@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SaveEmployeeRequest;
 use App\Models\Department;
 use App\Models\User;
+use App\Services\Notifications\OperationalNotifications;
 use App\Services\Oversight\AuditTrail;
 use App\Services\Registration\CitizenIdentifiers;
 use Illuminate\Http\Request;
@@ -104,6 +105,9 @@ class EmployeeManagementController extends Controller
             return back()->withErrors(['reset' => 'تعذر إرسال رابط الاستعادة؛ راجع إعدادات البريد.']);
         }
         app(AuditTrail::class)->record('employee.password_reset_requested', 'user', $employee->id, $request->user(), $status === Password::RESET_LINK_SENT ? 'success' : 'failed');
+        if ($status === Password::RESET_LINK_SENT) {
+            app(OperationalNotifications::class)->employeeResetRequested($employee, $request->user());
+        }
 
         return back()->with('status', $status === Password::RESET_LINK_SENT ? 'أُرسل رابط الاستعادة إلى الموظف.' : 'تعذر إرسال الرابط أو أُرسل مؤخرًا.');
     }

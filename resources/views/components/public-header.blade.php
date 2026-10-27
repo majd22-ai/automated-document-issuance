@@ -122,25 +122,18 @@
         @endforeach
 
         @auth
-          @if(auth()->user()->role === 'citizen')
-            <a class="gov-nav-link" href="{{ route('citizen.account.status') }}">حالة الحساب والتفعيل</a>
-            <a class="gov-nav-link" href="{{ route('citizen.data') }}"><x-icon name="identity" /> بياناتي</a>
-            <a class="gov-nav-link" href="{{ route('citizen.applications.index') }}"><x-icon name="clipboard-list" /> طلباتي</a>
-            <a class="gov-nav-link" href="{{ route('citizen.notifications.index') }}">الإشعارات ({{ auth()->user()->unreadNotifications()->count() }})</a>
-          @elseif(auth()->user()->role === 'employee')
-            @can('manageCitizenActivation', \App\Models\User::class)<a class="gov-nav-link" href="{{ route('employee.accounts.index') }}">تفعيل حسابات المواطنين</a>@endcan
-            <a class="gov-nav-link" href="{{ route('employee.citizens.index') }}"><x-icon name="users" /> بيانات المواطنين</a>
-            <a class="gov-nav-link" href="{{ route('employee.tracking.index') }}">متابعة الطلبات</a>
-            <a class="gov-nav-link" href="{{ route('employee.verifications.index') }}">التحقق الإلكتروني</a>
-            @if(auth()->user()->report_scope==='department')<a class="gov-nav-link" href="{{ route('employee.reports.index') }}">تقارير القسم</a>@endif
+          @if(in_array(auth()->user()->role, ['citizen', 'employee'], true))
+            @include('components.account-navigation')
           @elseif(auth()->user()->role === 'admin')
             <a class="gov-nav-link" href="{{ route('admin.dashboard') }}">الإدارة والرقابة</a>
           @endif
+          @if(!in_array(auth()->user()->role, ['citizen', 'employee'], true))
           <a class="gov-nav-link" href="{{ route('profile.edit') }}"><x-icon name="user" /> الملف الشخصي</a>
           <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button class="gov-nav-link" type="submit"><x-icon name="log-out" /> تسجيل الخروج</button>
           </form>
+          @endif
         @endauth
       </div>
     </div>

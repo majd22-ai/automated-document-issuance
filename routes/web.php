@@ -10,12 +10,15 @@ use App\Http\Controllers\CitizenAccountController;
 use App\Http\Controllers\CitizenAttachmentController;
 use App\Http\Controllers\CitizenDataController;
 use App\Http\Controllers\CitizenNotificationController;
+use App\Http\Controllers\CivilRegistrySimulationController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DocumentIssuanceController;
 use App\Http\Controllers\ElectronicVerificationController;
 use App\Http\Controllers\EmployeeManagementController;
+use App\Http\Controllers\EmployeeNotificationController;
 use App\Http\Controllers\EmployeePasswordController;
 use App\Http\Controllers\GovernmentServiceController;
+use App\Http\Controllers\LocalPasswordRecoveryController;
 use App\Http\Controllers\OperationalReportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistrationController;
@@ -23,8 +26,17 @@ use App\Http\Controllers\RequestOperationsController;
 use App\Http\Controllers\ReviewPermissionController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Middleware\EnsureCitizenDataIsComplete;
+use App\Services\Registration\LocalPasswordRecovery;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/integrations/civil-registry-demo', [CivilRegistrySimulationController::class, 'preview'])
+    ->middleware(['auth', 'role:admin,employee', 'throttle:30,1'])
+    ->name('integrations.civil-registry-demo.run');
+Route::get('/integrations/civil-registry-demo', [CivilRegistrySimulationController::class, 'preview'])
+    ->middleware(['auth', 'role:admin,employee'])
+    ->name('integrations.civil-registry-demo');
 
 Route::get('/reset-password/{token}', [EmployeePasswordController::class, 'form'])->middleware('guest')->name('password.reset');
 Route::post('/reset-password', [EmployeePasswordController::class, 'reset'])->middleware(['guest', 'throttle:6,1'])->name('password.update');
@@ -81,7 +93,7 @@ Route::get('/services/driving-licenses/{type}', [GovernmentServiceController::cl
 // =====================================================
 
 Route::get('/login', function () {
-    return view('auth.login');
+    return response()->view('auth.login')->header('Cache-Control', 'no-store, private');
 })->middleware('guest')->name('login');
 
 Route::post('/login', [AuthController::class, 'login'])->middleware(['guest', 'throttle:6,1'])->name('login.post');
@@ -107,11 +119,14 @@ Route::view('/terms', 'auth.terms')->name('terms');
 // استعادة كلمة المرور وتسجيل الخروج
 // =====================================================
 
-Route::get('/forgot-password', function () {
-    return view('auth.forgot-password');
+Route::get('/forgot-password', function (Request $request, LocalPasswordRecovery $recovery) {
+    $state = $recovery->pending($request);
+
+    return response()->view('auth.forgot-password', ['stage' => $state ? ($state['verified'] ? 3 : 2) : 1, 'recoveryEmail' => $state['email'] ?? null])->header('Cache-Control', 'no-store, private')->header('Referrer-Policy', 'no-referrer');
 })->middleware('guest')->name('password.request');
 
 Route::post('/forgot-password', function (Request $request) {
+    $request->session()->forget('local_recovery_password');
     $request->validate([
         'email' => 'required|email',
     ], [
@@ -119,14 +134,27 @@ Route::post('/forgot-password', function (Request $request) {
         'email.email' => 'البريد الإلكتروني غير صحيح.',
     ]);
 
+    if (LocalPasswordRecovery::enabled()) {
+        $preview = app(LocalPasswordRecovery::class)->start($request, $request->input('email'));
+        $response = redirect()->route('password.request')->with('status', 'تجربة محلية: إذا كان البريد لحساب نشط، يظهر رمز الاستعادة في النافذة المنبثقة. لم يُرسل بريد فعلي.');
+
+        return $preview === null ? $response : $response->with('local_recovery_preview', Crypt::encryptString(json_encode($preview, JSON_THROW_ON_ERROR)));
+    }
+
     // سلوك النموذج الأكاديمي الحالي: لا يوجد إرسال بريد فعلي.
     return back()->with(
         'status',
         'إذا كان بريدك الإلكتروني مسجلاً، ستصلك رسالة باستعادة كلمة المرور قريباً.'
     );
-})->middleware('guest')->name('password.email');
+})->middleware(['guest', 'throttle:6,1,password-recovery-email:'])->name('password.email');
+
+Route::post('/forgot-password/local/verify', [LocalPasswordRecoveryController::class, 'verify'])->middleware(['guest', 'throttle:6,1,password-recovery-code:'])->block(10, 10)->name('password.local.verify');
+Route::post('/forgot-password/local/reset', [LocalPasswordRecoveryController::class, 'complete'])->middleware(['guest', 'throttle:6,1,password-recovery-save:'])->block(10, 10)->name('password.local.complete');
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+Route::get('/notifications/unread-count', function (Request $request) {
+    return response()->json(['unread' => $request->user()->unreadNotifications()->count()])->header('Cache-Control', 'no-store, private');
+})->middleware(['auth', 'throttle:60,1,notification-count:'])->name('notifications.unread-count');
 Route::get('/profile', [ProfileController::class, 'edit'])->middleware('auth')->name('profile.edit');
 Route::patch('/profile', [ProfileController::class, 'update'])->middleware('auth')->name('profile.update');
 
@@ -148,6 +176,7 @@ Route::middleware(['auth', 'role:citizen'])
 
         Route::get('/data', [CitizenDataController::class, 'show'])->name('data');
         Route::get('/account/status', [CitizenAccountController::class, 'status'])->name('account.status');
+        Route::post('/account/activation-request', [CitizenAccountController::class, 'submit'])->middleware('throttle:6,1')->name('account.activation-request');
         Route::get('/services/{service}/attachments', [CitizenAttachmentController::class, 'index'])->name('services.attachments.index');
         Route::post('/services/{service}/attachments', [CitizenAttachmentController::class, 'store'])->middleware('throttle:20,1')->name('services.attachments.store');
         Route::get('/applications/{id}/attachments', [CitizenAttachmentController::class, 'application'])->name('applications.attachments.index');
@@ -230,6 +259,10 @@ Route::middleware(['auth', 'role:employee'])
 
         Route::get('/accounts', [CitizenAccountController::class, 'index'])->name('accounts.index');
         Route::get('/accounts/{citizen}', [CitizenAccountController::class, 'show'])->name('accounts.show');
+        Route::get('/notifications', [EmployeeNotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/read-all', [EmployeeNotificationController::class, 'readAll'])->name('notifications.read-all');
+        Route::post('/notifications/{id}/read', [EmployeeNotificationController::class, 'read'])->whereUuid('id')->name('notifications.read');
+        Route::post('/notifications/{id}/open', [EmployeeNotificationController::class, 'open'])->whereUuid('id')->name('notifications.open');
         Route::post('/accounts/{citizen}/confirm', [CitizenAccountController::class, 'confirm'])->middleware('throttle:10,1')->name('accounts.confirm');
         Route::get('/citizens', [CitizenDataController::class, 'search'])->name('citizens.index');
         Route::get('/citizens/{citizen}', [CitizenDataController::class, 'employeeShow'])->name('citizens.show');

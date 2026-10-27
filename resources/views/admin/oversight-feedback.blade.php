@@ -1,2 +1,2 @@
-@if(session('status'))<p role="status">{{ session('status') }}</p>@endif
-@if($errors->any())<div role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+@if(session('status'))<div class="alert alert-success ops-status" role="status">{{ session('status') }}</div>@endif
+@if($errors->any())<div class="alert alert-danger ops-status" role="alert"><strong>راجع البيانات التالية:</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif

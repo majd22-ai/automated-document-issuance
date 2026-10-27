@@ -1,0 +1,3 @@
+# Local password recovery preview
+
+User approved showing a new password in the green recovery notice for local testing. Existing password is hashed and never recovered. Add opt-in LOCAL_PASSWORD_RECOVERY guarded by exact local environment. Use Hash and current User observer to change password/revoke existing sessions, rotate remember token, invalidate broker token. Store generated secret encrypted in single-use session flash, never audit plaintext, disable caching. Preserve current non-local recovery behavior. Test new credential hash, old-password revocation, one-use display and production/disabled-account refusal. No database migration or password changes except when a user explicitly submits the local recovery form.
