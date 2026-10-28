@@ -35,7 +35,7 @@ class RegistrationController extends Controller
         }
         $data = json_decode(Crypt::decryptString($pending->payload), true);
 
-        return response()->view('auth.register', ['step' => 2, 'localCode' => LocalSms::enabled() ? $request->session()->get('registration_local_code') : null, 'maskedPhone' => substr($data['phone'], 0, 6).'••••'.substr($data['phone'], -2), 'resendAt' => Carbon::parse($pending->sent_at)->addSeconds(config('registration.resend_seconds'))->timestamp])->header('Cache-Control', 'no-store, private');
+        return response()->view('auth.register', ['step' => 2, 'registrationEmail' => $data['email'], 'localCode' => LocalSms::enabled() ? $request->session()->get('registration_local_code') : null, 'maskedPhone' => substr($data['phone'], 0, 6).'••••'.substr($data['phone'], -2), 'resendAt' => Carbon::parse($pending->sent_at)->addSeconds(config('registration.resend_seconds'))->timestamp])->header('Cache-Control', 'no-store, private');
     }
 
     public function verify(Request $request, CitizenRegistration $registration)

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Contracts\FingerprintConnector;
 use App\Contracts\RegistrationSms;
 use App\Contracts\ServiceEvidenceSource;
 use App\Models\CitizenAppointment;
@@ -18,8 +19,12 @@ use App\Models\RequestCharge;
 use App\Models\ReviewDecision;
 use App\Models\ServiceReviewPermission;
 use App\Models\User;
+use App\Observers\IdentityAttestationObserver;
 use App\Observers\OperationalAuditObserver;
 use App\Observers\OperationalNotificationObserver;
+use App\Services\Fingerprint\LocalFingerprintSimulator;
+use App\Services\Fingerprint\UnavailableFingerprintConnector;
+use App\Services\FingerprintService;
 use App\Services\Notifications\OperationalNotifications;
 use App\Services\Oversight\AuditTrail;
 use App\Services\Registration\LocalSms;
@@ -39,6 +44,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(FingerprintConnector::class, fn () => FingerprintService::enabled() ? new LocalFingerprintSimulator : new UnavailableFingerprintConnector);
         $this->app->scoped(OperationalNotifications::class);
         $this->app->bind(ServiceEvidenceSource::class, LocalAttachmentEvidenceSource::class);
         $this->app->bind(RegistrationSms::class, fn () => LocalSms::enabled() ? new LocalSms : new UnavailableSms);
@@ -49,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        CitizenServiceRequest::observe(IdentityAttestationObserver::class);
         foreach ([User::class, Department::class, CitizenServiceRequest::class, ReviewDecision::class, DocumentEvent::class, CitizenDocument::class, ManualPayment::class, RequestCharge::class, IntegrationAttempt::class, ServiceReviewPermission::class, GovernmentService::class, MedicalExamination::class, CitizenAppointment::class, CitizenAttachment::class] as $model) {
             $model::observe(OperationalAuditObserver::class);
             $model::observe(OperationalNotificationObserver::class);

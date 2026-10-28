@@ -65,6 +65,7 @@ class ServiceEligibility
         $report->add(new RequirementResult('citizen_data', 'بيانات المواطن المطلوبة', $missing ? State::Unmet : State::Met, $missing ? 'البيانات المطلوبة غير مكتملة: '.implode('، ', array_unique($missing)) : 'الحقول الأساسية المطلوبة مكتملة.', 'citizen'));
         if ($request) {
             $schema = new GovernmentService;
+            $schema->code = $request->service_snapshot['code'] ?? $service->code;
             $schema->application_fields = $request->service_snapshot['application_fields'] ?? [];
             $valid = Validator::make(['data' => $request->request_data ?? [], 'notes' => $request->notes], PreviewServiceRequest::payloadRules($schema))->passes();
             $report->add(new RequirementResult('request_data', 'بيانات نموذج الطلب', $valid ? State::Met : State::Unmet, $valid ? 'حقول الطلب المسجلة تستوفي النموذج.' : 'بيانات نموذج الطلب الإلزامية ناقصة أو غير صالحة.', 'citizen'));
@@ -165,6 +166,14 @@ class ServiceEligibility
 
         foreach (app(IntegrationRequirements::class)->checks($service, $request, $target) as $check) {
             $report->add($check);
+        }
+        if ($request) {
+            foreach (app(IdentityAttestations::class)->requirements($request, $target) as $check) {
+                $report->add($check);
+            }
+            foreach (app(FingerprintService::class)->requirements($request, $target) as $check) {
+                $report->add($check);
+            }
         }
 
         return $report;

@@ -5,6 +5,7 @@ namespace App\Services\Attachments;
 use App\Models\CitizenAttachment;
 use App\Models\CitizenServiceRequest;
 use App\Models\GovernmentService;
+use App\Models\IdentityCardForm;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -44,6 +46,12 @@ class ManageAttachments
                 $metadata = $this->validator->inspect($file, $rule);
                 $slot = CitizenAttachment::slot($citizen->id, $service->id, $application?->id, $code);
                 $attachment = CitizenAttachment::where('slot_key', $slot)->lockForUpdate()->first();
+                if ($attachment && IdentityCardForm::where('citizen_attachment_id', $attachment->id)->exists()) {
+                    Validator::make(['file' => $file], ['file' => [
+                        'image', 'mimes:jpg,jpeg,png', 'max:'.config('identity_card.photo.max_kb'),
+                        'dimensions:min_width='.config('identity_card.photo.min_width').',min_height='.config('identity_card.photo.min_height'),
+                    ]], ['file.dimensions' => 'الصورة المرتبطة باستمارة البطاقة يجب أن تستوفي الحد الأدنى للأبعاد المحدد للخدمة.', 'file.max' => 'حجم الصورة يتجاوز الحد المسموح لاستمارة البطاقة.'])->validate();
+                }
                 if ($attachment) {
                     Gate::forUser($citizen)->authorize('update', $attachment);
                 }
@@ -105,7 +113,7 @@ class ManageAttachments
             $file = CitizenAttachment::whereKey($attachment->id)->lockForUpdate()->firstOrFail();
             Gate::forUser($actor->id === $citizen->id ? $citizen : $actor->fresh())->authorize('update', $file);
             $this->assertUploadContext($citizen, $service, $application);
-            if ($this->rules->get($service, $file->document_code)['mandatory']) {
+            if ($this->rules->get($service, $file->document_code)['mandatory'] || IdentityCardForm::where('citizen_attachment_id', $file->id)->exists()) {
                 throw ValidationException::withMessages(['attachment' => 'هذا المرفق إلزامي؛ استبدله بملف صالح بدل حذفه.']);
             }
             $path = $file->storage_path;

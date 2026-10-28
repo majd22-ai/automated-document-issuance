@@ -100,7 +100,8 @@ class UserAuthenticationTest extends TestCase
         $user = $this->user('citizen', false);
         $original = $user->password;
         foreach ([$user->email, 'not-found@example.test'] as $email) {
-            $this->post('/forgot-password', ['email' => $email])->assertRedirect();
+            $this->post('/forgot-password', ['email' => $email])->assertRedirect()->assertSessionHasErrors('email')->assertSessionMissing('status');
+            $this->assertSame($email, session()->getOldInput('email'));
             $this->assertNull(session('local_recovery_password'));
             $this->assertNull(session('local_recovery'));
         }

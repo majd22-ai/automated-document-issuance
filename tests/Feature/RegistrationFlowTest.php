@@ -71,10 +71,25 @@ class RegistrationFlowTest extends TestCase
         $this->start()->assertRedirect('/register/verify');
         $code = session('registration_local_code');
         $this->assertMatchesRegularExpression('/^[0-9]{6}$/', $code);
-        $this->get('/register/verify')->assertOk()->assertSee($code)->assertHeader('Cache-Control', 'no-store, private');
+        $page = $this->get('/register/verify')->assertOk()->assertSee($code)->assertSee('id="recovery-preview"', false)->assertSee('value="registration@example.test"', false)->assertSee('data-recovery-copy', false)->assertSee('data-recovery-close', false)->assertDontSee('رمز التحقق للتجربة:')->assertHeader('Cache-Control', 'no-store, private');
         $this->post('/register/verify', ['code' => $code])->assertRedirect('/register/complete');
         $this->assertNull(User::sole()->phone_verified_at);
         $this->assertNull(session('registration_local_code'));
+    }
+
+    public function test_registration_hides_middle_identity_option_and_places_validation_under_fields(): void
+    {
+        $this->get('/register')->assertOk()->assertDontSee('value="existing_record"', false);
+        $this->sms();
+        $this->start(['email' => 'invalid', 'phone' => '123', 'terms' => '0'])->assertSessionHasErrors(['email', 'phone', 'terms']);
+        $html = $this->get('/register')->assertOk()->getContent();
+        $dom = new \DOMDocument;
+        @$dom->loadHTML('<?xml encoding="UTF-8">'.$html);
+        $xpath = new \DOMXPath($dom);
+        foreach (['email', 'phone'] as $field) {
+            $this->assertSame(1, $xpath->query('//input[@id="'.$field.'"]/ancestor::div[contains(@class,"form-group")][1]//small[contains(@class,"field-error")]')->length);
+        }
+        $this->assertSame(1, $xpath->query('//label[contains(@class,"registration-terms")]/following-sibling::small[contains(@class,"field-error")]')->length);
     }
 
     public function test_production_never_enables_local_otp(): void
@@ -124,12 +139,19 @@ class RegistrationFlowTest extends TestCase
     public function test_initial_account_never_uses_phone_as_national_identity(): void
     {
         $sms = $this->sms();
-        $this->start(['identity_path' => 'no_identity', 'national_id' => ''])->assertRedirect('/register/verify');
+        $this->start(['identity_path' => 'no_identity', 'national_id' => '', 'birth_certificate_number' => '20261028123'])->assertRedirect('/register/verify');
         $this->post('/register/verify', ['code' => $sms->messages[0][1]])->assertRedirect('/register/complete');
         $user = User::sole();
         $this->assertNull($user->nationalIdentity());
+        $this->assertSame('20261028123', $user->birth_certificate_number);
         $this->assertSame('initial_account', $user->registration_status);
         $this->assertSame('citizen_test', $user->username);
+    }
+
+    public function test_initial_registration_requires_birth_certificate_number(): void
+    {
+        $this->start(['identity_path' => 'no_identity', 'national_id' => '', 'birth_certificate_number' => ''])->assertSessionHasErrors('birth_certificate_number');
+        $this->assertDatabaseCount('users', 0);
     }
 
     public function test_validation_cannot_be_bypassed_in_browser(): void
@@ -248,7 +270,7 @@ class RegistrationFlowTest extends TestCase
     public function test_initial_account_can_be_assessed_by_internal_id_for_first_issue_only(): void
     {
         $sms = $this->sms();
-        $this->start(['identity_path' => 'no_identity', 'national_id' => '']);
+        $this->start(['identity_path' => 'no_identity', 'national_id' => '', 'birth_certificate_number' => '20261028123']);
         $this->post('/register/verify', ['code' => $sms->messages[0][1]]);
         $citizen = User::sole();
         $this->post(route('logout'));

@@ -15,4 +15,7 @@
   </div>
   {{ $services->links() }}
 </div></section>
+@if(request()->route('documentType') === 'identity' || !request()->route('documentType'))
+@include('components.civil-registry-links')
+@endif
 @endsection

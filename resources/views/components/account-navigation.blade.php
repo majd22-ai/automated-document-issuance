@@ -1,11 +1,12 @@
 @php
   $account = auth()->user();
   $employeeAccount = $account->role === 'employee';
+  $accountLabel = $employeeAccount ? (preg_split('/\s+/u', trim($account->name), 2)[0] ?? '') : $account->name;
   $inboxRoute = $employeeAccount ? 'employee.notifications.index' : 'citizen.notifications.index';
 @endphp
 <div class="gov-nav-dropdown gov-account-dropdown" data-menu="account">
   <button type="button" class="gov-nav-link gov-dropdown-trigger" aria-expanded="false" aria-controls="gov-account-menu" title="{{ $account->name }}">
-    <x-icon name="user" /><span class="gov-account-label">{{ $employeeAccount ? 'الوكيل' : 'المواطن' }} {{ $account->name }}</span>
+    <x-icon name="user" /><span class="gov-account-label">{{ $employeeAccount ? 'الوكيل' : 'المواطن' }} {{ $accountLabel }}</span>
     <span class="gov-caret" aria-hidden="true"><x-icon name="chevron-down" /></span>
   </button>
   <div class="gov-dropdown-content gov-account-menu" id="gov-account-menu">

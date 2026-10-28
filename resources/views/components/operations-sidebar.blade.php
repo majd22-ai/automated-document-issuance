@@ -32,6 +32,8 @@
     if ($has('can_deliver')) $navigation[] = ['التسليم','employee.deliveries.index','employee.deliveries.*'];
     if ($operator->report_scope === 'department') $navigation[] = ['تقارير القسم','employee.reports.index','employee.reports.*'];
   }
+  if (\App\Services\FingerprintService::canUse($operator)) $navigation[] = ['استقبال المواطنين وتسجيل البصمة','identity-workflow.reception','identity-workflow.reception'];
+  if (\App\Services\FingerprintService::canUse($operator, 'can_approve')) $navigation[] = ['المراجعة الإدارية التجريبية','identity-workflow.administration.index','identity-workflow.administration.*'];
 @endphp
 <aside class="ops-sidebar" aria-label="التنقل داخل مساحة العمل">
   <div class="ops-sidebar-identity"><span class="ops-role">{{ $adminWorkspace ? 'الإدارة والرقابة' : 'الموظف المختص' }}</span><strong>{{ $operator->name }}</strong><small>اختر القسم للوصول إلى إجراءاته</small></div>

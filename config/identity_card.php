@@ -1,0 +1,48 @@
+<?php
+
+return [
+    'simulation_enabled' => env('IDENTITY_ATTESTATION_SIMULATION', true),
+    'fingerprint' => ['simulation_enabled' => env('IDENTITY_FINGERPRINT_SIMULATION', true), 'manual_result_enabled' => env('IDENTITY_MANUAL_FINGERPRINT_RESULT', false)],
+    'attestation_security' => ['workplace' => false, 'neighborhood' => true, 'witnesses' => false],
+    'photo' => ['max_kb' => 2048, 'min_width' => 600, 'min_height' => 600],
+    'fields' => [
+        1 => [
+            'applicant_name' => ['label' => 'اسم مقدم الطلب', 'required' => true],
+            'first_name' => ['label' => 'الاسم الأول', 'required' => true],
+            'father_name' => ['label' => 'اسم الأب', 'required' => true],
+            'grandfather_name' => ['label' => 'اسم الجد', 'required' => true],
+            'surname' => ['label' => 'اللقب', 'required' => true],
+            'sex' => ['label' => 'الجنس', 'required' => true, 'type' => 'select', 'options' => ['male' => 'ذكر', 'female' => 'أنثى']],
+        ],
+        2 => [
+            'nationality' => ['label' => 'الجنسية', 'required' => true],
+            'birth_hijri' => ['label' => 'تاريخ الميلاد الهجري كتابةً', 'required' => true],
+            'birth_gregorian' => ['label' => 'تاريخ الميلاد الميلادي', 'required' => true, 'type' => 'date'],
+            'birth_place' => ['label' => 'مكان الميلاد', 'required' => true],
+            'birth_country' => ['label' => 'دولة الميلاد', 'required' => true],
+            'birth_governorate' => ['label' => 'محافظة الميلاد', 'required' => true],
+            'birth_district' => ['label' => 'مديرية الميلاد', 'required' => true],
+            'birth_village' => ['label' => 'عزلة / قرية الميلاد', 'required' => true],
+            'religion' => ['label' => 'الديانة', 'required' => false],
+        ],
+        3 => [
+            'residence_country' => ['label' => 'دولة الإقامة', 'required' => true],
+            'residence_governorate' => ['label' => 'محافظة الإقامة', 'required' => true],
+            'residence_district' => ['label' => 'مديرية الإقامة', 'required' => true],
+            'residence_village' => ['label' => 'عزلة / قرية الإقامة', 'required' => true],
+            'neighborhood' => ['label' => 'الحي', 'required' => true],
+            'street' => ['label' => 'الشارع', 'required' => true],
+            'house' => ['label' => 'المنزل', 'required' => true],
+            'phone' => ['label' => 'رقم الهاتف', 'required' => true],
+            'alternate_phone' => ['label' => 'رقم هاتف بديل', 'required' => false],
+            'marital_status' => ['label' => 'الحالة الاجتماعية', 'required' => true],
+            'blood_group' => ['label' => 'فصيلة الدم', 'required' => true, 'type' => 'select', 'options' => array_combine(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'], ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])],
+            'education' => ['label' => 'الحالة التعليمية', 'required' => true],
+            'highest_certificate' => ['label' => 'أعلى شهادة', 'required' => false],
+            'specialization' => ['label' => 'التخصص', 'required' => false],
+            'occupation' => ['label' => 'المهنة', 'required' => true],
+            'employer' => ['label' => 'جهة العمل', 'required' => false],
+            'previous_card_number' => ['label' => 'رقم البطاقة السابقة إن انطبق', 'required' => false],
+        ],
+    ],
+];

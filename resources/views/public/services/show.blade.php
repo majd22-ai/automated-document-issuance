@@ -6,7 +6,14 @@
   <div>
     <div class="card mb-3"><h2>وصف الخدمة</h2><p>{{ $service->description ?? 'لم يعتمد وصف الخدمة بعد.' }}</p><p>نوع الوثيقة: {{ \App\Models\GovernmentService::DOCUMENT_TYPES[$service->document_type] }} — العملية: {{ \App\Models\GovernmentService::OPERATIONS[$service->operation] }}</p></div>
     @foreach(['conditions' => 'الشروط والمتطلبات', 'required_documents' => 'المستندات المطلوبة'] as $field => $label)
-      <div class="card mb-3"><h2>{{ $label }}</h2><ul class="requirements-list">@forelse($service->{$field} ?? [] as $item)<li>{{ $item }}</li>@empty<li>لم تُحدّد؛ راجع الجهة المختصة.</li>@endforelse</ul></div>
+      @php
+        $documents = $service->{$field} ?? [];
+        if ($field === 'required_documents' && $service->document_type === 'identity') {
+          $identitySections = array_values(config('civil_registry_guides.identity.sections'));
+          $documents = $identitySections[$service->operation === 'issue' ? 0 : 1];
+        }
+      @endphp
+      <div class="card mb-3"><h2>{{ $label }}</h2><ul class="requirements-list">@forelse($documents as $item)<li>{{ $item }}</li>@empty<li>لم تُحدّد؛ راجع الجهة المختصة.</li>@endforelse</ul></div>
     @endforeach
     <div class="card mb-3"><h2>فحوص الأهلية المسجلة</h2><ul class="requirements-list">
       <li>اكتمال بيانات المواطن والتحقق الموثّق من الهوية واستيفاء الشروط لدى الجهة المختصة.</li>
@@ -27,6 +34,7 @@
     <p>الحالة: {{ $service->is_active ? 'مفعّلة' : 'غير مفعّلة' }}</p>
     <p>الرسوم: {{ $service->fee !== null ? $service->fee.' '.$service->currency : 'لم تُحدّد' }}</p>
     <p>المدة التقديرية: {{ $service->estimated_duration ?? 'لم تُحدّد' }}</p>
+    @if($service->code === 'identity-first-issue')<p><a class="btn btn-outline" href="{{ route('citizen.identity-card.index') }}">استمارة إصدار البطاقة الشخصية — حفظ مسودة</a></p>@endif
     @auth
       @if(auth()->user()->role === 'citizen')
         @if($service->is_active && $service->rules_approved)<p><a class="btn btn-outline" href="{{ route('citizen.services.attachments.index', $service) }}">استكمال الصور والمرفقات</a></p>@endif
@@ -47,4 +55,7 @@
   </div></aside>
 </div><p><a href="{{ route('services.index') }}">جميع الخدمات الحكومية</a></p></div></section>
 @if(isset($report))<section class="section"><div class="container">@include('components.requirements-result', ['requirementsResult' => $report->toArray()])</div></section>@endif
+@if($service->document_type === 'identity')
+@include('components.civil-registry-guide', ['guide' => config('civil_registry_guides.identity')])
+@endif
 @endsection

@@ -115,6 +115,11 @@ class User extends Authenticatable
         return $this->hasMany(CitizenAccountConfirmation::class);
     }
 
+    public function identityCardForms(): HasMany
+    {
+        return $this->hasMany(IdentityCardForm::class);
+    }
+
     public const ROLES = ['citizen', 'employee', 'admin'];
 
     protected $attributes = ['role' => 'citizen', 'is_active' => true];

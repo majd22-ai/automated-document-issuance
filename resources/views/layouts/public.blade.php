@@ -1,5 +1,5 @@
 @php
-  $operationsWorkspace = auth()->check() && in_array(auth()->user()->role, ['admin','employee'], true) && request()->routeIs('admin.*','employee.*','profile.*','integrations.civil-registry-demo*');
+  $operationsWorkspace = auth()->check() && in_array(auth()->user()->role, ['admin','employee'], true) && request()->routeIs('admin.*','employee.*','profile.*','integrations.civil-registry-demo*','identity-workflow.*');
 @endphp
  <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -106,6 +106,11 @@
   </main>
 
   @include('components.public-footer')
+
+  @if(auth()->check() && \App\Services\IdentityAttestations::canUseSimulation(auth()->user()))
+    <link rel="stylesheet" href="{{ asset('css/identity-attestation.css') }}?v={{ filemtime(public_path('css/identity-attestation.css')) }}">
+    @include('components.mobile-attestation-simulator')
+  @endif
 
   @stack('scripts')
   @if($operationsWorkspace)<script src="{{ asset('js/operations-workspace.js') }}?v={{ filemtime(public_path('js/operations-workspace.js')) }}" defer></script>@endif

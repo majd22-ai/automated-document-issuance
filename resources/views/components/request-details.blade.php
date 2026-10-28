@@ -3,6 +3,11 @@
   <dt>الخدمة المسجلة وقت التقديم</dt><dd>{{ $application->service_name ?? $application->service_code }}</dd>
   <dt>نوع الطلب</dt><dd>{{ \App\Models\GovernmentService::OPERATIONS[$application->request_type] ?? 'غير متوفر للسجل السابق' }}</dd>
   <dt>الحالة</dt><dd>{{ $application->statusLabel() }}</dd>
+  @if($application->identityCardForm)
+  <dt>مرحلة استمارة البطاقة</dt><dd>{{ $application->identityCardForm->statusLabel() }}</dd>
+  <dt>خطوة البصمة ومصدرها</dt><dd>{{ $application->identityCardForm->fingerprintStatusLabel() }}</dd>
+  @if(auth()->user()->role === 'citizen')<dt>المصادقة والبيانات التفصيلية</dt><dd><a href="{{ route('citizen.identity-card.show', $application->identityCardForm) }}">فتح استمارة البطاقة وحالة المصادقة</a></dd>@endif
+  @endif
   <dt>تاريخ التقديم</dt><dd>{{ $application->submitted_at?->format('Y-m-d H:i') ?? $application->created_at?->format('Y-m-d') ?? 'غير متوفر' }}</dd>
   @foreach($application->service_snapshot['application_fields'] ?? [] as $field)
     <dt>{{ $field['label'] }}</dt><dd>{{ $application->request_data[$field['key']] ?? 'غير مسجل' }}</dd>

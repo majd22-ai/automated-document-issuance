@@ -23,6 +23,12 @@ class AttachmentRules
             $result[$rule['code']] = $rule;
         }
 
+        if ($service->code === 'identity-first-issue' && ! collect($result)->contains('kind', 'photo')) {
+            $result['identity_photo'] = ['code' => 'identity_photo', 'name' => 'الصورة الشخصية لطلب البطاقة', 'kind' => 'photo',
+                'requires_review' => true, 'allowed_mime_types' => ['image/jpeg', 'image/png'],
+                'max_kb' => (int) config('identity_card.photo.max_kb'), 'mandatory' => false];
+        }
+
         return $result;
     }
 

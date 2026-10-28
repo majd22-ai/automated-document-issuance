@@ -133,6 +133,11 @@ class CitizenServiceRequest extends Model
         return $this->hasMany(CitizenAttachment::class);
     }
 
+    public function identityCardForm()
+    {
+        return $this->hasOne(IdentityCardForm::class);
+    }
+
     public function appointments(): HasMany
     {
         return $this->hasMany(CitizenAppointment::class);

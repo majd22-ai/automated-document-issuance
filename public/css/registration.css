@@ -36,3 +36,5 @@
 .otp-input { max-width: 300px; font-size: 1.5rem; text-align: center; letter-spacing: .45em; margin-block: 14px; }
 .masked-phone { text-align: center; font-size: 1.2rem; }
 @media (max-width: 600px) { .registration-grid { grid-template-columns: 1fr; } .registration-steps li { flex-direction: column; text-align: center; font-size: .78rem; } .registration-wrapper { padding-inline: 12px; } }
+
+#national_id::placeholder { color: #64748b; opacity: .65; }

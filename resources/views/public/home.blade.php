@@ -90,7 +90,7 @@
         <p>اختر نوع الوثيقة للاطلاع على المستندات والشروط الخاصة بكل خدمة.</p>
       </div>
       <div class="gov-services-grid">
-        <a class="gov-service-card" href="{{ route('services.identity').'#requirements' }}">
+        <a class="gov-service-card" href="{{ route('services.civil-registry.guide', 'identity') }}">
           <h3>متطلبات البطاقة الشخصية</h3>
           <p>متطلبات الإصدار لأول مرة والتجديد وبدل الفاقد.</p>
           <span class="gov-service-more">عرض المتطلبات <x-icon name="arrow-left" /></span>
@@ -108,6 +108,8 @@
       </div>
     </div>
   </section>
+
+  @include('components.civil-registry-links')
 
   <section class="section" id="faq" aria-labelledby="faq-heading">
     <div class="gov-container">

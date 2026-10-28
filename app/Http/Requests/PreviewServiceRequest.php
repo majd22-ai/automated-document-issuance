@@ -16,6 +16,15 @@ class PreviewServiceRequest extends FormRequest
     public static function payloadRules(GovernmentService $service): array
     {
         $fields = $service->application_fields ?? [];
+        if ($service->code === 'identity-first-issue') {
+            foreach (config('identity_card.fields') as $group) {
+                foreach ($group as $key => $field) {
+                    if (! in_array($key, array_column($fields, 'key'), true)) {
+                        $fields[] = ['key' => $key, 'type' => ($field['type'] ?? '') === 'date' ? 'date' : 'text', 'required' => false, 'max_length' => 200];
+                    }
+                }
+            }
+        }
         $rules = ['data' => ['sometimes', 'array', $fields ? 'array:'.implode(',', array_column($fields, 'key')) : 'size:0'], 'notes' => ['nullable', 'string', 'max:2000']];
         foreach ($fields as $field) {
             $rules['data.'.$field['key']] = [($field['required'] ?? false) ? 'required' : 'nullable', ...match ($field['type']) {

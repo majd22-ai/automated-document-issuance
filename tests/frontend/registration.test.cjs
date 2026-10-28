@@ -24,7 +24,7 @@ function screen(captchaValid = false) {
     });
     return nodes.get(id);
   }
-  const context = { fetch: async () => ({ ok: true, json: async () => ({ valid: captchaValid }) }), document: { getElementById: element, querySelectorAll: () => [] }, window: { addEventListener() {}, setInterval() {} } };
+  const context = { fetch: async () => ({ ok: true, json: async () => ({ valid: captchaValid }) }), document: { getElementById: element, querySelector: () => null, querySelectorAll: () => [] }, window: { addEventListener() {}, setInterval() {} } };
   element('resend-code').dataset = { resendAt: '0' };
   element('identity_path').value = 'has_identity';
   vm.runInNewContext(fs.readFileSync('public/js/registration.js', 'utf8'), context);
@@ -38,7 +38,9 @@ test('no-identity dialog keeps only main phone and never invents an ID', () => {
   node('identity-dialog-form').events.submit({ preventDefault() {} });
   assert.equal(node('phone').value, '777123456');
   assert.equal(node('national_id').value, '');
-  assert.equal(node('national_id').disabled, true);
+  assert.equal(node('national_id').disabled, false);
+  assert.equal(node('national_id').required, true);
+  assert.equal(node('national_id').name, 'birth_certificate_number');
   assert.equal(node('identity_path').value, 'no_identity');
   assert.equal(node('identity-dialog').open, false);
 });

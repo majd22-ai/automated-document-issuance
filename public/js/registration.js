@@ -17,16 +17,43 @@
     const next = get('registration-next');
     let busy = false;
     let checkedCaptcha = '';
+    let showFieldErrors = false;
+    function fieldError(input) {
+      const group = input.closest('.form-group') || input.closest('.captcha-section') || input.closest('.registration-terms');
+      if (!group) return;
+      let error = group.querySelector('[data-client-error]');
+      if (!error) {
+        error = document.createElement('small');
+        error.className = 'field-error';
+        error.dataset.clientError = 'true';
+        error.id = `${input.id}-client-error`;
+        error.setAttribute('role', 'alert');
+        group.append(error);
+        input.setAttribute('aria-describedby', [input.getAttribute('aria-describedby'), error.id].filter(Boolean).join(' '));
+      }
+      error.textContent = !input.disabled && !input.checkValidity() ? input.validationMessage : '';
+      input.setAttribute('aria-invalid', error.textContent ? 'true' : 'false');
+    }
+    function validateFields() {
+      Array.from(form.elements).filter(input => input.matches('input:not([type="hidden"]),select,textarea')).forEach(fieldError);
+    }
     function refresh() {
       const initial = path.value === 'no_identity';
-      nationalId.required = !initial;
-      nationalId.disabled = initial;
-      if (initial) nationalId.value = '';
+      nationalId.required = true;
+      nationalId.disabled = false;
+      const fieldName = initial ? 'birth_certificate_number' : 'national_id';
+      if (nationalId.name && nationalId.name !== fieldName) nationalId.value = '';
+      nationalId.name = fieldName;
+      nationalId.placeholder = initial ? 'أدخل رقم شهادة الميلاد الخاص بك' : 'أدخل رقم الهوية الخاص بك';
+      nationalId.pattern = initial ? '[0-9]{1,50}' : '[0-9]{5,20}';
+      nationalId.maxLength = initial ? 50 : 20;
+      document.querySelector('label[for="national_id"]')?.replaceChildren(initial ? 'رقم شهادة الميلاد' : 'رقم الهوية');
       password.setCustomValidity(password.value && !validPassword(password.value) ? 'أدخل 8 خانات على الأقل تشمل حروفًا وأرقامًا ورموزًا.' : '');
       const mismatch = passwordConfirmation.value && password.value !== passwordConfirmation.value;
       passwordConfirmation.setCustomValidity(mismatch ? 'كلمتا المرور غير متطابقتين' : '');
       get('password-match').textContent = mismatch ? 'كلمتا المرور غير متطابقتين' : '';
       next.disabled = busy;
+      if (showFieldErrors) validateFields();
     }
     get('no-identity').addEventListener('click', () => dialog.showModal());
     get('cancel-identity').addEventListener('click', () => dialog.close());
@@ -75,8 +102,11 @@
       refresh();
       if (busy) { event.preventDefault(); return; }
       const feedback = get('registration-feedback');
-      if (!form.reportValidity()) {
+      if (!form.checkValidity()) {
         event.preventDefault();
+        showFieldErrors = true;
+        validateFields();
+        Array.from(form.elements).find(input => input.willValidate && !input.checkValidity())?.focus();
         feedback.textContent = 'يرجى استكمال الحقول المطلوبة وتصحيح الحقل المشار إليه، والموافقة على شروط الاستخدام.';
         return;
       }

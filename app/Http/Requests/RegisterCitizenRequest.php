@@ -34,6 +34,7 @@ class RegisterCitizenRequest extends FormRequest
                 }
             }],
             'username' => ['required', 'string', 'min:4', 'max:30', 'regex:/^[A-Za-z0-9_]+$/', 'unique:users,username', 'unique:users,national_id'],
+            'birth_certificate_number' => ['nullable', 'required_if:identity_path,no_identity', 'prohibited_unless:identity_path,no_identity', 'regex:/^[0-9]{1,50}$/'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['required', 'string', 'regex:/^7[0-9]{8}$/'],
             'password' => ['required', 'string', 'max:255', 'confirmed', Password::min(8)->letters()->numbers()->symbols(), 'regex:/[\p{S}\p{P}]/u'],
@@ -54,6 +55,9 @@ class RegisterCitizenRequest extends FormRequest
         return [
             '*.required' => 'هذا الحقل مطلوب.', '*.unique' => 'القيمة مستخدمة بالفعل.',
             'national_id.required_unless' => 'أدخل رقم الهوية المرتبط بسجلك المدني.',
+            'birth_certificate_number.required_if' => 'أدخل رقم شهادة الميلاد الخاص بك.',
+            'birth_certificate_number.regex' => 'أدخل رقم شهادة الميلاد باستخدام الأرقام فقط، بحد أقصى 50 رقمًا.',
+            'birth_certificate_number.prohibited_unless' => 'اختر مسار عدم امتلاك رقم هوية لإدخال رقم شهادة الميلاد.',
             'national_id.prohibited_if' => 'لا يجوز إدخال رقم هوية لمسار الحساب دون هوية.',
             'national_id.regex' => 'أدخل رقم هوية من 5 إلى 20 رقمًا؛ يلزم التحقق الرسمي منه لاحقًا.',
             'username.regex' => 'استخدم حروفًا إنجليزية وأرقامًا والشرطة السفلية فقط.',

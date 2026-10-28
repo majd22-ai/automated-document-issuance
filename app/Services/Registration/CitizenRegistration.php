@@ -35,7 +35,7 @@ class CitizenRegistration
         $phone = '+967'.$data['phone'];
         $code = (string) random_int(100000, 999999);
         $token = Str::random(64);
-        $payload = array_intersect_key($data, array_flip(['name', 'username', 'email', 'national_id', 'identity_path']));
+        $payload = array_intersect_key($data, array_flip(['name', 'username', 'email', 'national_id', 'birth_certificate_number', 'identity_path']));
         $payload += ['phone' => $phone, 'password' => Hash::make($data['password'])];
         $payload['local_otp'] = $this->sms instanceof LocalSms;
         $this->send($phone, $code);

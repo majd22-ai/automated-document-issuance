@@ -51,6 +51,12 @@ Route::get('/', function () {
 
 Route::get('/services', [GovernmentServiceController::class, 'index'])->name('services.index');
 Route::get('/services/catalog/{service:code}', [GovernmentServiceController::class, 'show'])->name('services.catalog.show');
+Route::get('/services/civil-registry/{guideKey}', function (string $guideKey) {
+    $guide = config('civil_registry_guides.'.$guideKey);
+    abort_unless(is_array($guide), 404);
+
+    return response()->view('public.services.civil-registry-guide', compact('guide'));
+})->whereIn('guideKey', ['identity', 'birth', 'death', 'corrections'])->name('services.civil-registry.guide');
 Route::get('/services/identity', [GovernmentServiceController::class, 'index'])->defaults('documentType', 'identity')->name('services.identity');
 
 Route::get('/services/passports', [GovernmentServiceController::class, 'index'])->defaults('documentType', 'passport')->name('services.passports');
@@ -136,9 +142,12 @@ Route::post('/forgot-password', function (Request $request) {
 
     if (LocalPasswordRecovery::enabled()) {
         $preview = app(LocalPasswordRecovery::class)->start($request, $request->input('email'));
-        $response = redirect()->route('password.request')->with('status', 'تجربة محلية: إذا كان البريد لحساب نشط، يظهر رمز الاستعادة في النافذة المنبثقة. لم يُرسل بريد فعلي.');
+        if ($preview === null) {
+            return redirect()->route('password.request')->withErrors(['email' => 'تجربة محلية: لا يوجد حساب نشط بهذا البريد. تحقق من البريد المسجّل وحالة الحساب؛ لم يُنشأ رمز استعادة.'])->withInput($request->only('email'));
+        }
+        $response = redirect()->route('password.request')->with('status', 'تم إنشاء رمز الاستعادة المحلي. انسخه من النافذة، ثم أدخله للمتابعة. لم يُرسل بريد فعلي.');
 
-        return $preview === null ? $response : $response->with('local_recovery_preview', Crypt::encryptString(json_encode($preview, JSON_THROW_ON_ERROR)));
+        return $response->with('local_recovery_preview', Crypt::encryptString(json_encode($preview, JSON_THROW_ON_ERROR)));
     }
 
     // سلوك النموذج الأكاديمي الحالي: لا يوجد إرسال بريد فعلي.
@@ -165,10 +174,40 @@ Route::get('/attachments/{attachment}/download', [CitizenAttachmentController::c
 // صفحات المواطن
 // =====================================================
 
+Route::get('/identity-card/forms/{form}/photo', [\App\Http\Controllers\IdentityCardFormController::class, 'photo'])->middleware('auth')->name('citizen.identity-card.photo');
+Route::get('/employee/identity-card/{form}', [\App\Http\Controllers\IdentityCardFormController::class, 'employee'])->middleware(['auth', 'role:employee'])->name('employee.identity-card.show');
+Route::middleware('auth')->prefix('identity-workflow')->name('identity-workflow.')->group(function () {
+    Route::get('/reception', [\App\Http\Controllers\IdentityWorkflowController::class, 'reception'])->name('reception');
+    Route::post('/{form}/arrival', [\App\Http\Controllers\IdentityWorkflowController::class, 'arrival'])->name('arrival');
+    Route::post('/{form}/security-paper', [\App\Http\Controllers\IdentityWorkflowController::class, 'security'])->name('security');
+    Route::get('/{form}/fingerprint', [\App\Http\Controllers\IdentityWorkflowController::class, 'device'])->name('device');
+    Route::post('/{form}/fingerprint', [\App\Http\Controllers\IdentityWorkflowController::class, 'capture'])->middleware('throttle:10,1')->name('capture');
+    Route::post('/{form}/manual-device-result', [\App\Http\Controllers\IdentityWorkflowController::class, 'manual'])->middleware('throttle:10,1')->name('manual');
+    Route::get('/administration', [\App\Http\Controllers\IdentityWorkflowController::class, 'administrationIndex'])->name('administration.index');
+    Route::get('/{form}/administration', [\App\Http\Controllers\IdentityWorkflowController::class, 'administrationShow'])->name('administration.show');
+    Route::post('/{form}/administration', [\App\Http\Controllers\IdentityWorkflowController::class, 'administrationDecide'])->name('administration.decide');
+    Route::post('/{form}/requeue', [\App\Http\Controllers\IdentityWorkflowController::class, 'requeue'])->name('administration.requeue');
+    Route::get('/{form}/print', [\App\Http\Controllers\IdentityWorkflowController::class, 'print'])->name('print');
+});
+Route::middleware('auth')->prefix('simulation/identity-attestations')->name('simulation.identity-attestations.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\IdentityAttestationController::class, 'index'])->name('index');
+    Route::get('/notifications', [\App\Http\Controllers\IdentityAttestationController::class, 'feed'])->middleware('throttle:60,1')->name('feed');
+    Route::get('/{attestation}', [\App\Http\Controllers\IdentityAttestationController::class, 'show'])->name('show');
+    Route::post('/{attestation}/open', [\App\Http\Controllers\IdentityAttestationController::class, 'open'])->name('open');
+    Route::post('/{attestation}/decision', [\App\Http\Controllers\IdentityAttestationController::class, 'decide'])->middleware('throttle:20,1')->name('decide');
+});
+
 Route::middleware(['auth', 'role:citizen'])
     ->prefix('citizen')
     ->name('citizen.')
     ->group(function () {
+
+        Route::get('/identity-card', [\App\Http\Controllers\IdentityCardFormController::class, 'index'])->name('identity-card.index');
+        Route::post('/identity-card', [\App\Http\Controllers\IdentityCardFormController::class, 'store'])->middleware('throttle:10,1,identity-card-create:')->name('identity-card.store');
+        Route::get('/identity-card/{form}', [\App\Http\Controllers\IdentityCardFormController::class, 'show'])->name('identity-card.show');
+        Route::post('/identity-card/{form}', [\App\Http\Controllers\IdentityCardFormController::class, 'save'])->middleware('throttle:30,1,identity-card-save:')->name('identity-card.save');
+        Route::post('/identity-card/{form}/submit', [\App\Http\Controllers\IdentityCardFormController::class, 'submit'])->middleware('throttle:10,1,identity-card-submit:')->name('identity-card.submit');
+        Route::post('/identity-card/{form}/attestation', [\App\Http\Controllers\IdentityAttestationController::class, 'store'])->middleware('throttle:10,1,identity-card-attestation:')->name('identity-card.attestation.store');
 
         Route::get('/dashboard', function () {
             return view('citizen.dashboard');

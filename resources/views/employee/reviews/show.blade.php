@@ -4,6 +4,7 @@
 <section class="section"><div class="container"><div class="ops-page-head"><h1>مراجعة الطلب واعتماده</h1><p class="ops-help">راجع تفاصيل الطلب والمرفقات ونتائج التحقق قبل تسجيل قرار المراجعة.</p></div>@include('operations.messages')
 <p>الموظف المسؤول: {{ $application->assignee?->name ?? 'غير مسند' }} — آخر تحديث {{ $application->updated_at?->format('Y-m-d H:i') }} — نسخة المراجعة {{ $application->review_version }}</p>
 <div class="card ops-card" style="padding:1.5rem">@include('components.request-details')</div>
+@if($application->identityCardForm)<p><a class="btn btn-outline" href="{{ route('employee.identity-card.show', $application->identityCardForm) }}">فتح استمارة البطاقة والصورة وبيانات الشاهدين</a></p>@endif
 @include('components.citizen-details',['citizen'=>$application->citizen,'missing'=>$application->citizen->missingCitizenFields()])
 <p><a href="{{ route('employee.citizens.show',$application->user_id) }}">الوثائق المسجلة للمواطن وبياناته المرتبطة</a></p>
 <section class="card ops-card" style="padding:1.5rem;margin-block:1rem"><h2>نتيجة التحقق الحالية للقبول</h2>@include('components.requirements-result',['requirementsResult'=>$report->toArray()])<details><summary>متطلبات الاعتماد النهائي وتشمل الشروط المؤجلة لما قبل الإصدار</summary>@include('components.requirements-result',['requirementsResult'=>$approvalReport->toArray()])</details></section>
