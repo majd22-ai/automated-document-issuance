@@ -14,10 +14,13 @@ use App\Services\Registration\CitizenAccountActivation;
 use App\Services\Tracking\ApplicationTimeline;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Tests\Support\PreparesActivationProof;
 use Tests\TestCase;
 
 class CitizenActivationTest extends TestCase
 {
+    use PreparesActivationProof;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -53,7 +56,10 @@ class CitizenActivationTest extends TestCase
 
     private function proof(User $user, array $overrides = []): array
     {
-        return array_replace(['action' => 'activate', 'national_id' => $user->national_id, 'identity_confirmed' => true, 'official_issuance_confirmed' => false, 'evidence_reference' => 'TEST-ONLY official in-person reference', 'operation_token' => (string) Str::uuid()], $overrides);
+        $actor = User::where('role', 'employee')->whereHas('reviewPermissions', fn ($q) => $q->where('can_activate', true))->latest('id')->first();
+        $visit = $actor ? $this->prepareActivationProof($user, $actor) : ['visit_token' => (string) Str::uuid(), 'otp' => '123456'];
+
+        return array_replace(['action' => 'activate', 'national_id' => $user->national_id, 'identity_confirmed' => true, 'official_issuance_confirmed' => false, 'evidence_reference' => 'TEST-ONLY official in-person reference', 'operation_token' => (string) Str::uuid()] + $visit, $overrides);
     }
 
     private function completedRequest(User $user, User $employee)

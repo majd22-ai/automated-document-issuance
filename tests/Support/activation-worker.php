@@ -12,6 +12,8 @@ if (! $app->environment('testing') || config('database.default') !== 'mysql' || 
     exit(2);
 }
 config(['cache.default' => 'database']);
+$app['env'] = 'local';
+config(['registration.local_otp' => true, 'registration.activation_fingerprints' => true]);
 try {
     $data = json_decode(base64_decode($argv[3]), true, flags: JSON_THROW_ON_ERROR);
     while (microtime(true) < (float) $argv[4]) {

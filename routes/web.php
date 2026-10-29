@@ -49,6 +49,12 @@ Route::get('/', function () {
     return view('public.home');
 })->name('home');
 
+Route::get('/platform/{page}', function (string $page) {
+    return view('public.platform-info', ['page' => config('platform_pages.'.$page)]);
+})->whereIn('page', ['about', 'privacy', 'terms', 'data-protection', 'guide'])->name('platform.page');
+
+Route::view('/help/technical-issue', 'public.contact', ['mode' => 'technical'])->name('help.technical-issue');
+
 Route::get('/services', [GovernmentServiceController::class, 'index'])->name('services.index');
 Route::get('/services/catalog/{service:code}', [GovernmentServiceController::class, 'show'])->name('services.catalog.show');
 Route::get('/services/civil-registry/{guideKey}', function (string $guideKey) {
@@ -303,6 +309,9 @@ Route::middleware(['auth', 'role:employee'])
         Route::post('/notifications/{id}/read', [EmployeeNotificationController::class, 'read'])->whereUuid('id')->name('notifications.read');
         Route::post('/notifications/{id}/open', [EmployeeNotificationController::class, 'open'])->whereUuid('id')->name('notifications.open');
         Route::post('/accounts/{citizen}/confirm', [CitizenAccountController::class, 'confirm'])->middleware('throttle:10,1')->name('accounts.confirm');
+        Route::post('/accounts/{citizen}/prepare', [CitizenAccountController::class, 'prepare'])->middleware('throttle:5,1,activation-prepare:')->name('accounts.prepare');
+        Route::post('/accounts/{citizen}/finger', [CitizenAccountController::class, 'finger'])->middleware('throttle:15,1,activation-finger:')->name('accounts.finger');
+        Route::post('/accounts/{citizen}/code', [CitizenAccountController::class, 'sendActivationCode'])->middleware('throttle:5,1,activation-code:')->name('accounts.code');
         Route::get('/citizens', [CitizenDataController::class, 'search'])->name('citizens.index');
         Route::get('/citizens/{citizen}', [CitizenDataController::class, 'employeeShow'])->name('citizens.show');
 

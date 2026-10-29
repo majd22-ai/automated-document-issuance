@@ -10,7 +10,7 @@ class CitizenAccountConfirmation extends Model
 
     protected $guarded = ['*'];
 
-    protected $hidden = ['evidence_reference', 'payload_fingerprint', 'operation_token'];
+    protected $hidden = ['evidence_reference', 'payload_fingerprint', 'operation_token', 'activation_visit_token'];
 
     protected function casts(): array
     {

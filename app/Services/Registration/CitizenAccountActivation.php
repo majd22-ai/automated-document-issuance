@@ -19,7 +19,7 @@ class CitizenAccountActivation
 
     public function confirm(User $actor, User $citizen, array $data): CitizenAccountConfirmation
     {
-        $fingerprint = hash_hmac('sha256', json_encode([$data['action'], $data['national_id'], (int) ($data['request_id'] ?? 0), (bool) $data['identity_confirmed'], (bool) $data['official_issuance_confirmed'], $data['evidence_reference']], JSON_THROW_ON_ERROR), config('app.key'));
+        $fingerprint = hash_hmac('sha256', json_encode([$data['action'], $data['national_id'], (int) ($data['request_id'] ?? 0), (bool) $data['identity_confirmed'], (bool) $data['official_issuance_confirmed'], $data['evidence_reference'], $data['visit_token'] ?? null], JSON_THROW_ON_ERROR), config('app.key'));
         $record = $this->identifiers->serialized(fn () => DB::transaction(function () use ($actor, $citizen, $data, $fingerprint) {
             $users = User::whereIn('id', [$actor->id, $citizen->id])->orderBy('id')->lockForUpdate()->get()->keyBy('id');
             $actor = $users->get($actor->id);
@@ -56,11 +56,14 @@ class CitizenAccountActivation
                 throw ValidationException::withMessages(['action' => 'الاعتماد المطلوب مكتمل بالفعل. لا يسمح بتفعيل مكرر.']);
             }
             $conflict = $this->identifiers->conflicts($data['national_id'], $citizen->id);
+            $visit = app(InPersonActivation::class)->consume($actor, $citizen, $data, ! $conflict);
             $record = (new CitizenAccountConfirmation)->forceFill([
                 'user_id' => $citizen->id, 'actor_id' => $actor->id, 'citizen_service_request_id' => $request?->id,
                 'operation_token' => $data['operation_token'], 'action' => $data['action'], 'result' => $conflict ? 'conflict' : 'confirmed',
                 'evidence_reference' => $data['evidence_reference'], 'payload_fingerprint' => $fingerprint,
                 'identity_confirmed' => (bool) $data['identity_confirmed'], 'confirmed_at' => now(),
+                'fingerprint_source' => 'local_simulation', 'phone_verification_source' => $visit->otp_source,
+                'activation_visit_token' => $visit->visit_token,
             ]);
             $record->save();
             if ($conflict) {

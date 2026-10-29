@@ -10,11 +10,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
 use Tests\Support\CleansAuditFixtures;
+use Tests\Support\PreparesActivationProof;
 use Tests\TestCase;
 
 class CitizenActivationConcurrencyTest extends TestCase
 {
     use CleansAuditFixtures;
+    use PreparesActivationProof;
 
     private array $userIds = [];
 
@@ -33,6 +35,9 @@ class CitizenActivationConcurrencyTest extends TestCase
         if ($this->userIds) {
             $this->cleanAuditFixtures();
             DB::table('notifications')->whereIn('user_id', $this->userIds)->delete();
+            $visits = DB::table('citizen_activation_requests')->whereIn('user_id', $this->userIds)->pluck('id');
+            DB::table('activation_fingerprint_attempts')->whereIn('activation_request_id', $visits)->delete();
+            DB::table('citizen_activation_requests')->whereIn('id', $visits)->delete();
             DB::table('citizen_account_confirmations')->whereIn('user_id', $this->userIds)->delete();
             DB::table('citizen_documents')->whereIn('user_id', $this->userIds)->delete();
             DB::table('citizen_service_requests')->whereIn('user_id', $this->userIds)->delete();
@@ -63,7 +68,9 @@ class CitizenActivationConcurrencyTest extends TestCase
         $token = (string) Str::uuid();
         $release = (string) (microtime(true) + 2);
         $processes = [];
+        $proofs = [];
         foreach ($citizens as $index => $owner) {
+            $proofs[$owner->id] ??= $this->prepareActivationProof($owner, $actor);
             $data = ['action' => 'activate', 'national_id' => $owner->national_id, 'identity_confirmed' => true, 'official_issuance_confirmed' => false, 'evidence_reference' => 'TEST-ONLY concurrency official reference', 'operation_token' => $sameToken ? $token : (string) Str::uuid()];
             if ($competingAccounts) {
                 $request = $owner->serviceRequests()->create(['reference' => 'ACT-RACE-'.Str::uuid(), 'service_code' => $service->code, 'status' => 'submitted']);
@@ -71,7 +78,8 @@ class CitizenActivationConcurrencyTest extends TestCase
                 (new CitizenDocument)->forceFill(['user_id' => $owner->id, 'government_service_id' => $service->id, 'citizen_service_request_id' => $request->id, 'document_type' => 'TEST-ONLY identity', 'document_type_code' => 'identity', 'document_number' => 'ACT-RACE-'.Str::uuid(), 'status' => 'active', 'issued_at' => today(), 'issued_by' => $actor->id, 'issued_recorded_at' => now()])->save();
                 $data = array_replace($data, ['action' => 'confirm_issuance', 'national_id' => '9988112233', 'official_issuance_confirmed' => true, 'request_id' => $request->id]);
             }
-            $process = new Process([PHP_BINARY, base_path('tests/Support/activation-worker.php'), (string) $actor->id, (string) $owner->id, base64_encode(json_encode($data)), $release], base_path());
+            $data += $proofs[$owner->id];
+            $process = new Process([PHP_BINARY, base_path('tests/Support/activation-worker.php'), (string) $actor->id, (string) $owner->id, base64_encode(json_encode($data)), $release], base_path(), ['APP_ENV' => 'testing']);
             $process->setTimeout(40);
             $process->start();
             $processes[] = $process;

@@ -1,7 +1,8 @@
 @php
   $account = auth()->user();
   $employeeAccount = $account->role === 'employee';
-  $accountLabel = $employeeAccount ? (preg_split('/\s+/u', trim($account->name), 2)[0] ?? '') : $account->name;
+  $accountNameParts = preg_split('/\s+/u', trim($account->name), -1, PREG_SPLIT_NO_EMPTY);
+  $accountLabel = implode(' ', array_slice($accountNameParts, 0, $employeeAccount ? 1 : 2));
   $inboxRoute = $employeeAccount ? 'employee.notifications.index' : 'citizen.notifications.index';
 @endphp
 <div class="gov-nav-dropdown gov-account-dropdown" data-menu="account">

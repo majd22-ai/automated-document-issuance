@@ -21,6 +21,8 @@ class ConfirmCitizenAccountRequest extends FormRequest
             'official_issuance_confirmed' => ['required', 'boolean', 'accepted_if:action,confirm_issuance', 'declined_if:action,activate'],
             'evidence_reference' => ['required', 'string', 'min:8', 'max:255'],
             'operation_token' => ['required', 'uuid'],
+            'visit_token' => ['required', 'uuid'],
+            'otp' => ['required', 'string', 'regex:/^[0-9]{6}$/'],
             'is_active' => ['missing'], 'role' => ['missing'], 'account_activated_at' => ['missing'], 'identity_verified_at' => ['missing'], 'registration_status' => ['missing'],
         ];
     }
@@ -28,6 +30,7 @@ class ConfirmCitizenAccountRequest extends FormRequest
     public function messages(): array
     {
         return ['*.required' => 'هذا الحقل مطلوب.', 'national_id.regex' => 'أدخل الرقم الوطني الرسمي من 5 إلى 20 رقمًا.',
+            'otp.regex' => 'أدخل رمز التحقق المكوّن من ستة أرقام.', '*.uuid' => 'رمز العملية غير صالح. حدّث الصفحة وابدأ الخطوات مجددًا.',
             '*.accepted_if' => 'يلزم تأكيد اكتمال التحقق الرسمي وإصدار البطاقة لهذا الإجراء.',
             'request_id.required_if' => 'حدد طلب البطاقة المكتمل المرتبط بهذا الحساب.',
             'evidence_reference.min' => 'أدخل مرجع تحقق رسميًا واضحًا لا يقل عن 8 خانات.',

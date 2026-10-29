@@ -5,6 +5,7 @@
     'contact' => 'تواصل معنا',
     'report' => 'تقديم بلاغ إلى الجهة المعنية',
     'complaint' => 'تقديم شكوى — خاص بالمواطنين',
+    'technical' => 'الإبلاغ عن مشكلة تقنية',
   ];
 
   $title = $titles[$mode];
@@ -21,7 +22,7 @@
 
 <section class="section">
   <div class="gov-container">
-    <div class="card gov-front-form">
+    <div class="card gov-front-form" id="contact-form" style="scroll-margin-top:140px">
 
       <p class="gov-demo-note">
         واجهة عرض تجريبية؛ لا يتم إرسال الرسائل أو البلاغات
@@ -84,7 +85,7 @@
 
         <div class="form-group">
           <label class="form-label" for="contact-message">
-            {{ $mode === 'contact' ? 'الرسالة' : 'تفاصيل البلاغ أو الشكوى' }}
+            {{ $mode === 'technical' ? 'وصف المشكلة التقنية وخطوات حدوثها (دون كلمات مرور أو رموز تحقق)' : ($mode === 'contact' ? 'الرسالة' : 'تفاصيل البلاغ أو الشكوى') }}
           </label>
 
           <textarea

@@ -17,5 +17,5 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias(['role' => EnsureUserHasRole::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->dontFlash(['code', 'captcha', 'evidence_reference']);
+        $exceptions->dontFlash(['code', 'otp', 'captcha', 'evidence_reference', 'biometric_data', 'image', 'template']);
     })->create();
