@@ -16,7 +16,7 @@ class IdentityAttestationController extends Controller
     {
         $service->choose($request->user(), $form, $request->validated());
 
-        return redirect()->route('citizen.identity-card.show', $form)->with('status', 'تم اختيار مسار المصادقة التجريبية وحفظه. الإشعار متاح في شاشة المحاكاة للموظف المخول فقط.');
+        return redirect()->route('citizen.identity-card.show', $form)->with('status', 'تمّ اختيار جهة المصادقة وإرسال الطلب. ستُبلَّغ بالنتيجة عند اكتمال إجراءات المصادقة.');
     }
 
     public function index(Request $request, IdentityAttestations $service)
@@ -34,7 +34,7 @@ class IdentityAttestationController extends Controller
         $unread = (clone $query)->whereNull('notification_read_at')->count();
         $notifications = $query->with('form.application')->latest('id')->limit(30)->get()->map(fn ($row) => [
             'id' => $row->id, 'recipient_name' => $row->recipient_name,
-            'citizen_name' => $row->citizen_name ?? $row->form->data['applicant_name'] ?? 'مقدم الطلب',
+            'citizen_name' => $row->citizen_name ?? $row->form->data['applicant_name'] ?? 'مواطن مجهول',
             'request_reference' => $row->form->application->reference,
             'authority_label' => $row->authorityLabel(), 'created_at' => $row->notification_created_at->toIso8601String(),
             'read' => $row->notification_read_at !== null, 'open_url' => route('simulation.identity-attestations.open', $row, false),
@@ -64,6 +64,10 @@ class IdentityAttestationController extends Controller
     {
         $service->decide($request->user(), $attestation, $request->validated());
 
-        return redirect()->route('simulation.identity-attestations.show', $attestation)->with('status', 'تم حفظ القرار التجريبي وتحديث مرحلة الاستمارة؛ لم يُمنح اعتماد حكومي.');
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true])->header('Cache-Control', 'no-store, private');
+        }
+
+        return redirect()->route('simulation.identity-attestations.show', $attestation)->with('status', 'تمّ تسجيل قرار المصادقة بنجاح وتحديث حالة الطلب في قاعدة البيانات.');
     }
 }

@@ -32,8 +32,12 @@
             @csrf<input type="hidden" name="step" value="{{ $step }}"><input type="hidden" name="version" value="{{ $form->version }}">
             @if($step <= 3)
                 <p>الحقول المشار إليها بـ * مطلوبة للانتقال إلى الخطوة التالية. يمكنك حفظ مسودة غير مكتملة.</p>
-                <div class="identity-field-grid identity-panel">
+                <div class="identity-field-grid identity-panel" @if($step === 3) data-residence-selects data-location-values="names" @endif>
+                @if($step === 3)
+                    @include('components.residence-selects', ['prefix'=>'identity-residence', 'byName'=>true, 'governorateName'=>'data[residence_governorate]', 'districtName'=>'data[residence_district]', 'selectedGovernorate'=>old('data.residence_governorate',data_get($form->data,'residence_governorate')), 'selectedDistrict'=>old('data.residence_district',data_get($form->data,'residence_district'))])
+                @endif
                 @foreach($fields[$step] as $key => $field)
+                    @continue($step === 3 && in_array($key,['residence_governorate','residence_district']))
                     @php($errorKey = 'data.'.$key)
                     <div class="identity-field"><label for="field-{{ $key }}">{{ $field['label'] }} @if($field['required'] ?? false)<span aria-label="مطلوب">*</span>@endif</label>
                     @if(($field['type'] ?? 'text') === 'select')

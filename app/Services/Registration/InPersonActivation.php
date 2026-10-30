@@ -6,6 +6,7 @@ use App\Contracts\RegistrationSms;
 use App\Models\ActivationFingerprintAttempt;
 use App\Models\CitizenActivationRequest;
 use App\Models\User;
+use App\Services\Integrations\LocalCivilRegistryProvider;
 use App\Services\Oversight\AuditTrail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -16,6 +17,26 @@ use Illuminate\Validation\ValidationException;
 
 class InPersonActivation
 {
+    public function registryCheck(User $citizen, string $identityType, string $number): array
+    {
+        if ($identityType !== 'national_id') {
+            return ['source' => 'birth_certificate_review', 'message' => 'مسار شهادة الميلاد: يلزم اعتماد الإصدار الرسمي؛ لا يوجد رقم وطني مثبت بعد.'];
+        }
+        if (! $citizen->national_id || ! hash_equals($citizen->national_id, $number)) {
+            $this->fail('identity_number', 'الرقم الوطني لا يطابق حساب المواطن المفتوح.');
+        }
+        $provider = app(LocalCivilRegistryProvider::class);
+        if ($provider::enabled() && array_key_exists($number, config('civil_registry_demo.records', []))) {
+            if ($provider->simulate($number, $citizen->name) !== 'match') {
+                $this->fail('identity_number', 'تعذر تطابق الاسم والرقم في محاكاة السجل المدني أو أن السجل التجريبي غير متاح.');
+            }
+
+            return ['source' => 'local_civil_registry_demo', 'message' => 'نجحت مطابقة الاسم والرقم في محاكاة السجل المدني المحلي؛ ليست تحققًا حكوميًا حقيقيًا.'];
+        }
+
+        return ['source' => 'account_national_id', 'message' => 'طابق الرقم الوطني سجل الحساب المحلي. لا يوجد سجل مدني حكومي موصول لهذا الرقم؛ يلزم استكمال مراجعة الموظف المعتمدة.'];
+    }
+
     public function __construct(private RegistrationSms $sms) {}
 
     public static function local(): bool
@@ -66,8 +87,9 @@ class InPersonActivation
             if (! $national && ($data['identity_type'] !== 'birth_certificate' || ($citizen->birth_certificate_number && $citizen->birth_certificate_number !== $data['identity_number']))) {
                 $this->fail('identity_number', 'استخدم رقم شهادة الميلاد المسجل وفق مسار الحساب الأولي.');
             }
+            $registry = $this->registryCheck($citizen, $data['identity_type'], $data['identity_number']);
             if ($data['phone'] !== $citizen->phone && empty($data['phone_change_confirmed'])) {
-                $this->fail('phone_change_confirmed', 'أكد تعديل رقم هاتف الحساب؛ سيُحفظ التغيير بعد نجاح الاعتماد ويُسجل في التدقيق.');
+                $this->fail('phone_change_confirmed', 'رقم الجوال لا يطابق الرقم المسجل للمواطن. راجع الرقم وأدخله بشكل صحيح قبل الانتقال إلى البصمتين.');
             }
             $key = 'activation-begin:'.$citizen->id;
             if (RateLimiter::tooManyAttempts($key, 5)) {
@@ -83,6 +105,7 @@ class InPersonActivation
                 'otp_sent_at' => null, 'otp_expires_at' => null, 'otp_verified_at' => null, 'visit_consumed_at' => null])->save();
             app(AuditTrail::class)->record('citizen_account.visit_started', 'activation_request', $visit->id, $actor,
                 changes: ['changed_fields' => $citizen->phone === $data['phone'] ? ['identity_review'] : ['identity_review', 'pending_phone_change']]);
+            app(AuditTrail::class)->record('citizen_account.registry_checked', 'activation_request', $visit->id, $actor, changes: ['action' => $registry['source']]);
 
             return $visit;
         });
@@ -192,10 +215,13 @@ class InPersonActivation
             $visit = $this->validVisit($visit, $actor, $citizen, $token);
             if (! self::local() || ! $this->passed($visit, 'right_index') || ! $this->passed($visit, 'left_index')
                 || ! $visit->otp_hash || ! $visit->otp_expires_at || now()->gte($visit->otp_expires_at)
-                || $visit->otp_attempts >= config('registration.max_attempts')) {
+                || ($visit->otp_attempts >= config('registration.max_attempts') && ! $visit->otp_verified_at)) {
                 $this->fail('otp', 'الرمز منتهي أو تجاوز حد المحاولات، أو لم تكتمل خطوات الحضور.');
             }
             $ok = Hash::check($code, $visit->otp_hash);
+            if ($ok && $visit->otp_verified_at) {
+                return true;
+            }
             $visit->forceFill(['otp_attempts' => $visit->otp_attempts + 1, 'otp_verified_at' => $ok ? now() : null])->save();
             app(AuditTrail::class)->record('citizen_account.otp_checked', 'activation_request', $visit->id, $actor, $ok ? 'success' : 'failed');
 

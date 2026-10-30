@@ -13,12 +13,15 @@ class ChooseIdentityAttestation extends FormRequest
 
     public function rules(): array
     {
-        return ['authority_type' => ['required', 'in:workplace,neighborhood,witnesses'],
-            'recipient_name' => ['required_unless:authority_type,witnesses', 'nullable', 'string', 'max:150']];
+        return ['authority_type' => ['required', 'in:neighborhood'],
+            'governorate_id' => ['required', 'integer', 'exists:residence_governorates,id'],
+            'district_id' => ['required', 'integer', 'exists:residence_districts,id'],
+            'official_id' => ['required', 'integer', 'exists:neighborhood_officials,id'],
+            'neighborhood' => ['required', 'string', 'max:150']];
     }
 
     public function messages(): array
     {
-        return ['authority_type.required' => 'اختر مسار المصادقة.', 'authority_type.in' => 'مسار المصادقة غير صحيح.', 'recipient_name.required_unless' => 'أدخل اسم الجهة المستلمة في المحاكاة.', 'recipient_name.max' => 'اسم الجهة لا يزيد عن 150 حرفًا.'];
+        return ['*.required' => 'هذا الحقل مطلوب.', '*.exists' => 'اختر قيمة مسجلة في النظام.', 'authority_type.in' => 'المصادقة الجديدة متاحة عن طريق عاقل الحارة فقط.'];
     }
 }

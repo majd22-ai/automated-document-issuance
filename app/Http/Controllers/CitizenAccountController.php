@@ -58,12 +58,20 @@ class CitizenAccountController extends Controller
     public function prepare(Request $request, User $citizen, InPersonActivation $flow)
     {
         Gate::authorize('activateCitizen', $citizen);
+        if (preg_match('/^7[0-9]{8}$/D', (string) $request->input('phone'))) {
+            $request->merge(['phone' => '+967'.$request->input('phone')]);
+        }
         $data = $request->validate(['identity_type' => ['required', 'in:national_id,birth_certificate'],
             'identity_number' => ['required', 'string', 'regex:/^[0-9]{5,50}$/'],
             'phone' => ['required', 'string', 'regex:/^\+9677[0-9]{8}$/'], 'phone_change_confirmed' => ['sometimes', 'accepted']],
             ['*.required' => 'هذا الحقل مطلوب.', 'identity_number.regex' => 'أدخل رقم الهوية أو شهادة الميلاد من 5 إلى 50 رقمًا.',
                 'phone.regex' => 'أدخل رقم جوال يمني صحيحًا: +967 ثم تسعة أرقام تبدأ بـ7.', 'phone_change_confirmed.accepted' => 'أكد تعديل الهاتف قبل حفظ البيانات.']);
-        $flow->begin($request->user(), $citizen, $data);
+        $visit = $flow->begin($request->user(), $citizen, $data);
+        if ($request->expectsJson()) {
+            return response()->json(['visit_token' => $visit->visit_token, 'phone' => $visit->visit_phone,
+                'right_token' => (string) Str::uuid(), 'left_token' => (string) Str::uuid(),
+                'registry' => $flow->registryCheck($citizen, $data['identity_type'], $data['identity_number'])])->header('Cache-Control', 'no-store, private');
+        }
 
         return back()->with('status', 'حُفظت بيانات الحضور للمراجعة. تعديل الهاتف المقترح سيطبق عند نجاح الاعتماد فقط.');
     }
@@ -76,7 +84,16 @@ class CitizenAccountController extends Controller
             'source' => ['missing'], 'result' => ['missing'], 'biometric_data' => ['missing'], 'image' => ['missing'], 'template' => ['missing']]);
         $attempt = $flow->finger($request->user(), $citizen, $data);
 
-        return response()->json(['result' => $attempt->result, 'source' => 'محاكاة بصمة محلية', 'time' => $attempt->performed_at->toISOString()])->header('Cache-Control', 'no-store, private');
+        return response()->json(['result' => $attempt->result, 'source' => 'محاكاة بصمة محلية', 'time' => $attempt->performed_at->toISOString(), 'retry_token' => (string) Str::uuid()])->header('Cache-Control', 'no-store, private');
+    }
+
+    public function verifyActivationCode(Request $request, User $citizen, InPersonActivation $flow)
+    {
+        Gate::authorize('activateCitizen', $citizen);
+        $data = $request->validate(['visit_token' => ['required', 'uuid'], 'otp' => ['required', 'string', 'regex:/^[0-9]{6}$/']]);
+        $flow->verify($request->user(), $citizen, $data['visit_token'], $data['otp']);
+
+        return response()->json(['verified' => true, 'message' => 'تم التحقق من الرمز. يمكنك الآن تأكيد تفعيل الحساب بعد استكمال المراجعة المطلوبة.'])->header('Cache-Control', 'no-store, private');
     }
 
     public function sendActivationCode(Request $request, User $citizen, InPersonActivation $flow)

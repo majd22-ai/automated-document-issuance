@@ -58,9 +58,13 @@ class IdentityAttestationTest extends TestCase
 
     private function choose(IdentityCardForm $form, string $type = 'workplace'): IdentityCardAttestation
     {
-        $this->actingAs($form->citizen)->post('/citizen/identity-card/'.$form->id.'/attestation', ['authority_type' => $type, 'recipient_name' => 'جهة اختبار'])->assertSessionHasNoErrors()->assertRedirect();
-
-        return $form->attestation()->firstOrFail();
+        // Historical records remain reviewable; these paths are no longer offered for new requests.
+        return $form->attestation()->first() ?? tap((new IdentityCardAttestation)->forceFill([
+            'identity_card_form_id' => $form->id, 'form_revision' => $form->revision, 'reference' => 'SIM-ATT-'.Str::ulid(),
+            'authority_type' => $type, 'recipient_name' => 'جهة اختبار', 'citizen_name' => $form->data['applicant_name'],
+            'status' => 'pending', 'created_by' => $form->user_id, 'notification_created_at' => $type === 'witnesses' ? null : now(),
+            'security_required' => $type === 'neighborhood', 'security_status' => $type === 'neighborhood' ? 'pending' : 'not_required',
+        ]), fn ($row) => $row->save());
     }
 
     public function test_workplace_and_neighborhood_create_one_persistent_notice_and_open_the_correct_request(): void

@@ -3,6 +3,8 @@
 namespace Tests\Integration;
 
 use App\Models\IdentityCardForm;
+use App\Models\NeighborhoodOfficial;
+use App\Models\ResidenceDistrict;
 use App\Models\User;
 use App\Services\IdentityAttestations;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +22,8 @@ class IdentityAttestationConcurrencyTest extends TestCase
     private ?int $formId = null;
 
     private ?int $requestId = null;
+
+    private ?int $officialId = null;
 
     protected function setUp(): void
     {
@@ -40,6 +44,9 @@ class IdentityAttestationConcurrencyTest extends TestCase
         if ($this->requestId) {
             DB::table('citizen_service_requests')->where('id', $this->requestId)->delete();
         }
+        if ($this->officialId) {
+            DB::table('neighborhood_officials')->where('id', $this->officialId)->delete();
+        }
         $this->cleanAuditFixtures();
         if ($this->users) {
             DB::table('users')->whereIn('id', $this->users)->delete();
@@ -59,7 +66,12 @@ class IdentityAttestationConcurrencyTest extends TestCase
         $this->formId = $form->id;
         $this->app['env'] = 'local';
         config(['identity_card.simulation_enabled' => true]);
-        $row = app(IdentityAttestations::class)->choose($citizen, $form, ['authority_type' => 'workplace', 'recipient_name' => 'TEST fixture authority']);
+        $district = ResidenceDistrict::firstOrFail();
+        $official = (new NeighborhoodOfficial)->forceFill(['full_name' => 'TEST official fixture only', 'national_id' => (string) random_int(100000000000, 999999999999), 'phone' => '777123456', 'district_id' => $district->id, 'neighborhood' => 'TEST neighborhood', 'is_active' => true]);
+        $official->save();
+        $this->officialId = $official->id;
+        $form->forceFill(['data' => ['applicant_name' => 'TEST fixture', 'neighborhood' => 'TEST neighborhood']])->save();
+        $row = app(IdentityAttestations::class)->choose($citizen, $form, ['authority_type' => 'neighborhood', 'official_id' => $official->id, 'governorate_id' => $district->governorate_id, 'district_id' => $district->id, 'neighborhood' => 'TEST neighborhood']);
         $release = (string) (microtime(true) + 2);
         $processes = [];
         foreach (['approved', 'rejected'] as $decision) {

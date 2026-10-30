@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'neighborhood_test_code' => env('NEIGHBORHOOD_TEST_CODE'),
     'simulation_enabled' => env('IDENTITY_ATTESTATION_SIMULATION', true),
     'fingerprint' => ['simulation_enabled' => env('IDENTITY_FINGERPRINT_SIMULATION', true), 'manual_result_enabled' => env('IDENTITY_MANUAL_FINGERPRINT_RESULT', false)],
     'attestation_security' => ['workplace' => false, 'neighborhood' => true, 'witnesses' => false],
@@ -41,7 +42,6 @@ return [
             'highest_certificate' => ['label' => 'أعلى شهادة', 'required' => false],
             'specialization' => ['label' => 'التخصص', 'required' => false],
             'occupation' => ['label' => 'المهنة', 'required' => true],
-            'employer' => ['label' => 'جهة العمل', 'required' => false],
             'previous_card_number' => ['label' => 'رقم البطاقة السابقة إن انطبق', 'required' => false],
         ],
     ],

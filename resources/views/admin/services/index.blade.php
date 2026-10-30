@@ -12,7 +12,7 @@
       <td>{{ \App\Models\GovernmentService::DOCUMENT_TYPES[$service->document_type] }} — {{ \App\Models\GovernmentService::OPERATIONS[$service->operation] }}</td>
       <td>{{ $service->is_active ? 'مفعّلة' : 'غير مفعّلة' }} / {{ $service->rules_approved ? 'معتمدة' : 'بانتظار الاعتماد' }}</td>
       <td>{{ $service->fee !== null ? $service->fee.' '.$service->currency : 'لم تُحدّد' }}</td>
-      <td><a href="{{ route('admin.services.edit', $service) }}">إعداد الخدمة والتقييمات</a> / <a href="{{ $service->publicUrl() }}">التفاصيل</a></td>
+      <td><a href="{{ route('admin.services.edit', $service) }}">إعداد الخدمة</a> / <a href="{{ route('admin.services.assessments.create', $service) }}">تقييم مواطن</a> / <a href="{{ $service->publicUrl() }}">التفاصيل</a></td>
     </tr>@empty<tr><td class="ops-empty" colspan="5">لا توجد خدمات مسجلة.</td></tr>@endforelse</tbody>
   </table></div>{{ $services->links() }}</div>
 </div></section>

@@ -212,7 +212,10 @@ class FingerprintService
     {
         return DB::transaction(function () use ($actor, $form, $data) {
             $form = $this->lock($actor, $form, 'administer', (int) $data['version']);
-            abort_unless($form->status === 'pending_administrative_review' || ($form->status === 'returned_to_staff' && in_array($data['action'], ['correction_required', 'rejected'], true)), 409, 'الطلب ليس في مرحلة المراجعة الإدارية، أو يحتاج نسخة تصحيح جديدة.');
+            $earlyCorrection = $data['action'] === 'correction_required'
+                && in_array($form->status, ['pending_photo_review', 'pending_attestation', 'pending_neighborhood_attestation', 'rejected'], true)
+                && (! $form->attestation || in_array($form->attestation->status, ['pending', 'rejected'], true));
+            abort_unless($earlyCorrection || $form->status === 'pending_administrative_review' || ($form->status === 'returned_to_staff' && in_array($data['action'], ['correction_required', 'rejected'], true)), 409, 'الطلب ليس في مرحلة المراجعة الإدارية، أو يحتاج نسخة تصحيح جديدة.');
             if ($data['action'] === 'approved' && ($reasons = $this->administrationReasons($form))) {
                 throw ValidationException::withMessages(['requirements' => $reasons]);
             }

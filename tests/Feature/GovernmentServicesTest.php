@@ -225,4 +225,78 @@ class GovernmentServicesTest extends TestCase
         $this->assertSame('12.50', $request->service_snapshot['fee']);
         $this->assertSame(1, $citizen->serviceRequests()->count());
     }
+
+    public function test_settings_form_round_trip_preserves_advanced_rules_without_editing_them(): void
+    {
+        $service = $this->service();
+        $service->update([
+            'required_documents' => ['صورة شخصية'], 'required_fields' => ['name', 'phone'],
+            'application_fields' => [['key' => 'address', 'label' => 'العنوان', 'type' => 'text', 'required' => true, 'max_length' => 200]],
+            'verification_rules' => ['documents' => [['code' => 'photo', 'name' => 'صورة شخصية', 'kind' => 'photo', 'allowed_mime_types' => ['image/jpeg', 'image/png'], 'requires_review' => true]]],
+            'workflow_rules' => ['payment' => ['required' => true, 'stage' => 'approved']],
+            'integration_rules' => ['identity' => ['required' => false, 'provider' => 'test_provider', 'max_age_minutes' => 60]],
+        ]);
+        $keys = ['application_fields', 'verification_rules', 'workflow_rules', 'integration_rules', 'issuance_rules', 'required_fields', 'required_documents'];
+        $before = $service->fresh()->only($keys);
+        $html = $this->actingAs($this->user('admin'))->get(route('admin.services.edit', $service))->assertOk()->getContent();
+        $document = new \DOMDocument;
+        @$document->loadHTML('<?xml encoding="UTF-8">'.$html);
+        $xpath = new \DOMXPath($document);
+        $this->assertSame(1, $xpath->query('//form[@data-service-settings]')->length);
+        $this->assertSame(0, $xpath->query('//form[@data-service-settings]//details[contains(@class,"setting-advanced")]/@open')->length);
+        $this->assertSame(0, $xpath->query('//input[@name="verification_reference"]')->length);
+        $payload = [];
+        foreach ($xpath->query('//form[@data-service-settings]//*[self::input or self::textarea or self::select][@name]') as $field) {
+            $name = $field->getAttribute('name');
+            if (str_starts_with($name, '_')) {
+                continue;
+            }
+            if ($field->getAttribute('type') === 'checkbox' && ! $field->hasAttribute('checked')) {
+                continue;
+            }
+            if ($field->tagName === 'textarea') {
+                $value = $field->textContent;
+            } elseif ($field->tagName === 'select') {
+                $option = $xpath->query('option[@selected]', $field)->item(0) ?? $xpath->query('option', $field)->item(0);
+                $value = $option->getAttribute('value');
+            } else {
+                $value = $field->getAttribute('value');
+            }
+            if (str_ends_with($name, '[]')) {
+                $key = substr($name, 0, -2);
+                if (! is_array($payload[$key] ?? null)) {
+                    $payload[$key] = [];
+                }
+                $payload[$key][] = $value;
+            } else {
+                $payload[$name] = $value;
+            }
+        }
+        $payload['name'] = 'اسم أوضح للخدمة';
+        $this->patch(route('admin.services.update', $service), $payload)->assertSessionHasNoErrors()->assertRedirect(route('admin.services.index'));
+        $this->assertSame($before, $service->fresh()->only($keys));
+        $this->assertSame('اسم أوضح للخدمة', $service->fresh()->name);
+    }
+
+    public function test_assessment_has_separate_admin_only_page_and_create_screen_still_works(): void
+    {
+        $service = $this->service();
+        foreach (['citizen', 'employee'] as $role) {
+            $this->actingAs($this->user($role))->get(route('admin.services.assessments.create', $service))->assertForbidden();
+        }
+        $this->actingAs($this->user('admin'))->get(route('admin.services.assessments.create', $service))->assertOk()->assertSee('verification_reference', false)->assertDontSee('data-service-settings', false);
+        $this->get(route('admin.services.create'))->assertOk()->assertSee('name="code"', false)->assertSee('name="document_type"', false);
+    }
+
+    public function test_invalid_advanced_input_is_preserved_and_its_section_opens_after_validation(): void
+    {
+        $service = $this->service();
+        $this->actingAs($this->user('admin'))->from(route('admin.services.edit', $service))->patch(route('admin.services.update', $service), ['name' => $service->name, 'verification_rules' => 'invalid-json'])->assertSessionHasErrors('verification_rules');
+        $html = $this->get(route('admin.services.edit', $service))->assertOk()->assertSee('invalid-json')->getContent();
+        $document = new \DOMDocument;
+        @$document->loadHTML('<?xml encoding="UTF-8">'.$html);
+        $xpath = new \DOMXPath($document);
+        $this->assertSame(1, $xpath->query('//details[contains(@class,"setting-advanced") and @open]')->length);
+        $this->assertSame(1,$xpath->query('//textarea[@name="verification_rules"]/ancestor::details[contains(@class,"setting-subsection") and @open]')->length);
+    }
 }

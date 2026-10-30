@@ -24,6 +24,10 @@ class CivilRegistrySimulationController extends Controller
             $outcome = $provider->simulate($input['national_id'], $input['name']);
         }
 
+        if ($request->expectsJson()) {
+            return response()->json(['outcome' => $outcome])->header('Cache-Control', 'no-store, private');
+        }
+
         return response()->view('verifications.civil-registry-demo', [
             'outcome' => $outcome, 'input' => $input,
             'records' => config('civil_registry_demo.records', []),

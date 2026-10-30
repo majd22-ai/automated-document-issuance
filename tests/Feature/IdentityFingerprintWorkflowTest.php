@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\GovernmentService;
+use App\Models\IdentityCardAttestation;
 use App\Models\IdentityCardForm;
 use App\Models\ServiceReviewPermission;
 use App\Models\User;
@@ -96,7 +97,14 @@ class IdentityFingerprintWorkflowTest extends TestCase
 
     private function attest(IdentityCardForm $form, string $type = 'workplace'): void
     {
-        $this->actingAs($this->citizen)->post('/citizen/identity-card/'.$form->id.'/attestation', ['authority_type' => $type, 'recipient_name' => 'جهة اختبار'])->assertSessionHasNoErrors();
+        $form = $form->fresh();
+        // Continue exercising historical requests without exposing legacy choices to new applicants.
+        (new IdentityCardAttestation)->forceFill([
+            'identity_card_form_id' => $form->id, 'form_revision' => $form->revision, 'reference' => 'SIM-ATT-'.Str::ulid(),
+            'authority_type' => $type, 'recipient_name' => 'جهة اختبار', 'created_by' => $this->citizen->id,
+            'status' => 'pending', 'security_required' => $type === 'neighborhood', 'security_status' => $type === 'neighborhood' ? 'pending' : 'not_required',
+            'notification_created_at' => now(),
+        ])->save();
         $row = $form->fresh()->attestation;
         $this->actingAs($this->employee)->post('/simulation/identity-attestations/'.$row->id.'/decision', ['decision' => 'approved'])->assertSessionHasNoErrors()->assertRedirect();
     }
@@ -126,7 +134,7 @@ class IdentityFingerprintWorkflowTest extends TestCase
         $this->assertSame('pending_fingerprint_attendance', $form->fresh()->status);
         $this->actingAs($this->employee)->get('/identity-workflow/reception?reference='.$form->application->reference)->assertOk()->assertSee('اختبار محلي');
         $this->arrive($form);
-        $this->get('/identity-workflow/'.$form->id.'/fingerprint')->assertOk()->assertSee('جهاز البصمة');
+        $this->get('/identity-workflow/'.$form->id.'/fingerprint')->assertOk()->assertSee('جهاز بصمة الأصابع');
         $this->capture($form)->assertOk()->assertJson(['result' => 'success']);
         $operation = $form->operations()->firstOrFail();
         $this->assertSame('simulation', $operation->source);

@@ -6,6 +6,7 @@
     $navigation = [
       ['نظرة عامة','admin.dashboard','admin.dashboard'],
       ['المستخدمون','admin.users.index','admin.users.*'],
+      ['عُقّال الحارات','admin.neighborhood-officials.index','admin.neighborhood-officials.*'],
       ['الموظفون','admin.employees.index','admin.employees.*'],
       ['الأقسام','admin.departments.index','admin.departments.*'],
       ['صلاحيات الخدمات','admin.review-permissions.index','admin.review-permissions.*'],

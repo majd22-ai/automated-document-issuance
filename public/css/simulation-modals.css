@@ -1,0 +1,648 @@
+/* ============================================================
+   SIMULATION MODALS — تصميم موحّد لنوافذ المحاكاة
+   ألوان المشروع: --primary-gold:#d9b83f | --primary-black:#080808
+   ============================================================ */
+
+/* ─── متغيرات محلية ─── */
+.sim-modal-dialog {
+  --sim-bg:        #111418;
+  --sim-surface:   #1a1f26;
+  --sim-border:    #2e3640;
+  --sim-gold:      #d9b83f;
+  --sim-gold-dim:  #a88a20;
+  --sim-cyan:      #149fbe;
+  --sim-cyan-dim:  #0e7a94;
+  --sim-text:      #e8edf2;
+  --sim-muted:     #8a99a8;
+  --sim-error:     #e06060;
+  --sim-success:   #4eca80;
+  --sim-warning-bg:#2a2000;
+  --sim-warning-bd:#5a4500;
+  --sim-radius:    12px;
+}
+
+/* ─── النافذة الأساسية ─── */
+.sim-modal-dialog {
+  direction: rtl;
+  width: min(560px, calc(100vw - 1.5rem));
+  max-height: 90dvh;
+  box-sizing: border-box;
+  border: 1px solid var(--sim-border);
+  border-radius: var(--sim-radius);
+  padding: 0;
+  background: var(--sim-bg);
+  color: var(--sim-text);
+  overflow: hidden;
+  box-shadow: 0 20px 60px #00000080, 0 0 0 1px #ffffff08;
+  font-family: inherit;
+}
+
+.sim-modal-dialog::backdrop {
+  background: #000000b8;
+  backdrop-filter: blur(3px);
+}
+
+/* ─── رأس النافذة ─── */
+.sim-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  background: var(--sim-surface);
+  border-bottom: 2px solid var(--sim-gold);
+}
+
+.sim-modal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--sim-gold);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sim-modal-title .sim-icon {
+  font-size: 1.2rem;
+  opacity: .85;
+}
+
+.sim-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--sim-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--sim-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+  flex-shrink: 0;
+}
+
+.sim-modal-close:hover {
+  background: #ff404020;
+  border-color: #ff4040;
+  color: #ff6060;
+}
+
+.sim-modal-close:focus-visible {
+  outline: 2px solid var(--sim-gold);
+  outline-offset: 2px;
+}
+
+/* ─── محتوى النافذة ─── */
+.sim-modal-body {
+  padding: 22px;
+  overflow-y: auto;
+  max-height: calc(90dvh - 72px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--sim-border) transparent;
+}
+
+/* ─── شريط الحالة / تحذير ─── */
+.sim-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: .88rem;
+  line-height: 1.75;
+  margin-bottom: 18px;
+}
+
+.sim-alert-warning {
+  background: var(--sim-warning-bg);
+  border: 1px solid var(--sim-warning-bd);
+  color: #e0c060;
+}
+
+.sim-alert-info {
+  background: #0e2a35;
+  border: 1px solid #1a4d62;
+  color: #7de0f7;
+}
+
+.sim-alert-success {
+  background: #0a2a18;
+  border: 1px solid #1a5433;
+  color: var(--sim-success);
+}
+
+.sim-alert-error {
+  background: #2a0a0a;
+  border: 1px solid #5a1a1a;
+  color: var(--sim-error);
+}
+
+.sim-alert-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ─── بيانات العملية dl/dt/dd ─── */
+.sim-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.sim-details-full {
+  grid-template-columns: 1fr;
+}
+
+.sim-detail-item { display: contents; }
+
+.sim-detail-group {
+  padding: 12px 14px;
+  background: var(--sim-surface);
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+}
+
+.sim-detail-group dt {
+  font-size: .78rem;
+  color: var(--sim-muted);
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.sim-detail-group dd {
+  margin: 0;
+  font-size: .95rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  color: var(--sim-text);
+}
+
+/* ─── فاصل ─── */
+.sim-divider {
+  height: 1px;
+  background: var(--sim-border);
+  margin: 20px 0;
+}
+
+/* ─── حقل نموذج ─── */
+.sim-field {
+  margin-bottom: 16px;
+}
+
+.sim-field label {
+  display: block;
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--sim-muted);
+  margin-bottom: 6px;
+}
+
+.sim-field input[type="text"],
+.sim-field input[type="number"],
+.sim-field input[type="datetime-local"],
+.sim-field select,
+.sim-field textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 13px;
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+  background: var(--sim-surface);
+  color: var(--sim-text);
+  font: inherit;
+  font-size: .93rem;
+  transition: border-color .15s;
+  -webkit-appearance: none;
+}
+
+.sim-field input:focus,
+.sim-field select:focus,
+.sim-field textarea:focus {
+  outline: none;
+  border-color: var(--sim-cyan);
+  box-shadow: 0 0 0 3px #149fbe22;
+}
+
+.sim-field textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.sim-field-error {
+  color: var(--sim-error);
+  font-size: .8rem;
+  margin-top: 4px;
+}
+
+/* ─── Checkbox ─── */
+.sim-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: .88rem;
+  line-height: 1.7;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+
+.sim-check input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  margin-top: 3px;
+  flex-shrink: 0;
+  accent-color: var(--sim-cyan);
+  cursor: pointer;
+}
+
+/* ─── Fieldset شهود ─── */
+.sim-fieldset {
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.sim-fieldset legend {
+  padding-inline: 8px;
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--sim-gold);
+}
+
+/* ─── أزرار الأفعال ─── */
+.sim-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.sim-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 7px;
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background .15s, border-color .15s, opacity .15s;
+  min-height: 42px;
+  line-height: 1.4;
+}
+
+.sim-btn:focus-visible {
+  outline: 2px solid var(--sim-gold);
+  outline-offset: 3px;
+}
+
+.sim-btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* الزر الأساسي (ذهبي) */
+.sim-btn-primary {
+  background: var(--sim-gold);
+  border-color: var(--sim-gold);
+  color: #0d0d0d;
+}
+
+.sim-btn-primary:not(:disabled):hover {
+  background: #c5a530;
+  border-color: #c5a530;
+}
+
+/* زر ثانوي (سيان) */
+.sim-btn-secondary {
+  background: var(--sim-cyan);
+  border-color: var(--sim-cyan);
+  color: #fff;
+}
+
+.sim-btn-secondary:not(:disabled):hover {
+  background: var(--sim-cyan-dim);
+  border-color: var(--sim-cyan-dim);
+}
+
+/* زر مخطط (outline) */
+.sim-btn-outline {
+  background: transparent;
+  border-color: var(--sim-border);
+  color: var(--sim-text);
+}
+
+.sim-btn-outline:not(:disabled):hover {
+  border-color: var(--sim-gold);
+  color: var(--sim-gold);
+}
+
+/* زر خطر */
+.sim-btn-danger {
+  background: #7a1c1c;
+  border-color: #9a2c2c;
+  color: #ffd5d5;
+}
+
+.sim-btn-danger:not(:disabled):hover {
+  background: #9a2020;
+  border-color: #bc3030;
+}
+
+/* ─── زر فتح المودال (trigger) ─── */
+.sim-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border: 1px solid var(--sim-gold);
+  border-radius: 7px;
+  background: #1a1500;
+  color: var(--sim-gold);
+  font: inherit;
+  font-size: .88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s;
+}
+
+.sim-trigger-btn:hover {
+  background: #2a2000;
+  box-shadow: 0 0 0 2px var(--sim-gold-dim);
+}
+
+.sim-trigger-btn:focus-visible {
+  outline: 2px solid var(--sim-gold);
+  outline-offset: 3px;
+}
+
+/* ─── حالة التحميل ─── */
+.sim-loading-state {
+  text-align: center;
+  padding: 28px 16px;
+}
+
+.sim-spinner {
+  display: inline-block;
+  width: 42px;
+  height: 42px;
+  border: 3px solid var(--sim-border);
+  border-top-color: var(--sim-gold);
+  border-radius: 50%;
+  animation: sim-spin .75s linear infinite;
+  margin-bottom: 14px;
+}
+
+@keyframes sim-spin {
+  to { transform: rotate(360deg); }
+}
+
+.sim-loading-text {
+  color: var(--sim-muted);
+  font-size: .93rem;
+}
+
+/* ─── حالة نجاح ─── */
+.sim-success-state {
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.sim-success-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+  color: var(--sim-success);
+  display: block;
+}
+
+.sim-success-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--sim-success);
+  margin: 0 0 8px;
+}
+
+/* ─── حالة فشل ─── */
+.sim-failure-state {
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.sim-failure-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+  color: var(--sim-error);
+  display: block;
+}
+
+.sim-failure-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--sim-error);
+  margin: 0 0 8px;
+}
+
+/* ─── بصمة ─── */
+.sim-fingerprint-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0;
+}
+
+.sim-fingerprint-svg {
+  width: 100px;
+  height: 115px;
+  color: var(--sim-gold);
+  transition: color .3s;
+}
+
+.sim-fingerprint-svg.is-running {
+  animation: sim-fingerprint-pulse 1.1s ease-in-out infinite;
+  color: var(--sim-cyan);
+}
+
+.sim-fingerprint-svg.is-success { color: var(--sim-success); }
+.sim-fingerprint-svg.is-failure { color: var(--sim-error); }
+
+@keyframes sim-fingerprint-pulse {
+  50% { opacity: .3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sim-fingerprint-svg.is-running { animation: none; }
+  .sim-spinner { animation: none; border-top-color: var(--sim-gold); }
+}
+
+.sim-progress {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--sim-border);
+  border: none;
+}
+
+.sim-progress::-webkit-progress-bar { background: var(--sim-border); border-radius: 3px; }
+.sim-progress::-webkit-progress-value { background: var(--sim-gold); border-radius: 3px; transition: width .4s; }
+.sim-progress::-moz-progress-bar { background: var(--sim-gold); border-radius: 3px; }
+
+/* ─── نتيجة التحقق البصمة ─── */
+.sim-fp-result {
+  width: 100%;
+  padding: 14px;
+  background: var(--sim-surface);
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+  font-size: .88rem;
+  line-height: 1.8;
+}
+
+/* ─── قائمة السجلات التجريبية ─── */
+.sim-records {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.sim-record-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--sim-surface);
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+  font-size: .85rem;
+}
+
+.sim-record-id {
+  font-family: 'Courier New', monospace;
+  color: var(--sim-cyan);
+  font-size: .82rem;
+  direction: ltr;
+}
+
+.sim-record-available {
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.sim-record-available.yes {
+  background: #0a2a18;
+  border: 1px solid #1a5433;
+  color: var(--sim-success);
+}
+
+.sim-record-available.no {
+  background: #2a0a0a;
+  border: 1px solid #5a1a1a;
+  color: var(--sim-error);
+}
+
+/* ─── جدول سجل المحاولات ─── */
+.sim-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.sim-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
+  text-align: right;
+}
+
+.sim-table th {
+  padding: 10px 13px;
+  background: var(--sim-surface);
+  color: var(--sim-muted);
+  font-weight: 700;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--sim-border);
+}
+
+.sim-table td {
+  padding: 10px 13px;
+  border-bottom: 1px solid var(--sim-border);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+
+.sim-table tbody tr:last-child td { border-bottom: none; }
+
+.sim-table tbody tr:hover { background: var(--sim-surface); }
+
+/* ─── شارة الحالة داخل المودال ─── */
+.sim-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.sim-status-badge.pending   { background:#2a2000; border:1px solid #5a4500; color:#e0c060; }
+.sim-status-badge.approved  { background:#0a2a18; border:1px solid #1a5433; color:var(--sim-success); }
+.sim-status-badge.rejected  { background:#2a0a0a; border:1px solid #5a1a1a; color:var(--sim-error); }
+.sim-status-badge.running   { background:#0e2a35; border:1px solid #1a4d62; color:var(--sim-cyan); }
+
+/* ─── زر trigger داخل الصف ─── */
+.sim-row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ─── تجاوب الجوال ─── */
+@media (max-width: 600px) {
+  .sim-modal-dialog {
+    width: 100vw;
+    max-height: 95dvh;
+    border-radius: var(--sim-radius) var(--sim-radius) 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    /* bottom-sheet on mobile */
+  }
+
+  .sim-details {
+    grid-template-columns: 1fr;
+  }
+
+  .sim-actions {
+    flex-direction: column;
+  }
+
+  .sim-actions .sim-btn,
+  .sim-actions a.sim-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .sim-modal-head {
+    padding: 14px 16px;
+  }
+
+  .sim-modal-body {
+    padding: 16px;
+  }
+}

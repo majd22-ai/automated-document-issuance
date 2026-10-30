@@ -14,6 +14,10 @@ class DecideIdentityAttestation extends FormRequest
     public function rules(): array
     {
         $rules = ['decision' => ['required', 'in:approved,rejected'], 'reason' => ['required_if:decision,rejected', 'nullable', 'string', 'max:1500']];
+        if ($this->route('attestation')->neighborhood_official_id && $this->input('decision') === 'approved') {
+            $rules['verification_method'] = ['required', 'in:code,fingerprint'];
+            $rules['verification_code'] = ['required_if:verification_method,code', 'nullable', 'digits:6'];
+        }
         if ($this->route('attestation')->authority_type === 'witnesses') {
             $approve = $this->input('decision') === 'approved';
             $rules += ['witnesses' => ['required', 'array', 'list', 'size:2'],

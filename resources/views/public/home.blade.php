@@ -109,8 +109,6 @@
     </div>
   </section>
 
-  @include('components.civil-registry-links')
-
   <section class="section" id="faq" aria-labelledby="faq-heading">
     <div class="gov-container">
       <div class="section-header">

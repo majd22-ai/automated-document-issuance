@@ -53,6 +53,51 @@ class InPersonActivationTest extends TestCase
         return CitizenActivationRequest::where('user_id', $this->citizen->id)->sole();
     }
 
+    public function test_popup_prepare_checks_identity_and_returns_server_operation_keys_for_lan_browsers(): void
+    {
+        $url = route('employee.accounts.prepare', $this->citizen);
+        $this->postJson($url, ['identity_type' => 'national_id', 'identity_number' => '99999999', 'phone' => '777123456'])->assertUnprocessable()->assertJsonValidationErrors('identity_number');
+        $this->assertDatabaseCount('citizen_activation_requests', 0);
+        $this->postJson($url, ['identity_type' => 'national_id', 'identity_number' => $this->citizen->national_id, 'phone' => '777123457'])->assertUnprocessable()->assertJsonValidationErrors('phone_change_confirmed');
+        $this->assertDatabaseCount('citizen_activation_requests', 0);
+        $response = $this->postJson($url, ['identity_type' => 'national_id', 'identity_number' => $this->citizen->national_id, 'phone' => '777123456'])->assertOk();
+        $response->assertJsonPath('phone', '+967777123456')->assertJsonPath('registry.source', 'account_national_id')->assertHeader('Cache-Control', 'no-store, private');
+        $this->assertTrue(Str::isUuid($response->json('right_token')));
+        $this->assertTrue(Str::isUuid($response->json('left_token')));
+        $html = $this->get(route('employee.accounts.show', $this->citizen))->assertOk()->assertSee('data-activation-dialog', false)->assertSee('data-activation-message', false)->assertSee('data-finger="right_index"', false)->assertSee('data-finger="left_index"', false)->getContent();
+        $document = new \DOMDocument;
+        @$document->loadHTML('<?xml encoding="UTF-8">'.$html);
+        $xpath = new \DOMXPath($document);
+        foreach (['activation-identity-number', 'activation-phone'] as $id) {
+            $this->assertSame('', $xpath->query('//input[@id="'.$id.'"]')->item(0)->getAttribute('value'));
+        }
+    }
+
+    public function test_separate_code_confirmation_does_not_activate_until_final_button_and_preserves_attempt_budget(): void
+    {
+        [$visit,$code] = $this->ready();
+        $url = route('employee.accounts.verify-code', $this->citizen);
+        $this->postJson($url, ['visit_token' => $visit->visit_token, 'otp' => '000000'])->assertUnprocessable();
+        $this->postJson($url, ['visit_token' => $visit->visit_token, 'otp' => $code])->assertOk()->assertJsonPath('verified', true);
+        $attempts = $visit->fresh()->otp_attempts;
+        $this->assertNull($this->citizen->fresh()->account_activated_at);
+        $this->postJson($url, ['visit_token' => $visit->visit_token, 'otp' => $code])->assertOk();
+        $this->assertSame($attempts, $visit->fresh()->otp_attempts);
+        $this->post(route('employee.accounts.confirm', $this->citizen), $this->proof($visit, $code))->assertSessionHasNoErrors();
+        $this->assertTrue($this->citizen->fresh()->hasActivatedIdentity());
+        $this->assertSame($attempts, $visit->fresh()->otp_attempts);
+        $this->assertStringContainsString('تم تفعيل حسابك', $this->citizen->notifications()->latest()->first()->data['body']);
+    }
+
+    public function test_configured_registry_demo_must_match_name_and_number(): void
+    {
+        config(['civil_registry_demo.enabled' => true, 'civil_registry_demo.records' => [$this->citizen->national_id => ['name' => 'اسم لا يطابق المواطن', 'available' => true]]]);
+        $payload = ['identity_type' => 'national_id', 'identity_number' => $this->citizen->national_id, 'phone' => $this->citizen->phone];
+        $this->postJson(route('employee.accounts.prepare', $this->citizen), $payload)->assertUnprocessable()->assertJsonValidationErrors('identity_number');
+        config(['civil_registry_demo.records' => [$this->citizen->national_id => ['name' => $this->citizen->name, 'available' => true]]]);
+        $this->postJson(route('employee.accounts.prepare', $this->citizen), $payload)->assertOk()->assertJsonPath('registry.source', 'local_civil_registry_demo');
+    }
+
     private function finger(CitizenActivationRequest $visit, string $finger, bool $fail = false, ?string $token = null)
     {
         return $this->postJson(route('employee.accounts.finger', $this->citizen), ['visit_token' => $visit->visit_token,

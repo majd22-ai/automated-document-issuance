@@ -195,6 +195,8 @@ Route::middleware('auth')->prefix('identity-workflow')->name('identity-workflow.
     Route::post('/{form}/requeue', [\App\Http\Controllers\IdentityWorkflowController::class, 'requeue'])->name('administration.requeue');
     Route::get('/{form}/print', [\App\Http\Controllers\IdentityWorkflowController::class, 'print'])->name('print');
 });
+Route::get('/residence/districts/{district}/officials', [\App\Http\Controllers\NeighborhoodOfficialController::class, 'officials'])->middleware(['auth', 'throttle:60,1'])->name('residence.officials');
+
 Route::middleware('auth')->prefix('simulation/identity-attestations')->name('simulation.identity-attestations.')->group(function () {
     Route::get('/', [\App\Http\Controllers\IdentityAttestationController::class, 'index'])->name('index');
     Route::get('/notifications', [\App\Http\Controllers\IdentityAttestationController::class, 'feed'])->middleware('throttle:60,1')->name('feed');
@@ -312,6 +314,7 @@ Route::middleware(['auth', 'role:employee'])
         Route::post('/accounts/{citizen}/prepare', [CitizenAccountController::class, 'prepare'])->middleware('throttle:5,1,activation-prepare:')->name('accounts.prepare');
         Route::post('/accounts/{citizen}/finger', [CitizenAccountController::class, 'finger'])->middleware('throttle:15,1,activation-finger:')->name('accounts.finger');
         Route::post('/accounts/{citizen}/code', [CitizenAccountController::class, 'sendActivationCode'])->middleware('throttle:5,1,activation-code:')->name('accounts.code');
+        Route::post('/accounts/{citizen}/verify-code', [CitizenAccountController::class, 'verifyActivationCode'])->middleware('throttle:10,1,activation-verify:')->name('accounts.verify-code');
         Route::get('/citizens', [CitizenDataController::class, 'search'])->name('citizens.index');
         Route::get('/citizens/{citizen}', [CitizenDataController::class, 'employeeShow'])->name('citizens.show');
 
@@ -336,6 +339,10 @@ Route::middleware(['auth', 'role:admin'])
     ->name('admin.')
     ->group(function () {
 
+        Route::get('/neighborhood-officials', [\App\Http\Controllers\NeighborhoodOfficialController::class, 'index'])->name('neighborhood-officials.index');
+        Route::post('/neighborhood-officials', [\App\Http\Controllers\NeighborhoodOfficialController::class, 'store'])->middleware('throttle:20,1')->name('neighborhood-officials.store');
+        Route::patch('/neighborhood-officials/{official}', [\App\Http\Controllers\NeighborhoodOfficialController::class, 'update'])->name('neighborhood-officials.update');
+
         Route::get('/dashboard', [OperationalReportController::class, 'index'])->name('dashboard');
 
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
@@ -357,6 +364,7 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/services/create', [AdminGovernmentServiceController::class, 'create'])->name('services.create');
         Route::post('/services', [AdminGovernmentServiceController::class, 'store'])->name('services.store');
         Route::get('/services/{service}/edit', [AdminGovernmentServiceController::class, 'edit'])->name('services.edit');
+        Route::get('/services/{service}/assessment', [AdminGovernmentServiceController::class, 'assessmentForm'])->name('services.assessments.create');
         Route::patch('/services/{service}', [AdminGovernmentServiceController::class, 'update'])->name('services.update');
         Route::post('/services/{service}/assessments', [AdminGovernmentServiceController::class, 'assessment'])->name('services.assessments.store');
 

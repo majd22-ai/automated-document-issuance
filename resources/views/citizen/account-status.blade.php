@@ -3,6 +3,7 @@
 @section('content')
 <section class="section" dir="rtl"><div class="container"><div class="card" style="padding:clamp(20px,4vw,40px);max-width:850px;margin:auto">
 <h1>حالة الحساب والتفعيل</h1><p role="status">{{ $citizen->accountStatusLabel() }}</p>
+@if($citizen->account_activated_at)<p class="alert alert-success" role="status">تم تفعيل حسابك إلى منصة الإصدار الآلي بنجاح.</p>@endif
 @include('operations.messages')
 @if($activationRequest)
 <div class="alert alert-info" role="status"><h2>طلب تفعيل حسابك</h2><p>مرجع الطلب: {{ $activationRequest->id }} — تاريخ الإرسال: {{ $activationRequest->submitted_at }}</p><p>{{ match($activationRequest->status) { 'approved' => 'اكتملت مراجعة طلب التفعيل واعتماده.', 'review_required' => 'يحتاج الطلب إلى مراجعة آمنة لدى الموظف المختص.', default => 'تم إرسال الطلب وهو بانتظار مراجعة الموظف المخوّل.' } }}</p></div>

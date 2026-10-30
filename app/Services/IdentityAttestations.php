@@ -8,6 +8,7 @@ use App\Models\CitizenServiceRequest;
 use App\Models\GovernmentService;
 use App\Models\IdentityCardAttestation;
 use App\Models\IdentityCardForm;
+use App\Models\NeighborhoodOfficial;
 use App\Models\User;
 use App\Notifications\CitizenActivity;
 use App\Services\Oversight\AuditTrail;
@@ -19,6 +20,31 @@ use Illuminate\Validation\ValidationException;
 
 class IdentityAttestations
 {
+    public function recipient(array $data, ?IdentityCardForm $form = null): NeighborhoodOfficial
+    {
+        $official = NeighborhoodOfficial::with('district.governorate')->whereKey($data['official_id'] ?? null)->lockForUpdate()->first();
+        if (! $official || ! $official->is_active) {
+            throw ValidationException::withMessages(['official_id' => 'اختر عاقلًا مسجلًا ومفعّلًا.']);
+        }
+        if ($official->district_id !== (int) ($data['district_id'] ?? 0) || $official->district->governorate_id !== (int) ($data['governorate_id'] ?? 0)) {
+            throw ValidationException::withMessages(['district_id' => 'المديرية أو العاقل لا يتبع المحافظة المحددة.']);
+        }
+        $normalize = fn ($value) => preg_replace('/\s+/u', ' ', trim((string) $value));
+        if ($normalize($data['neighborhood'] ?? '') !== $normalize($official->neighborhood)
+            || ($form && $normalize($form->data['neighborhood'] ?? '') !== $normalize($official->neighborhood))) {
+            throw ValidationException::withMessages(['neighborhood' => 'يجب أن يطابق حي السكن في الاستمارة الحي المسؤول عنه العاقل. راجع البيانات قبل طلب المصادقة.']);
+        }
+        if ($form) {
+            foreach (['residence_governorate' => $official->district->governorate->name, 'residence_district' => $official->district->name] as $field => $name) {
+                if (filled($form->data[$field] ?? null) && $normalize($form->data[$field]) !== $normalize($name)) {
+                    throw ValidationException::withMessages(['district_id' => 'المحافظة والمديرية يجب أن تطابقا عنوان الإقامة المحفوظ في الاستمارة.']);
+                }
+            }
+        }
+
+        return $official;
+    }
+
     public static function enabled(): bool
     {
         return app()->environment('local') && config('identity_card.simulation_enabled') === true;
@@ -67,15 +93,19 @@ class IdentityAttestations
             Gate::forUser($actor)->authorize('chooseAttestation', $form);
             $existing = $form->attestation()->lockForUpdate()->first();
             if ($existing) {
-                abort_unless($existing->authority_type === $data['authority_type'], 409, 'تم اختيار مسار المصادقة لهذا الطلب بالفعل.');
+                abort_unless($existing->authority_type === $data['authority_type'] && $existing->neighborhood_official_id === (int) ($data['official_id'] ?? 0), 409, 'تم اختيار مسار المصادقة لهذا الطلب بالفعل.');
 
                 return $existing;
             }
             $type = $data['authority_type'];
+            abort_unless($type === 'neighborhood', 422, 'المصادقة الجديدة عن طريق عاقل الحارة فقط.');
+            $official = $this->recipient($data, $form);
             $security = (bool) config('identity_card.attestation_security.'.$type, false);
             $attestation = new IdentityCardAttestation;
             $attestation->forceFill(['identity_card_form_id' => $form->id, 'form_revision' => $form->revision, 'citizen_name' => $form->data['applicant_name'] ?? null, 'reference' => 'SIM-ATT-'.Str::ulid(),
-                'authority_type' => $type, 'recipient_name' => $type === 'witnesses' ? 'الشاهدان — مراجعة الموظف المختص' : $data['recipient_name'],
+                'authority_type' => $type, 'recipient_name' => $official->full_name,
+                'neighborhood_official_id' => $official->id,
+                'recipient_scope' => ['governorate_id' => $official->district->governorate_id, 'district_id' => $official->district_id, 'governorate' => $official->district->governorate->name, 'district' => $official->district->name, 'neighborhood' => $official->neighborhood],
                 'status' => 'pending', 'created_by' => $actor->id, 'notification_created_at' => $type === 'witnesses' ? null : now(),
                 'security_required' => $security, 'security_status' => $security ? 'pending' : 'not_required',
             ])->save();
@@ -103,13 +133,34 @@ class IdentityAttestations
 
     public function decide(User $actor, IdentityCardAttestation $attestation, array $data): IdentityCardAttestation
     {
-        return DB::transaction(function () use ($actor, $attestation, $data) {
+        $result = DB::transaction(function () use ($actor, $attestation, $data) {
             $form = $this->lock($attestation->form);
             $actor = $actor->fresh();
             Gate::forUser($actor)->authorize('simulate', $form);
             $row = IdentityCardAttestation::whereKey($attestation->id)->lockForUpdate()->firstOrFail();
             abort_unless($row->form_revision === $form->revision, 409, 'المصادقة تخص نسخة سابقة من الاستمارة.');
             abort_unless($row->status === 'pending', 409, 'سبق اتخاذ قرار أو إلغاء المصادقة؛ لا يمكن تكراره.');
+            if ($row->neighborhood_official_id) {
+                $scope = $row->recipient_scope ?? [];
+                $this->recipient($scope + ['official_id' => $row->neighborhood_official_id], $form);
+                if ($data['decision'] === 'approved') {
+                    if ($row->verification_attempts >= 5) {
+                        return ['verification_code' => 'تجاوزت حد محاولات التحقق التجريبي. راجع المسؤول.'];
+                    }
+                    $row->verification_attempts++;
+                    $method = $data['verification_method'] ?? null;
+                    $code = config('identity_card.neighborhood_test_code');
+                    $verified = $method === 'fingerprint' || ($method === 'code' && is_string($code) && preg_match('/^\d{6}$/D', $code) && hash_equals($code, (string) ($data['verification_code'] ?? '')));
+                    if (! $verified) {
+                        $row->save();
+                        app(AuditTrail::class)->record('neighborhood_simulation_verification', IdentityCardAttestation::class, $row->id, $actor, result: 'failed', changes: ['action' => 'local_verification', 'status' => 'failed']);
+
+                        return ['verification_code' => 'فشل التحقق التجريبي. الرمز غير صحيح أو لم يُضبط رمز البيئة المحلية.'];
+                    }
+                    $row->forceFill(['verification_source' => $method === 'code' ? 'local_code' : 'local_fingerprint', 'verified_at' => now()]);
+                    app(AuditTrail::class)->record('neighborhood_simulation_verification', IdentityCardAttestation::class, $row->id, $actor, changes: ['action' => $row->verification_source, 'status' => 'verified']);
+                }
+            }
             if ($row->authority_type === 'witnesses') {
                 if ($data['decision'] === 'approved' && (count($data['witnesses'] ?? []) !== 2 || collect($data['witnesses'])->contains(fn ($result) => ($result['attendance'] ?? null) !== 'present' || ($result['verification'] ?? null) !== 'approved'))) {
                     throw ValidationException::withMessages(['witnesses' => 'لا يمكن الموافقة قبل تسجيل حضور الشاهدين والتحقق من وثائقهما.']);
@@ -133,6 +184,11 @@ class IdentityAttestations
 
             return $row;
         });
+        if (is_array($result)) {
+            throw ValidationException::withMessages($result);
+        }
+
+        return $result;
     }
 
     public function requirements(CitizenServiceRequest $application, ?ServiceRequestStatus $target): array
@@ -144,6 +200,9 @@ class IdentityAttestations
         $required = in_array(($target?->value ?? $application->status), ['accepted', 'approved', 'processing', 'completed'], true);
         $attestation = $form->attestation;
         $approved = self::enabled() && $attestation?->status === 'approved';
+        if ($approved && $attestation->neighborhood_official_id) {
+            $approved = $attestation->verified_at && in_array($attestation->verification_source, ['local_code', 'local_fingerprint'], true);
+        }
         if ($approved && $attestation->authority_type === 'witnesses') {
             $approved = $form->witnesses()->where('attendance_status', 'present')->where('verification_status', 'approved')->whereNotNull('reviewed_at')->count() === 2;
         }
