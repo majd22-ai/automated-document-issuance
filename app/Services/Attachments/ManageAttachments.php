@@ -7,6 +7,7 @@ use App\Models\CitizenServiceRequest;
 use App\Models\GovernmentService;
 use App\Models\IdentityCardForm;
 use App\Models\User;
+use App\Services\PhotoQuality;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +45,9 @@ class ManageAttachments
                 $this->assertUploadContext($citizen, $service, $application);
                 $rule = $this->rules->get($service, $code);
                 $metadata = $this->validator->inspect($file, $rule);
+                if ($service->code === 'identity-first-issue' && ($rule['kind'] ?? null) === 'photo') {
+                    app(PhotoQuality::class)->inspect($file->getRealPath(), 'file');
+                }
                 $slot = CitizenAttachment::slot($citizen->id, $service->id, $application?->id, $code);
                 $attachment = CitizenAttachment::where('slot_key', $slot)->lockForUpdate()->first();
                 if ($attachment && IdentityCardForm::where('citizen_attachment_id', $attachment->id)->exists()) {

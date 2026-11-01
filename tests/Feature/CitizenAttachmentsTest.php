@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactionsManager;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -21,6 +22,7 @@ class CitizenAttachmentsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Process::fake(['*photo_quality.py*' => Process::result(output: '{"version":1,"status":"completed","accepted":true,"errors":[]}')]);
         $connection = DB::connection();
         if ($connection->getDatabaseName() !== ':memory:' && ! str_ends_with($connection->getDatabaseName(), '_testing')) {
             throw new \RuntimeException('Isolated testing database required.');

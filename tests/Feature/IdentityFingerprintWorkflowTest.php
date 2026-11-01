@@ -12,6 +12,7 @@ use App\Services\FingerprintService;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -27,6 +28,7 @@ class IdentityFingerprintWorkflowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Process::fake(['*photo_quality.py*' => Process::result(output: '{"version":1,"status":"completed","accepted":true,"errors":[]}')]);
         $db = DB::connection();
         if ($db->getDatabaseName() !== ':memory:' && ! str_ends_with($db->getDatabaseName(), '_testing')) {
             throw new \RuntimeException('Isolated testing database required');

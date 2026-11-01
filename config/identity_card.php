@@ -23,7 +23,7 @@ return [
             'birth_country' => ['label' => 'دولة الميلاد', 'required' => true],
             'birth_governorate' => ['label' => 'محافظة الميلاد', 'required' => true],
             'birth_district' => ['label' => 'مديرية الميلاد', 'required' => true],
-            'birth_village' => ['label' => 'عزلة / قرية الميلاد', 'required' => true],
+            'birth_village' => ['label' => 'عزلة / قرية الميلاد', 'required' => false],
             'religion' => ['label' => 'الديانة', 'required' => false],
         ],
         3 => [

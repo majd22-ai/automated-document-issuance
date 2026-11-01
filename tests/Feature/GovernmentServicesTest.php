@@ -76,6 +76,22 @@ class GovernmentServicesTest extends TestCase
         $this->post($path, ['user_id' => $this->user()->id])->assertRedirect('/citizen/data');
     }
 
+    public function test_service_detail_offers_role_appropriate_actions(): void
+    {
+        $service = $this->service();
+        foreach (['admin', 'employee'] as $role) {
+            $this->actingAs($this->user($role))->get('/services/identity/first-issue')
+                ->assertOk()->assertDontSee('href="'.route('citizen.identity-card.index').'"', false)
+                ->assertSee('تقديم الطلب متاح من حساب المواطن.')
+                ->assertSee(route($role.'.dashboard'));
+        }
+        $this->actingAs($this->user())->get('/services/identity/first-issue')
+            ->assertOk()->assertSee('بدء الطلب أو استكمال مسودتي')
+            ->assertSee('href="'.route('citizen.identity-card.index').'"', false);
+        $service->update(['is_active' => false]);
+        $this->get('/services/identity/first-issue')->assertOk()->assertDontSee('بدء الطلب أو استكمال مسودتي');
+    }
+
     public function test_unapproved_disabled_or_unassessed_service_cannot_start(): void
     {
         $citizen = $this->user();

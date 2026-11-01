@@ -1,4 +1,7 @@
 /vendor/
+/.venv-photo/
+__pycache__/
+*.pyc
 node_modules/
 npm-debug.log
 yarn-error.log

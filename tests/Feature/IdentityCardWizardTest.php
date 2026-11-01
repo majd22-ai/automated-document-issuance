@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Attachments\ManageAttachments;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -18,6 +19,8 @@ class IdentityCardWizardTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Workflow tests isolate the external image engine; protocol failures are tested below.
+        Process::fake(['*photo_quality.py*' => Process::result(output: '{"version":1,"status":"completed","accepted":true,"errors":[]}')]);
         $db = DB::connection();
         if ($db->getDatabaseName() !== ':memory:' && ! str_ends_with($db->getDatabaseName(), '_testing')) {
             throw new \RuntimeException('Isolated testing database required');
@@ -73,6 +76,70 @@ class IdentityCardWizardTest extends TestCase
         }
         $this->save($form, 5, ['witnesses' => $witnesses])->assertSessionHasNoErrors()->assertRedirect();
         $this->get('/citizen/identity-card/'.$form->id.'?step=6')->assertOk()->assertSee('شاهد اختبار 0');
+    }
+
+    public function test_photo_engine_rejection_is_shown_without_saving_or_advancing(): void
+    {
+        $form = $this->draft();
+        for ($step = 1; $step <= 3; $step++) {
+            $this->save($form, $step, ['data' => $this->data($step)])->assertSessionHasNoErrors();
+        }
+        Process::fake(['*photo_quality.py*' => Process::result(output: '{"version":1,"status":"completed","accepted":false,"errors":["blur","background","multiple_faces"]}')]);
+        $this->save($form, 4, ['photo' => UploadedFile::fake()->image('bad.jpg', 600, 600)])
+            ->assertSessionHasErrors('photo');
+        $this->assertStringContainsString('ضبابية', implode(' ', session('errors')->get('photo')));
+        $this->assertSame(4, $form->fresh()->current_step);
+        $this->assertNull($form->fresh()->citizen_attachment_id);
+        $this->assertSame([], Storage::disk('attachments')->allFiles());
+    }
+
+    public function test_photo_engine_failure_cannot_replace_an_existing_private_photo(): void
+    {
+        $form = $this->draft();
+        $this->ready($form);
+        $previous = $form->fresh()->photo;
+        Process::fake(['*photo_quality.py*' => Process::result(output: 'unavailable', exitCode: 2)]);
+        $this->save($form, 4, ['photo' => UploadedFile::fake()->image('replacement.jpg', 600, 600)], 'save')->assertSessionHasErrors('photo');
+        $this->assertSame($previous->storage_path, $form->fresh()->photo->storage_path);
+        Storage::disk('attachments')->assertExists($previous->storage_path);
+        $this->get('/citizen/identity-card/'.$form->id.'?step=6')->assertOk();
+        $reviews = session('identity_card_reviews');
+        $this->post('/citizen/identity-card/'.$form->id.'/submit', ['version' => $form->fresh()->version, 'declaration' => '1', 'review_token' => array_key_last($reviews)])
+            ->assertSessionHasErrors('photo');
+        $this->assertNull($form->fresh()->submitted_at);
+    }
+
+    public function test_birth_date_selectors_save_real_dates_and_keep_location_names(): void
+    {
+        $form = $this->draft();
+        $this->save($form, 1, ['data' => $this->data(1)])->assertSessionHasNoErrors();
+        $this->get('/citizen/identity-card/'.$form->id.'?step=2')->assertOk()
+            ->assertSee('birth_dates[birth_gregorian][day]', false)
+            ->assertSee('birth_dates[birth_hijri][year]', false)
+            ->assertSee('data-birth-locations', false);
+        $data = $this->data(2);
+        $data['birth_country'] = 'اليمن';
+        $data['birth_village'] = 'اسم قرية من الوثيقة';
+        $this->save($form, 2, ['data' => $data, 'birth_dates' => [
+            'birth_gregorian' => ['year' => '2000', 'month' => '2', 'day' => '29'],
+            'birth_hijri' => ['year' => '1420', 'month' => '11', 'day' => '24'],
+        ]])->assertSessionHasNoErrors();
+        $this->assertSame('2000-02-29', $form->fresh()->data['birth_gregorian']);
+        $this->assertSame('1420-11-24', $form->fresh()->data['birth_hijri']);
+        $this->assertSame('اسم قرية من الوثيقة', $form->fresh()->data['birth_village']);
+    }
+
+    public function test_birth_selector_rejects_invalid_or_partial_dates_even_when_saving_draft(): void
+    {
+        $form = $this->draft();
+        $this->save($form, 1, ['data' => $this->data(1)])->assertSessionHasNoErrors();
+        foreach ([['year' => '2001', 'month' => '2', 'day' => '29'], ['year' => '2000', 'month' => '', 'day' => '1']] as $parts) {
+            $this->save($form, 2, ['data' => $this->data(2), 'birth_dates' => ['birth_gregorian' => $parts]], 'save')
+                ->assertSessionHasErrors('data.birth_gregorian');
+        }
+        $this->save($form, 2, ['data' => $this->data(2), 'birth_dates' => ['birth_hijri' => ['year' => '1420', 'month' => '13', 'day' => '1']]])
+            ->assertSessionHasErrors('data.birth_hijri');
+        $this->assertArrayNotHasKey('birth_gregorian', $form->fresh()->data);
     }
 
     public function test_draft_can_be_saved_incomplete_resumed_and_rejects_stale_or_foreign_changes(): void

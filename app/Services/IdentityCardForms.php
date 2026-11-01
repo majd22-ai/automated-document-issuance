@@ -100,6 +100,7 @@ class IdentityCardForms
         } catch (ValidationException $error) {
             throw ValidationException::withMessages(['photo' => $error->errors()['file'] ?? ['تعذر التحقق من الصورة.']]);
         }
+        app(PhotoQuality::class)->inspect($file->getRealPath());
         $extension = $metadata['extension'];
         unset($metadata['extension']);
         $rule = collect($form->service->verification_rules['documents'] ?? [])->firstWhere('kind', 'photo');
@@ -198,6 +199,7 @@ class IdentityCardForms
                 || ! in_array($photo->mime_type, ['image/jpeg', 'image/png'], true)) {
                 throw ValidationException::withMessages(['photo' => 'الصورة الحالية لا تستوفي الحجم أو الأبعاد أو الصيغة المطلوبة؛ عد لمرحلة الصورة واستبدلها.']);
             }
+            app(PhotoQuality::class)->inspect(Storage::disk('attachments')->path($photo->storage_path));
             if ($correction) {
                 $application = CitizenServiceRequest::whereKey($form->citizen_service_request_id)->lockForUpdate()->firstOrFail();
                 abort_unless($application->user_id === $actor->id && $application->government_service_id === $form->government_service_id

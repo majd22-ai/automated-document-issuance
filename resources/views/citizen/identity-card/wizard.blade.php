@@ -37,6 +37,8 @@
                     @include('components.residence-selects', ['prefix'=>'identity-residence', 'byName'=>true, 'governorateName'=>'data[residence_governorate]', 'districtName'=>'data[residence_district]', 'selectedGovernorate'=>old('data.residence_governorate',data_get($form->data,'residence_governorate')), 'selectedDistrict'=>old('data.residence_district',data_get($form->data,'residence_district'))])
                 @endif
                 @foreach($fields[$step] as $key => $field)
+                    @if($step === 2 && $loop->first)@include('components.birth-details')@endif
+                    @continue($step === 2 && str_starts_with($key,'birth_'))
                     @continue($step === 3 && in_array($key,['residence_governorate','residence_district']))
                     @php($errorKey = 'data.'.$key)
                     <div class="identity-field"><label for="field-{{ $key }}">{{ $field['label'] }} @if($field['required'] ?? false)<span aria-label="مطلوب">*</span>@endif</label>
@@ -49,9 +51,26 @@
                 @endforeach
                 </div>
             @elseif($step === 4)
+                <div class="identity-panel" aria-labelledby="photo-instructions-title">
+                    <h3 id="photo-instructions-title">تعليمات رفع الصورة الشخصية</h3>
+                    <p>عزيزي المواطن، يرجى التأكد من مطابقة صورتك للشروط التالية قبل رفعها:</p>
+                    <ol class="requirements-list">
+                        <li>أن تكون الصورة حديثة وملونة.</li>
+                        <li>أن تكون الخلفية بيضاء وموحدة.</li>
+                        <li>أن يكون الوجه مقابلاً للكاميرا مباشرة.</li>
+                        <li>أن تكون جميع ملامح الوجه واضحة.</li>
+                        <li>أن يظهر الرأس كاملاً دون قص.</li>
+                        <li>أن تكون الصورة بإضاءة جيدة وخالية من الظلال.</li>
+                        <li>يمنع استخدام الفلاتر أو المؤثرات أو تعديل ملامح الوجه.</li>
+                        <li>يمنع رفع صور الأشخاص الآخرين أو الصور الجماعية.</li>
+                        <li>يجب رفع صورة أصلية ملتقطة بالكاميرا وليست صورة لشاشة هاتف أو صورة مطبوعة.</li>
+                    </ol>
+                    <p class="identity-notice"><strong>تنبيه:</strong> سيتم فحص الصورة إلكترونياً، وقد يُطلب منك إعادة رفعها إذا لم تستوفِ شروط القبول.</p>
+                </div>
                 <div class="identity-panel"><label for="identity-photo">الصورة الشخصية</label><p id="photo-help">ارفع صورة شخصية واضحة بصيغة JPG أو JPEG أو PNG، بحد أقصى {{ config('identity_card.photo.max_kb', 2048) }} كيلوبايت، وأبعاد لا تقل عن {{ config('identity_card.photo.min_width', 600) }} × {{ config('identity_card.photo.min_height', 600) }} بكسل. رفع الصورة لا يغني عن إجراءات الحضور والتحقق لدى الجهة المختصة.</p>
                     <input id="identity-photo" name="photo" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" @required(!$form->photo) data-identity-photo aria-describedby="photo-help photo-error" @error('photo') aria-invalid="true" @enderror>
                     <p id="photo-error" class="identity-field-error">@error('photo'){{ $message }}@enderror</p>
+                    <p class="identity-notice" role="status" data-photo-check-status hidden>جارٍ فحص جودة الصورة إلكترونيًا، يرجى الانتظار…</p>
                     <img class="identity-photo" data-identity-photo-preview @if($form->photo) src="{{ route('citizen.identity-card.photo', $form) }}" @else hidden @endif alt="معاينة الصورة الشخصية">
                     @if($form->photo)<p>توجد صورة محفوظة. يمكنك اختيار صورة بديلة.</p>@endif
                 </div>

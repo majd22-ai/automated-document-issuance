@@ -47,6 +47,18 @@ class UserAuthenticationTest extends TestCase
         $this->get('/login')->assertOk()->assertHeader('Cache-Control', 'no-store, private')->assertSee('name="_token"', false);
     }
 
+    public function test_expired_login_csrf_returns_to_a_fresh_form_without_authenticating(): void
+    {
+        $this->app['env'] = 'local';
+        $this->withSession(['_token' => 'current-token'])
+            ->post('/login', ['_token' => 'expired-token', 'identifier' => 'test', 'password' => 'private-password'])
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('identifier')
+            ->assertSessionMissing('_old_input.password');
+        $this->assertGuest();
+        $this->get('/login')->assertOk()->assertSee('انتهت جلسة تسجيل الدخول');
+    }
+
     public function test_local_recovery_requires_code_then_password_confirmation_and_returns_to_login(): void
     {
         $this->app['env'] = 'local';

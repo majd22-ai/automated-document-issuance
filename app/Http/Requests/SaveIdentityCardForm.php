@@ -7,6 +7,50 @@ use Illuminate\Validation\Rule;
 
 class SaveIdentityCardForm extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ((int) $this->input('step') !== 2) {
+            return;
+        }
+        $data = $this->input('data', []);
+        if (! is_array($data)) {
+            return;
+        }
+        foreach (['birth_gregorian', 'birth_hijri'] as $field) {
+            $parts = $this->input('birth_dates.'.$field);
+            if (! is_array($parts)) {
+                continue;
+            }
+            $values = array_map(fn ($part) => $parts[$part] ?? '', ['year', 'month', 'day']);
+            if (count(array_filter($values, fn ($value) => $value !== '' && $value !== null)) === 0) {
+                // Preserve only legacy written dates which cannot be represented by these selectors.
+                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($data[$field] ?? ''))) {
+                    $data[$field] = null;
+                }
+                continue;
+            }
+            $validParts = count(array_filter($values, fn ($v) => is_scalar($v) && ctype_digit((string) $v))) === 3;
+            [$year, $month, $day] = array_map(fn ($v) => is_scalar($v) ? (int) $v : 0, $values);
+            $valid = $validParts && ($field === 'birth_gregorian' ? checkdate($month, $day, $year) : ($year >= 1 && $year <= 1500 && $month >= 1 && $month <= 12 && $day >= 1 && $day <= 30));
+            $data[$field] = $valid ? sprintf('%04d-%02d-%02d', $year, $month, $day) : null;
+            if (! $valid) {
+                $this->merge(['invalid_birth_date_'.$field => true]);
+            }
+        }
+        $this->merge(['data' => $data]);
+    }
+
+    public function after(): array
+    {
+        return [function (\Illuminate\Validation\Validator $validator) {
+            foreach (['birth_gregorian', 'birth_hijri'] as $field) {
+                if ($this->input('invalid_birth_date_'.$field)) {
+                    $validator->errors()->add('data.'.$field, 'اختر يومًا وشهرًا وسنة لتاريخ صحيح.');
+                }
+            }
+        }];
+    }
+
     public function authorize(): bool
     {
         return $this->user()?->is_active && $this->user()?->role === 'citizen'
