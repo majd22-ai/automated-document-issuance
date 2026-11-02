@@ -83,6 +83,22 @@ class IdentityCardFormController extends Controller
         return Storage::disk('attachments')->response($photo->storage_path, 'identity-photo.'.($photo->mime_type === 'image/png' ? 'png' : 'jpg'), ['Cache-Control' => 'no-store, private', 'X-Content-Type-Options' => 'nosniff']);
     }
 
+    public function witnessSelfie(Request $request, IdentityCardForm $form, int $position)
+    {
+        abort_unless(in_array($position, [1, 2], true), 404);
+        if ($request->user()->role === 'citizen') {
+            $this->owner($request, $form);
+        } else {
+            Gate::authorize('viewPrintable', $form);
+        }
+        $witness = $form->witnesses()->where('position', $position)->firstOrFail();
+        abort_unless($witness->selfieIntact(), 404);
+
+        return Storage::disk('attachments')->response($witness->selfie_path, 'witness-selfie.'.($witness->selfie_mime === 'image/png' ? 'png' : 'jpg'), [
+            'Cache-Control' => 'no-store, private', 'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     public function employee(Request $request, IdentityCardForm $form)
     {
         abort_unless($form->application, 404);

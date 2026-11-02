@@ -16,7 +16,7 @@
           $documents = $identitySections[$service->operation === 'issue' ? 0 : 1];
         }
       @endphp
-      <div class="card mb-3"><h2>{{ $label }}</h2><ul class="requirements-list">@forelse($documents as $item)<li>{{ $item }}</li>@empty<li>لم تُحدّد؛ راجع الجهة المختصة.</li>@endforelse</ul></div>
+      <div class="card mb-3" id="{{ $field === 'required_documents' ? 'requirements' : 'conditions' }}"><h2>{{ $label }}</h2><ul class="requirements-list">@forelse($documents as $item)<li>{{ $item }}</li>@empty<li>لم تُحدّد؛ راجع الجهة المختصة.</li>@endforelse</ul></div>
     @endforeach
     <details class="card mb-3"><summary>ما الذي تتم مراجعته قبل قبول الطلب؟</summary><ul class="requirements-list">
       <li>اكتمال بيانات المواطن والتحقق الموثّق من الهوية واستيفاء الشروط لدى الجهة المختصة.</li>

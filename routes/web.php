@@ -181,6 +181,7 @@ Route::get('/attachments/{attachment}/download', [CitizenAttachmentController::c
 // =====================================================
 
 Route::get('/identity-card/forms/{form}/photo', [\App\Http\Controllers\IdentityCardFormController::class, 'photo'])->middleware('auth')->name('citizen.identity-card.photo');
+Route::get('/identity-card/forms/{form}/witness-selfie/{position}', [\App\Http\Controllers\IdentityCardFormController::class, 'witnessSelfie'])->middleware('auth')->whereIn('position', ['1', '2'])->name('citizen.identity-card.witness-selfie');
 Route::get('/employee/identity-card/{form}', [\App\Http\Controllers\IdentityCardFormController::class, 'employee'])->middleware(['auth', 'role:employee'])->name('employee.identity-card.show');
 Route::middleware('auth')->prefix('identity-workflow')->name('identity-workflow.')->group(function () {
     Route::get('/reception', [\App\Http\Controllers\IdentityWorkflowController::class, 'reception'])->name('reception');
