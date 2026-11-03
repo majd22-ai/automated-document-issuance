@@ -1,4 +1,4 @@
-/* PORTAL THEME START - keep this entire file */
+﻿/* PORTAL THEME START - keep this entire file */
 :root {
   --primary-cyan:#149fbe;
   --primary-cyan-hover:#107f98;
@@ -50,7 +50,7 @@ html { scroll-padding-top:120px; }
 .gov-banner-home .gov-header-logos .gov-national-emblem { order:0; width:clamp(58px,8vw,96px); height:clamp(64px,9vw,100px); }
 .gov-banner-home .gov-ministry-logo { order:2; }
 .gov-header-identity h1 { font-size:clamp(20px,2vw,30px); font-weight:800; line-height:1.65; color:#223746; margin-bottom:5px; }
-.gov-header-english { font:500 9px/1.8 Inter,sans-serif; letter-spacing:1.3px; color:#687078; margin-bottom:15px; }
+.gov-header-english { font:500 9px/1.8 system-ui,sans-serif; letter-spacing:1.3px; color:#687078; margin-bottom:15px; }
 .gov-header-tags { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; }
 .gov-header-tags span { padding:5px 12px; background:#fff; border:1px solid #e8e1d1; border-radius:5px; color:#59606a; font-size:10px; box-shadow:0 2px 7px #0001; }
 
@@ -137,8 +137,10 @@ html { scroll-padding-top:120px; }
 .gov-welcome-copy ul { padding-inline-start:22px; color:#62686c; font-size:13px; line-height:2.3; }
 .gov-welcome-copy li::marker { color:var(--primary-cyan); }
 .gov-welcome-copy .btn { margin-top:22px; }
-.gov-welcome-picture { position:relative; min-height:330px; align-self:stretch; border:3px solid var(--primary-gold); border-radius:12px; background:linear-gradient(0deg,#0e273099,transparent 60%),url('/assets/images/banner/header-left.png') center/cover; box-shadow:0 5px 16px #0001; overflow:hidden; }
-.gov-picture-caption { position:absolute; inset-inline:20px; bottom:18px; color:#fff; font-size:13px; }
+.gov-welcome-picture { position:relative; isolation:isolate; min-height:330px; align-self:stretch; border:3px solid var(--primary-gold); border-radius:12px; background:#0e2730; box-shadow:0 5px 16px #0001; overflow:hidden; }
+.gov-welcome-photo { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; }
+.gov-welcome-picture::after { content:""; position:absolute; inset:0; background:linear-gradient(0deg,#0e273099,transparent 60%); pointer-events:none; z-index:1; }
+.gov-picture-caption { position:absolute; z-index:2; inset-inline:20px; bottom:18px; color:#fff; font-size:13px; }
 
 /* Service cards */
 .gov-services-section { background:#fafbfc; }
@@ -278,3 +280,4 @@ html { scroll-padding-top:120px; }
   .gov-service-card:hover { transform:none; }
 }
 /* PORTAL THEME END */
+

@@ -36,7 +36,8 @@
 </div>
         @endguest
       </div>
-      <div class="gov-welcome-picture" role="img" aria-label="مجمع الإصدار الآلي من الداخل" style="background-image:linear-gradient(0deg,#0e273099,transparent 60%),url('{{ asset('assets/images/banner/الاصدار الالي من الداخل 2.jfif') }}');">
+      <div class="gov-welcome-picture" role="img" aria-label="مجمع الإصدار الآلي من الداخل">
+        <x-responsive-image src="assets/images/banner/platform-interior.webp" class="gov-welcome-photo" sizes="(max-width:900px) calc(100vw - 32px), (max-width:1200px) 46vw, 560px" loading="lazy" alt="" aria-hidden="true" />
         <div class="gov-picture-caption">اليمن | نحو خدمات رقمية أسهل</div>
       </div>
     </div>

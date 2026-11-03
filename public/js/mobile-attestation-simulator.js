@@ -1,12 +1,18 @@
 (() => {
     const root = document.querySelector('[data-attestation-simulator]');
     if (!root) return;
+    if (root.dataset.pollingStarted) return;
+    root.dataset.pollingStarted = 'true';
     const dialog = root.querySelector('dialog');
     const list = root.querySelector('[data-attestation-notifications]');
     const count = root.querySelector('[data-attestation-count]');
     const status = root.querySelector('[data-attestation-feed-status]');
     const seen = new Set();
     let running = false;
+    let timer = null;
+    let controller;
+    let lastAttempt = -Infinity;
+    let stopped = false;
     const open = () => { if (!dialog.open) dialog.showModal(); };
     root.querySelector('[data-attestation-toggle]').addEventListener('click', open);
     root.querySelector('[data-attestation-close]').addEventListener('click', () => dialog.close());
@@ -17,10 +23,13 @@
         return element;
     };
     async function refresh() {
-        if (document.hidden || running) return;
+        if (stopped || document.hidden || running || Date.now() - lastAttempt < 120000) return;
         running = true;
+        lastAttempt = Date.now();
+        controller = new AbortController();
         try {
-            const response = await fetch(root.dataset.feedUrl, { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } });
+            const response = await fetch(root.dataset.feedUrl, { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' }, signal: controller.signal });
+            if ([401, 403, 419].includes(response.status)) { stopped = true; pause(); return; }
             if (!response.ok) throw new Error('feed');
             const feed = await response.json();
             const notifications = Array.isArray(feed.notifications) ? feed.notifications.slice(0, 30) : [];
@@ -58,11 +67,23 @@
             });
             status.textContent = notifications.length ? '' : 'لا توجد إشعارات مصادقة.';
             if (newlyUnread) open();
-        } catch {
+        } catch (error) {
+            if (error.name === 'AbortError') return;
             status.textContent = 'تعذر تحديث الإشعارات. ستتم إعادة المحاولة تلقائيًا.';
         } finally { running = false; }
     }
-    refresh();
-    window.setInterval(refresh, 20000);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+    function pause() {
+        if (timer !== null) window.clearInterval(timer);
+        timer = null;
+        controller?.abort();
+    }
+    function resume() {
+        if (stopped || document.hidden) return;
+        if (timer === null) timer = window.setInterval(refresh, 120000);
+        refresh();
+    }
+    document.addEventListener('visibilitychange', () => document.hidden ? pause() : resume());
+    window.addEventListener('pagehide', pause);
+    window.addEventListener('pageshow', resume);
+    resume();
 })();

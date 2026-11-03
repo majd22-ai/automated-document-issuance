@@ -13,7 +13,7 @@
 @endphp
 <div class="auth-wrapper"><div class="auth-card">
   <div class="auth-logo">
-    <img class="auth-platform-logo" src="{{ asset('assets/images/logos/unified-issuance-logo.png') }}" alt="شعار مركز الإصدار الآلي الموحد">
+    <img class="auth-platform-logo" src="{{ asset('assets/images/logos/unified-issuance-logo.webp') }}" alt="شعار مركز الإصدار الآلي الموحد">
     <h2>{{ $stage === 3 ? 'إنشاء كلمة مرور جديدة' : 'استعادة كلمة المرور' }}</h2>
     <p>{{ $stage === 1 ? 'أدخل البريد الإلكتروني المسجّل في حسابك.' : ($stage === 2 ? 'أدخل رمز الاستعادة بعد نسخه من النافذة المحلية.' : 'اختر كلمة مرور جديدة وأكدها لإكمال الاستعادة.') }}</p>
   </div>

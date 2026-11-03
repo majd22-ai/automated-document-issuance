@@ -7,7 +7,7 @@
   <div class="auth-card">
 
     <div class="auth-logo">
-      <img class="auth-platform-logo" src="{{ asset('assets/images/logos/unified-issuance-logo.png') }}" alt="شعار مركز الإصدار الآلي الموحد">
+      <img class="auth-platform-logo" src="{{ asset('assets/images/logos/unified-issuance-logo.webp') }}" alt="شعار مركز الإصدار الآلي الموحد">
       <h2>تسجيل الدخول</h2>
       <p>أدخل بيانات حسابك للوصول إلى خدمات المنصة</p>
     </div>

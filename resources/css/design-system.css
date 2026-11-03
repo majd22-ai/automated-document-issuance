@@ -43,8 +43,8 @@
   --info-light: #E3F4F7;
 
   /* Typography */
-  --font-arabic: "Cairo", "Tajawal", system-ui, sans-serif;
-  --font-english: "Inter", "Roboto", system-ui, sans-serif;
+  --font-arabic: system-ui, sans-serif;
+  --font-english: system-ui, sans-serif;
 
   /* Layout */
   --content-max-width: 1280px;

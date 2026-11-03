@@ -58,7 +58,9 @@ class DocumentIssuanceConcurrencyTest extends TestCase
             DB::table('service_review_permissions')->where('government_service_id', $service->id)->delete();
             DB::table('government_services')->where('id', $service->id)->delete();
         }
-        DB::table('users')->whereIn('id', $this->users)->delete();
+        if ($this->users) {
+            DB::table('users')->whereIn('id', $this->users)->delete();
+        }
         $this->cleanAuditFixtures();
         parent::tearDown();
     }
