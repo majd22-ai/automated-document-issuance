@@ -14,8 +14,14 @@ class GovernmentServiceController extends Controller
     public function index(Request $request): Response
     {
         $type = $request->route('documentType');
-        $services = GovernmentService::where('is_active', true)->when($type, fn ($query) => $query->where('document_type', $type))->orderBy('id')->paginate(12);
-        $title = $type ? 'خدمات '.GovernmentService::DOCUMENT_TYPES[$type] : 'الخدمات الحكومية';
+        $services = GovernmentService::where('is_active', true)
+            ->when($type, fn ($query) => $query->whereIn('document_type', $type === 'identity' ? ['identity', 'birth_certificate'] : [$type]))
+            ->orderBy('id')->paginate(12);
+        $title = match ($type) {
+            'identity' => 'خدمات الأحوال المدنية',
+            null => 'الخدمات الحكومية',
+            default => 'خدمات '.GovernmentService::DOCUMENT_TYPES[$type],
+        };
 
         return response()->view('public.services.index', compact('services', 'title'));
     }

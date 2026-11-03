@@ -85,6 +85,25 @@ class GovernmentServicesTest extends TestCase
         $this->get('/services/catalog/not-found')->assertNotFound();
     }
 
+    public function test_birth_certificate_is_listed_with_civil_registry_services_only_when_active(): void
+    {
+        $birthCertificate = GovernmentService::where('code', 'birth-certificate-first-issue')->firstOrFail();
+        $this->get('/services/identity')->assertOk()->assertDontSee($birthCertificate->name);
+
+        $birthCertificate->fill([
+            'is_active' => true,
+            'rules_approved' => true,
+            'source_reference' => 'TEST-ONLY approval',
+        ])->save();
+
+        $this->get('/services/identity')
+            ->assertOk()
+            ->assertSee('خدمات الأحوال المدنية')
+            ->assertSee($birthCertificate->name)
+            ->assertSee($birthCertificate->publicUrl());
+        $this->get('/services/passports')->assertOk()->assertDontSee($birthCertificate->name);
+    }
+
     public function test_start_requires_login_citizen_role_and_complete_data(): void
     {
         $service = $this->service();
