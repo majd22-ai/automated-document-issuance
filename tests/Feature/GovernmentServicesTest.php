@@ -74,7 +74,8 @@ class GovernmentServicesTest extends TestCase
 
     public function test_catalog_uses_database_and_inactive_services_are_not_offered(): void
     {
-        $this->assertSame(7, GovernmentService::count());
+        $this->assertSame(8, GovernmentService::count());
+        $this->assertDatabaseHas('government_services', ['code' => 'birth-certificate-first-issue', 'is_active' => false]);
         $this->get('/services')->assertOk()->assertSee('لا توجد خدمات مفعّلة');
         $service = $this->service();
         $this->get('/services')->assertOk()->assertSee($service->name);
@@ -335,6 +336,6 @@ class GovernmentServicesTest extends TestCase
         @$document->loadHTML('<?xml encoding="UTF-8">'.$html);
         $xpath = new \DOMXPath($document);
         $this->assertSame(1, $xpath->query('//details[contains(@class,"setting-advanced") and @open]')->length);
-        $this->assertSame(1,$xpath->query('//textarea[@name="verification_rules"]/ancestor::details[contains(@class,"setting-subsection") and @open]')->length);
+        $this->assertSame(1, $xpath->query('//textarea[@name="verification_rules"]/ancestor::details[contains(@class,"setting-subsection") and @open]')->length);
     }
 }

@@ -4,7 +4,6 @@ namespace App\Services\Issuance;
 
 use App\Models\CitizenDocument;
 use App\Models\DocumentCopy;
-use App\Models\GovernmentService;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -13,7 +12,7 @@ class ElectronicCopies
 {
     public function generate(CitizenDocument $document, User $actor): DocumentCopy
     {
-        if (! array_key_exists($document->document_type_code, GovernmentService::DOCUMENT_TYPES)) {
+        if (! in_array($document->document_type_code, ['identity', 'passport', 'driving_license', 'birth_certificate'], true)) {
             throw new \RuntimeException('Unsupported internal document template');
         }
         $path = 'copies/'.Str::uuid().'.html';

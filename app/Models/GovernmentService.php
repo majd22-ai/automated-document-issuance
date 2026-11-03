@@ -9,7 +9,7 @@ use Illuminate\Validation\ValidationException;
 
 class GovernmentService extends Model
 {
-    public const DOCUMENT_TYPES = ['identity' => 'البطاقة الشخصية', 'passport' => 'جواز السفر', 'driving_license' => 'رخصة القيادة'];
+    public const DOCUMENT_TYPES = ['identity' => 'البطاقة الشخصية', 'passport' => 'جواز السفر', 'driving_license' => 'رخصة القيادة', 'birth_certificate' => 'شهادة الميلاد'];
 
     public const OPERATIONS = ['issue' => 'إصدار', 'renewal' => 'تجديد', 'replacement' => 'بدل فاقد'];
 

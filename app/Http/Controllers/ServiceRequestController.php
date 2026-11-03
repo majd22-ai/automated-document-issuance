@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\PreviewServiceRequest;
 use App\Http\Requests\SubmitServiceRequest;
+use App\Models\BirthCertificateDraft;
 use App\Models\GovernmentService;
 use App\Services\ServiceRequestSubmission;
 use Illuminate\Http\RedirectResponse;
@@ -49,6 +50,9 @@ class ServiceRequestController extends Controller
         $token = $request->validated('preview_token');
         $application = $submission->submit($request->user(), $service, $token, $request->session()->get('request_previews.'.$token));
         $request->session()->forget('request_previews.'.$token);
+        if ($service->code === 'birth-certificate-first-issue') {
+            BirthCertificateDraft::where('user_id', $request->user()->id)->where('government_service_id', $service->id)->delete();
+        }
 
         return redirect()->route('citizen.applications.success', $application->id);
     }

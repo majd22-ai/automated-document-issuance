@@ -24,6 +24,9 @@ class ValidateAttachmentFile
             $fail('نوع الملف الفعلي أو امتداده غير مسموح. ارفع PNG أو JPEG أو PDF حسب شروط الحقل.');
         }
         if (str_starts_with($mime, 'image/')) {
+            if (! function_exists($mime === 'image/png' ? 'imagecreatefrompng' : 'imagecreatefromjpeg')) {
+                $fail('التحقق الآمن من الصور غير مهيأ في الخادم حاليًا. راجع مسؤول النظام قبل رفع صورة.');
+            }
             $info = @getimagesize($file->getPathname());
             if (! $info || ($info['mime'] ?? null) !== $mime || $info[0] < 1 || $info[1] < 1 || config('attachments.max_pixels') < $info[0] * $info[1]) {
                 $fail('الصورة تالفة أو تتجاوز أبعاد المعالجة المسموحة.');

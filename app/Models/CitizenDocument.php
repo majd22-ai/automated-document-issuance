@@ -59,6 +59,11 @@ class CitizenDocument extends Model
         return $this->hasMany(DocumentEvent::class);
     }
 
+    public function birthCertificate()
+    {
+        return $this->hasOne(BirthCertificate::class);
+    }
+
     public function validityLabel(): string
     {
         if ($this->status === 'superseded') {

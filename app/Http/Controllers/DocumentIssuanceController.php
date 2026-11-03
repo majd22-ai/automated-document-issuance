@@ -78,6 +78,9 @@ class DocumentIssuanceController extends Controller
     {
         $document = $this->document($request, $id);
         Gate::authorize('download', $document);
+        if ($document->document_type_code === 'birth_certificate') {
+            return app(BirthCertificateController::class)->download($request, $document->id);
+        }
         $bytes = $document->copies()->latest('id')->first()?->contents();
         if ($bytes === null) {
             return response('النسخة الإلكترونية مفقودة أو غير سليمة؛ اطلب إعادة إنشائها من الموظف المختص.', 409, ['Content-Type' => 'text/plain; charset=UTF-8', 'Cache-Control' => 'no-store, private', 'X-Content-Type-Options' => 'nosniff']);
@@ -111,11 +114,11 @@ class DocumentIssuanceController extends Controller
         return back()->with('status', 'تم تسجيل حالة التسليم والتحقق من شروط إكمال الطلب.');
     }
 
-    public function regenerate(DocumentCommandRequest $request,string $id,ManageDocuments $documents)
+    public function regenerate(DocumentCommandRequest $request, string $id, ManageDocuments $documents)
     {
-        $document = $this->document($request,$id);
-        $documents->regenerate($request->user(),$document,$request->validated());
+        $document = $this->document($request, $id);
+        $documents->regenerate($request->user(), $document, $request->validated());
 
-        return back()->with('status','تم إنشاء نسخة إلكترونية جديدة مع حفظ تاريخ النسخ السابقة.');
+        return back()->with('status', 'تم إنشاء نسخة إلكترونية جديدة مع حفظ تاريخ النسخ السابقة.');
     }
 }

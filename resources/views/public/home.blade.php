@@ -89,6 +89,25 @@
         <h2 id="service-requirements-heading">متطلبات الخدمات</h2>
         <p>اضغط على اسم الجهة، ثم اختر الخدمة لعرض متطلباتها.</p>
       </div>
+      <div class="gov-services-grid">
+        @foreach(config('civil_registry_guides') as $guideKey => $guide)
+          <a class="gov-service-card" href="{{ route('services.civil-registry.guide', $guideKey) }}">
+            <h3>متطلبات {{ $guide['title'] }}</h3>
+            <p>اطّلع على متطلبات ووثائق خدمة {{ $guide['title'] }}.</p>
+            <span class="gov-service-more">عرض المتطلبات <x-icon name="arrow-left" /></span>
+          </a>
+        @endforeach
+        <a class="gov-service-card" href="{{ route('services.passports').'#requirements' }}">
+          <h3>متطلبات جواز السفر</h3>
+          <p>المستندات المطلوبة لإصدار جواز السفر وتجديده.</p>
+          <span class="gov-service-more">عرض المتطلبات <x-icon name="arrow-left" /></span>
+        </a>
+        <a class="gov-service-card" href="{{ route('services.driving-licenses').'#requirements' }}">
+          <h3>متطلبات رخصة القيادة</h3>
+          <p>المستندات والفحص الطبي ومتطلبات الإصدار والتجديد.</p>
+          <span class="gov-service-more">عرض المتطلبات <x-icon name="arrow-left" /></span>
+        </a>
+      </div>
       <div class="gov-services-grid gov-requirements-groups">
         @foreach([
           ['title'=>'متطلبات خدمات مصلحة الأحوال المدنية','icon'=>'identity','route'=>'services.identity.show','items'=>['first-issue'=>'متطلبات إصدار بطاقة شخصية لأول مرة','renewal'=>'متطلبات تجديد بطاقة شخصية','lost-replacement'=>'متطلبات إصدار بطاقة شخصية بدل فاقد']],

@@ -6,7 +6,7 @@
   <div class="grid grid-2">
     @forelse($services as $service)
       <a href="{{ $service->publicUrl() }}" class="service-item card-hover">
-        <div class="icon-box"><x-icon :name="['identity' => 'identity', 'passport' => 'passport', 'driving_license' => 'car'][$service->document_type]" size="30" /></div>
+        <div class="icon-box"><x-icon :name="['identity' => 'identity', 'passport' => 'passport', 'driving_license' => 'car', 'birth_certificate' => 'document'][$service->document_type]" size="30" /></div>
         <div class="content"><h2>{{ $service->name }}</h2><p>{{ $service->description ?? 'الوصف قيد الاعتماد.' }}</p><span>{{ \App\Models\GovernmentService::OPERATIONS[$service->operation] }}</span><p>الرسوم: {{ $service->fee !== null ? $service->fee.' '.$service->currency : 'لم تُحدّد' }}</p><span class="btn btn-outline btn-sm">الشروط والتفاصيل</span></div>
       </a>
     @empty
