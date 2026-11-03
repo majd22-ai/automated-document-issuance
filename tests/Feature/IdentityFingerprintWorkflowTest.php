@@ -78,7 +78,7 @@ class IdentityFingerprintWorkflowTest extends TestCase
         $this->save($form, 4, $photo ? ['photo' => UploadedFile::fake()->image('portrait.png', 600, 600)] : []);
         $witnesses = [];
         foreach ([1, 2] as $position) {
-            $witnesses[] = ['name' => 'شاهد '.$position, 'document_type' => 'بطاقة', 'document_number' => '123456'.$position, 'issued_place' => 'صنعاء', 'issued_at' => '2020-01-01', 'phone' => '777123456', 'address' => 'عنوان الاختبار'];
+            $witnesses[] = ['name' => 'شاهد '.$position, 'document_type' => 'بطاقة', 'document_number' => '123456'.$position, 'issued_place' => 'صنعاء', 'issued_at' => '2020-01-01', 'phone' => '777123456', 'address' => 'عنوان الاختبار', 'selfie' => UploadedFile::fake()->image('witness-'.$position.'.jpg', 600, 600)];
         }
         $this->save($form, 5, ['witnesses' => $witnesses]);
         $this->actingAs($this->citizen)->get('/citizen/identity-card/'.$form->id.'?step=6')->assertOk();

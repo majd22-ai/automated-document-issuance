@@ -32,6 +32,28 @@ class GovernmentServicesTest extends TestCase
         return $user;
     }
 
+    public function test_home_agency_requirement_menus_link_to_each_service_requirements(): void
+    {
+        $response = $this->get('/')->assertOk()
+            ->assertSee('خدمات مصلحة الأحوال المدنية')
+            ->assertSee('خدمات مصلحة الهجرة والجوازات والجنسية')
+            ->assertSee('خدمات الإدارة العامة للمرور')
+            ->assertDontSee('3 خدمات')->assertDontSee('خدمتان');
+        $dom = new \DOMDocument;
+        @$dom->loadHTML('<?xml encoding="utf-8" ?>'.$response->getContent());
+        $xpath = new \DOMXPath($dom);
+        $this->assertCount(3, $xpath->query('//section[@id="service-requirements"]//details'));
+        $links = $xpath->query('//section[@id="service-requirements"]//details/nav/a');
+        $this->assertCount(7, $links);
+        foreach ($links as $link) {
+            $this->assertSame('requirements', parse_url($link->getAttribute('href'), PHP_URL_FRAGMENT));
+            $this->get(parse_url($link->getAttribute('href'), PHP_URL_PATH))->assertOk()->assertSee('id="requirements"', false);
+        }
+        foreach (['identity', 'passport', 'car'] as $icon) {
+            $this->assertStringContainsString('outline.svg#'.$icon, $response->getContent());
+        }
+    }
+
     private function service(string $code = 'identity-first-issue'): GovernmentService
     {
         $service = GovernmentService::where('code', $code)->firstOrFail();

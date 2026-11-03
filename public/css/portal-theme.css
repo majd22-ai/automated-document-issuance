@@ -148,6 +148,18 @@ html { scroll-padding-top:120px; }
 .gov-service-card:hover { color:#30343b; transform:translateY(-3px); box-shadow:0 8px 24px #0001; }
 .gov-service-icon { display:grid; place-items:center; width:52px; height:52px; background:var(--primary-cyan-light); color:var(--primary-cyan); font-size:27px; border-radius:9px; }
 .gov-service-card h3 { font-size:19px; }
+.gov-requirements-groups{align-items:start}
+.gov-requirements-group{border:1px solid #e0e5e9;border-top:3px solid var(--primary-gold);border-radius:9px;background:#fff;overflow:hidden;min-width:0}
+.gov-requirements-group summary{display:flex;align-items:center;gap:12px;cursor:pointer;padding:24px;list-style:none;font-size:18px;font-weight:700;line-height:1.9;color:#30343b}
+.gov-requirements-group summary::-webkit-details-marker{display:none}
+.gov-requirements-group summary>.site-icon:last-child{margin-inline-start:auto;flex-shrink:0}
+.gov-requirements-group[open] summary>.site-icon:last-child{transform:rotate(180deg)}
+.gov-requirements-group summary .gov-service-icon{flex-shrink:0}
+.gov-requirements-group nav{display:flex;flex-direction:column;padding:0 16px 16px;gap:8px}
+.gov-requirements-group nav a{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;border:1px solid #e0e5e9;border-radius:7px;color:#30343b;line-height:1.8;background:#fafafa}
+.gov-requirements-group nav a:hover{background:#fff9e7;border-color:var(--primary-gold)}
+.gov-requirements-group summary:focus-visible,.gov-requirements-group nav a:focus-visible{outline:3px solid var(--primary-gold);outline-offset:-3px}
+#requirements{scroll-margin-top:150px}
 .gov-service-card p { color:#62686c; font-size:13px; line-height:2; }
 .gov-service-more { display:flex; justify-content:space-between; width:100%; padding-top:16px; margin-top:auto; border-top:1px solid #eee; color:var(--primary-cyan-hover); font-size:13px; font-weight:700; }
 .gov-notice-section { padding:22px 0; background:#fff9e8; border-block:1px solid #efe4bf; color:#736136; font-size:12px; line-height:2; }
