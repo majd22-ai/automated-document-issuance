@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedJsonArray;
 use App\Enums\ServiceRequestStatus;
 use App\Services\Issuance\IssuanceLifecycle;
 use App\Services\Review\ReviewActions;
@@ -120,7 +121,7 @@ class CitizenServiceRequest extends Model
 
     protected function casts(): array
     {
-        return ['service_fee' => 'decimal:2', 'service_rules_version' => 'integer', 'service_snapshot' => 'array', 'request_data' => 'array', 'original_request_data' => 'array', 'review_version' => 'integer', 'assigned_at' => 'immutable_datetime', 'completed_at' => 'immutable_datetime', 'declared_at' => 'datetime', 'submitted_at' => 'datetime', 'requirements_result' => 'array', 'requirements_checked_at' => 'datetime'];
+        return ['service_fee' => 'decimal:2', 'service_rules_version' => 'integer', 'service_snapshot' => 'array', 'request_data' => EncryptedJsonArray::class, 'original_request_data' => EncryptedJsonArray::class, 'review_version' => 'integer', 'assigned_at' => 'immutable_datetime', 'completed_at' => 'immutable_datetime', 'declared_at' => 'datetime', 'submitted_at' => 'datetime', 'requirements_result' => 'array', 'requirements_checked_at' => 'datetime'];
     }
 
     public function service(): BelongsTo

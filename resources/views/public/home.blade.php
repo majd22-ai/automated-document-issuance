@@ -90,11 +90,13 @@
         <p>اختر نوع الوثيقة للاطلاع على المستندات والشروط الخاصة بكل خدمة.</p>
       </div>
       <div class="gov-services-grid">
-        <a class="gov-service-card" href="{{ route('services.civil-registry.guide', 'identity') }}">
-          <h3>متطلبات البطاقة الشخصية</h3>
-          <p>متطلبات الإصدار لأول مرة والتجديد وبدل الفاقد.</p>
-          <span class="gov-service-more">عرض المتطلبات <x-icon name="arrow-left" /></span>
-        </a>
+        @foreach(config('civil_registry_guides') as $guideKey => $guide)
+          <a class="gov-service-card" href="{{ route('services.civil-registry.guide', $guideKey) }}">
+            <h3>متطلبات {{ $guide['title'] }}</h3>
+            <p>اطّلع على متطلبات ووثائق خدمة {{ $guide['title'] }}.</p>
+            <span class="gov-service-more">عرض المتطلبات <x-icon name="arrow-left" /></span>
+          </a>
+        @endforeach
         <a class="gov-service-card" href="{{ route('services.passports').'#requirements' }}">
           <h3>متطلبات جواز السفر</h3>
           <p>المستندات المطلوبة لإصدار جواز السفر وتجديده.</p>

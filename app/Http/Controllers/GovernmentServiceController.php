@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BirthCertificateDraft;
 use App\Models\GovernmentService;
 use App\Services\ServiceEligibility;
 use Illuminate\Http\Request;
@@ -52,7 +53,10 @@ class GovernmentServiceController extends Controller
     {
         $report = $eligibility->evaluate($request->user(), $service);
         $reasons = $report->reasons();
+        $draft = $service->code === 'birth-certificate-first-issue'
+            ? BirthCertificateDraft::where('user_id', $request->user()->id)->where('government_service_id', $service->id)->first()
+            : null;
 
-        return response()->view('citizen.applications.create', compact('service', 'reasons', 'report'), $reasons ? 422 : 200)->header('Cache-Control', 'no-store, private');
+        return response()->view('citizen.applications.create', compact('service', 'reasons', 'report', 'draft'), $reasons ? 422 : 200)->header('Cache-Control', 'no-store, private');
     }
 }

@@ -18,6 +18,8 @@ use App\Services\Requirements\PriorDocumentRequirements;
 use App\Services\Review\ApprovalReadiness;
 use App\Services\Review\ReviewActions;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class IssueDocuments
@@ -27,8 +29,9 @@ class IssueDocuments
     public function issue(User $actor, CitizenServiceRequest $request, array $data): CitizenDocument
     {
         $newPath = null;
+        $birthPdfPath = null;
         try {
-            return $this->locks->run($actor, $request, 'issueDocument', function ($actor, $owner, $service, $request) use ($data, &$newPath) {
+            return $this->locks->run($actor, $request, 'issueDocument', function ($actor, $owner, $service, $request) use ($data, &$newPath, &$birthPdfPath) {
                 $existing = $request->issuedDocument()->first();
                 if ($existing && $this->audit->replay($existing, $actor, 'issued', $data)) {
                     return $existing;
@@ -82,6 +85,14 @@ class IssueDocuments
                         throw ValidationException::withMessages(['copy' => 'تعذر إنشاء النسخة الإلكترونية. لم يُصدر السجل ولم تتغير الوثيقة السابقة. أعد المحاولة بعد معالجة التخزين.']);
                     }
                 }
+                if ($service->code === 'birth-certificate-first-issue') {
+                    try {
+                        $birthPdfPath = app(BirthCertificateIssuance::class)->issue($document, $request, $actor)->pdf_path;
+                    } catch (\Throwable $exception) {
+                        Log::error('birth_certificate_generation_failed', ['exception_type' => get_class($exception)]);
+                        throw ValidationException::withMessages(['copy' => 'تعذر إنشاء ملف نموذج شهادة الميلاد ورمز التحقق. لم يكتمل الإصدار؛ أعد المحاولة بعد معالجة التخزين أو إعداد PDF.']);
+                    }
+                }
                 $this->audit->record($document, $actor, 'issued', $data, from: null, to: 'active', details: ['request_id' => $request->id, 'rules_version' => $service->rules_version, 'previous_document_id' => $previous?->id]);
                 $request = $request->transitionTo(ServiceRequestStatus::Processing, $actor);
                 if ($previous) {
@@ -95,6 +106,9 @@ class IssueDocuments
             });
         } catch (\Throwable $error) {
             $this->copies->discard($newPath);
+            if ($birthPdfPath && preg_match('~^birth-certificates/[a-f0-9-]{36}\.pdf$~D', $birthPdfPath)) {
+                Storage::disk('documents')->delete($birthPdfPath);
+            }
             if ($error instanceof UniqueConstraintViolationException) {
                 throw ValidationException::withMessages(['document' => 'تعارض إصدار متزامن أو رقم داخلي مستخدم. حدّث الصفحة للتحقق ثم أعد المحاولة.']);
             }
