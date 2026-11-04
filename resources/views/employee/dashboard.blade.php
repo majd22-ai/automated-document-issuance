@@ -6,9 +6,19 @@
     $hasStaffGrant = fn ($ability) => $staffGrants->contains(fn ($permission) => (bool) $permission->{$ability});
 @endphp
 <section class="section"><div class="container">
-    <div class="ops-page-head"><h1>لوحة عمل الموظف</h1><p class="ops-help">ابدأ بقائمة المراجعة، ثم تابع التحقق والإصدار والتسليم حسب الصلاحية الممنوحة لخدماتك.</p></div>
+    <x-workspace-heading title="لوحة عمل الموظف" role-label="مساحة الموظف" description="ابدأ بقائمة المراجعة، ثم تابع التحقق والإصدار والتسليم حسب الصلاحية الممنوحة لخدماتك." />
     @include('operations.messages')
-    <div class="ops-toolbar" style="margin-block:1rem"><a class="btn btn-outline" href="{{ route('employee.notifications.index') }}">إشعاراتي <span class="ops-status">{{ auth()->user()->unreadNotifications()->count() }} غير مقروءة</span></a></div>
+    @if(\App\Models\NeighborhoodOfficial::authorized(auth()->user()))
+    <article class="card ops-card"><h2>اعتماد شهادات السكن</h2><p>راجع طلبات المواطنين الموجهة إليك ضمن حيك، وسجّل الموافقة أو الرفض.</p><a class="btn btn-primary" href="{{ route('employee.neighborhood-attestations.index') }}">طلبات شهادة السكن في حيي</a></article>
+    @endif
+    <div class="ops-grid" aria-label="ملخص نطاق العمل">
+        <article class="ops-metric"><strong>{{ $staffGrants->filter(fn ($grant) => collect(['can_review','can_approve','can_assign','can_issue','can_deliver','can_verify','can_activate'])->contains(fn ($ability) => (bool) $grant->{$ability}))->count() }}</strong><p>خدمات لديك صلاحية للعمل عليها</p></article>
+        @if($hasStaffGrant('can_review') || $hasStaffGrant('can_approve') || $hasStaffGrant('can_assign'))
+        <article class="ops-metric"><strong>{{ \App\Models\CitizenServiceRequest::where('assigned_to', auth()->id())->whereIn('government_service_id', $staffGrants->filter(fn ($grant) => $grant->can_review || $grant->can_approve || $grant->can_assign)->pluck('government_service_id'))->whereIn('status', ['submitted','under_review','requires_correction','accepted','approved','processing'])->count() }}</strong><p>طلبات مفتوحة مسندة إليك ضمن صلاحيات المراجعة</p></article>
+        @endif
+    </div>
+    @if($staffGrants->isEmpty())<p class="ops-help">لم تُمنح صلاحيات خدمات بعد. تواصل مع مدير النظام لتحديد نطاق مهامك.</p>@endif
+    @unless(\App\Models\NeighborhoodOfficial::residenceOnly(auth()->user()))
     <div class="ops-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:1rem">
         @if($hasStaffGrant('can_review') || $hasStaffGrant('can_approve') || $hasStaffGrant('can_assign'))
 <article class="card ops-card" style="padding:1.5rem"><h2>مراجعة الطلبات</h2><p>ابحث عن الطلبات ضمن خدماتك، وراجع المتطلبات والمرفقات قبل القرار.</p><a class="btn btn-primary" href="{{ route('employee.applications.index') }}">فتح قائمة المراجعة</a><p><a href="{{ route('employee.applications.index', ['mine'=>1]) }}">الطلبات المسندة إليّ</a></p></article>
@@ -30,6 +40,7 @@
 <article class="card ops-card" style="padding:1.5rem"><h2>التسليم والاستلام</h2><p>تابع طريقة الاستلام وسجل حالة التسليم ومرجع الإثبات.</p><a class="btn btn-outline" href="{{ route('employee.deliveries.index') }}">متابعة التسليم</a></article>
 @endif
     </div>
+    @endunless
 </div></section>
 <section class="section"><div class="container"><details><summary>فتح المعاينة التجريبية السابقة</summary><p class="ops-help">المعاينة السابقة محفوظة للتجربة فقط، وبياناتها مستقلة عن الطلبات الفعلية. استخدم أقسام العمل أعلاه لتنفيذ الإجراءات على سجلات المنصة.</p>@include('components.portal-demo', ['screen' => 'review'])</details></div></section>
 @endsection

@@ -13,6 +13,11 @@
         const sync = () => {
             if (submit) submit.hidden = !official?.value;
             if (official && neighborhood) neighborhood.value = official.selectedOptions[0]?.dataset.neighborhood || '';
+            const selected = official?.selectedOptions[0];
+            const officialName = root.querySelector('[data-official-name]');
+            const officialPhone = root.querySelector('[data-official-phone]');
+            if (officialName) officialName.value = selected?.dataset.fullName || '';
+            if (officialPhone) officialPhone.value = selected?.dataset.phone || '';
         };
         const loadOfficials = async (initial = false) => {
             if (!official) return;
@@ -28,8 +33,10 @@
                 if (current !== generation) return;
                 reset(official, rows.length ? 'اختر عاقل الحارة / مسؤول الحي' : 'لا يوجد عاقل مسجل في هذه المديرية');
                 rows.forEach(row => {
-                    const option = new Option(`${row.full_name} — ${row.neighborhood}`, row.id);
+                    const option = new Option(row.neighborhood, row.id);
                     option.dataset.neighborhood = row.neighborhood;
+                    option.dataset.fullName = row.full_name;
+                    option.dataset.phone = row.phone;
                     official.add(option);
                 });
                 official.disabled = !rows.length;

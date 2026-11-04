@@ -13,9 +13,6 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Trust Apache reverse proxy so HTTPS headers are recognised
-        $middleware->trustProxies(at: '127.0.0.1');
-
         $middleware->web(append: [EnsureAccountIsActive::class]);
         $middleware->alias(['role' => EnsureUserHasRole::class]);
     })

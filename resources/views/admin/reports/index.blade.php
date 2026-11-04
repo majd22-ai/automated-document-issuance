@@ -1,7 +1,11 @@
 @extends('layouts.public')
 @section('title','التقارير والرقابة')
 @section('content')
-<section class="ops-page-head"><div class="container"><h1>{{ $dashboard?'لوحة الإدارة والرقابة':'التقارير والإحصائيات' }}</h1><p>مؤشرات من سجلات المنصة الفعلية</p></div></section>
+@if($dashboard)
+<x-workspace-heading title="لوحة الإدارة والرقابة" role-label="مساحة المدير" description="تابع مؤشرات المنصة وأدر الحسابات والخدمات والصلاحيات." />
+@else
+<section class="ops-page-head"><div class="container"><h1>التقارير والإحصائيات</h1><p>مؤشرات من سجلات المنصة الفعلية</p></div></section>
+@endif
 <section class="ops-section"><div class="container">@include('admin.oversight-feedback')
 @if(auth()->user()->role==='admin')<p><a href="{{ route('admin.employees.index') }}">الموظفون</a> — <a href="{{ route('admin.departments.index') }}">الأقسام</a> — <a href="{{ route('admin.users.index') }}">المستخدمون والأدوار</a> — <a href="{{ route('admin.review-permissions.index') }}">صلاحيات الخدمات</a> — <a href="{{ route('admin.services.index') }}">الخدمات</a> — <a href="{{ route('admin.integrations.index') }}">التكاملات</a> — <a href="{{ route('admin.audit-logs.index') }}">التدقيق</a></p>@endif
 <form method="GET" class="card ops-card ops-form-grid" aria-label="تصفية النتائج"><label>الفترة<select class="form-control" name="period">@foreach(['today'=>'اليوم','7days'=>'آخر سبعة أيام','30days'=>'آخر ثلاثين يومًا','month'=>'الشهر الحالي','custom'=>'فترة مخصصة'] as $value=>$label)<option value="{{ $value }}" @selected(request('period','30days')===$value)>{{ $label }}</option>@endforeach</select></label><label>من<input class="form-control" type="date" name="from" value="{{ request('from') }}"></label><label>إلى<input class="form-control" type="date" name="to" value="{{ request('to') }}"></label>

@@ -20,6 +20,7 @@
     $grants = $operator->reviewPermissions()->get();
     $has = fn ($ability) => $grants->contains(fn ($permission) => (bool) $permission->{$ability});
     $navigation = [['مهامي اليومية','employee.dashboard','employee.dashboard'],['الإشعارات','employee.notifications.index','employee.notifications.*']];
+    if (\App\Models\NeighborhoodOfficial::authorized($operator)) $navigation[] = ['اعتماد شهادات السكن','employee.neighborhood-attestations.index','employee.neighborhood-attestations.*'];
     if ($operator->can('manageCitizenActivation', \App\Models\User::class)) $navigation[] = ['تفعيل حسابات المواطنين','employee.accounts.index','employee.accounts.*'];
     $navigation[] = ['بيانات المواطنين','employee.citizens.index','employee.citizens.*'];
     if ($has('can_review') || $has('can_approve') || $has('can_assign')) $navigation[] = ['مراجعة الطلبات','employee.applications.index','employee.applications.*'];
@@ -35,6 +36,7 @@
   }
   if (\App\Services\FingerprintService::canUse($operator)) $navigation[] = ['استقبال المواطنين وتسجيل البصمة','identity-workflow.reception','identity-workflow.reception'];
   if (\App\Services\FingerprintService::canUse($operator, 'can_approve')) $navigation[] = ['المراجعة الإدارية التجريبية','identity-workflow.administration.index','identity-workflow.administration.*'];
+  if (\App\Models\NeighborhoodOfficial::residenceOnly($operator)) $navigation = array_values(array_filter($navigation, fn ($item) => in_array($item[1], ['employee.dashboard','employee.notifications.index','employee.neighborhood-attestations.index'], true)));
 @endphp
 <aside class="ops-sidebar" aria-label="التنقل داخل مساحة العمل">
   <div class="ops-sidebar-identity"><span class="ops-role">{{ $adminWorkspace ? 'الإدارة والرقابة' : 'الموظف المختص' }}</span><strong>{{ $operator->name }}</strong><small>اختر القسم للوصول إلى إجراءاته</small></div>

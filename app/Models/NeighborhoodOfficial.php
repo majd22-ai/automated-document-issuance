@@ -28,4 +28,26 @@ class NeighborhoodOfficial extends Model
     {
         return $this->belongsTo(ResidenceDistrict::class, 'district_id');
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public static function authorized(User $user): bool
+    {
+        return $user->is_active && $user->role === 'employee'
+            && static::where('user_id', $user->id)->where('is_active', true)->where('can_attest', true)->exists();
+    }
+
+    public static function residenceOnly(User $user): bool
+    {
+        return $user->role === 'employee' && static::where('user_id', $user->id)->exists()
+            && $user->report_scope !== 'department'
+            && ! $user->reviewPermissions()->where(function ($query) {
+                foreach (['can_review', 'can_approve', 'can_assign', 'can_issue', 'can_deliver', 'can_verify', 'can_activate'] as $ability) {
+                    $query->orWhere($ability, true);
+                }
+            })->exists();
+    }
 }

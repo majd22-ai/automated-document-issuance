@@ -23,6 +23,7 @@ use App\Http\Controllers\IdentityAttestationController;
 use App\Http\Controllers\IdentityCardFormController;
 use App\Http\Controllers\IdentityWorkflowController;
 use App\Http\Controllers\LocalPasswordRecoveryController;
+use App\Http\Controllers\NeighborhoodAttestationController;
 use App\Http\Controllers\NeighborhoodOfficialController;
 use App\Http\Controllers\OperationalReportController;
 use App\Http\Controllers\ProfileController;
@@ -283,6 +284,10 @@ Route::middleware(['auth', 'role:employee'])
         Route::get('/dashboard', function () {
             return view('employee.dashboard');
         })->name('dashboard');
+        Route::get('/neighborhood-attestations', [NeighborhoodAttestationController::class, 'index'])->name('neighborhood-attestations.index');
+        Route::get('/neighborhood-attestations/{attestation}', [NeighborhoodAttestationController::class, 'show'])->name('neighborhood-attestations.show');
+        Route::post('/neighborhood-attestations/{attestation}/confirm', [NeighborhoodAttestationController::class, 'confirm'])->middleware('throttle:6,1')->name('neighborhood-attestations.confirm');
+        Route::post('/neighborhood-attestations/{attestation}/decision', [NeighborhoodAttestationController::class, 'decide'])->middleware('throttle:10,1')->name('neighborhood-attestations.decide');
 
         Route::get('/applications', [ApplicationReviewController::class, 'index'])->name('applications.index');
         Route::get('/reports', [OperationalReportController::class, 'index'])->name('reports.index');

@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\NeighborhoodOfficial;
 use App\Models\ResidenceDistrict;
+use App\Models\User;
 use App\Services\Oversight\AuditTrail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class NeighborhoodOfficialController extends Controller
@@ -14,8 +16,9 @@ class NeighborhoodOfficialController extends Controller
     public function index()
     {
         $officials = NeighborhoodOfficial::with('district.governorate')->latest('id')->paginate(20);
+        $employees = User::where('role', 'employee')->where('is_active', true)->orderBy('name')->get(['id', 'name']);
 
-        return response()->view('admin.neighborhood-officials', compact('officials'))->header('Cache-Control', 'no-store, private');
+        return response()->view('admin.neighborhood-officials', compact('officials', 'employees'))->header('Cache-Control', 'no-store, private');
     }
 
     public function store(Request $request)
@@ -46,11 +49,17 @@ class NeighborhoodOfficialController extends Controller
 
     public function update(Request $request, NeighborhoodOfficial $official)
     {
-        $data = $request->validate(['is_active' => ['required', 'boolean']]);
+        $data = $request->validate(['is_active' => ['required', 'boolean'], 'user_id' => ['nullable', 'integer', 'exists:users,id', Rule::unique('neighborhood_officials', 'user_id')->ignore($official->id)], 'can_attest' => ['sometimes', 'boolean']]);
+        if (array_key_exists('user_id', $data)) {
+            $employee = User::find($data['user_id']);
+            if (($data['user_id'] && (! $employee || $employee->role !== 'employee' || ! $employee->is_active)) || (($data['can_attest'] ?? false) && ! $employee)) {
+                throw ValidationException::withMessages(['user_id' => 'اختر حساب موظف مفعّل قبل منح صلاحية شهادة السكن.']);
+            }
+        }
         DB::transaction(function () use ($request, $official, $data) {
             $row = NeighborhoodOfficial::whereKey($official->id)->lockForUpdate()->firstOrFail();
             $row->forceFill($data)->save();
-            app(AuditTrail::class)->record('neighborhood_official_status_changed', NeighborhoodOfficial::class, $row->id, $request->user(), changes: ['is_active' => $row->is_active]);
+            app(AuditTrail::class)->record('neighborhood_official_status_changed', NeighborhoodOfficial::class, $row->id, $request->user(), changes: ['is_active' => $row->is_active, 'changed_fields' => array_keys($data)]);
         });
 
         return back()->with('status', 'تم تحديث حالة العاقل مع الاحتفاظ بسجلاته السابقة.');
@@ -60,6 +69,8 @@ class NeighborhoodOfficialController extends Controller
     {
         abort_unless($request->user()->is_active, 403);
 
-        return response()->json($district->officials()->where('is_active', true)->orderBy('full_name')->get(['id', 'full_name', 'neighborhood']))->header('Cache-Control', 'no-store, private');
+        $rows = $district->officials()->where('is_active', true)->where('can_attest', true)->whereHas('user', fn ($q) => $q->where('role', 'employee')->where('is_active', true))->orderBy('neighborhood')->get();
+
+        return response()->json($rows->map(fn ($official) => ['id' => $official->id, 'full_name' => $official->full_name, 'neighborhood' => $official->neighborhood, 'phone' => $official->phone]))->header('Cache-Control', 'no-store, private');
     }
 }

@@ -46,6 +46,26 @@ class WorkspaceExperienceTest extends TestCase
         $this->get('/')->assertDontSee('id="ops-navigation"', false);
     }
 
+    public function test_dashboards_share_heading_and_citizen_requests_are_private(): void
+    {
+        $citizen = User::factory()->create();
+        $other = User::factory()->create();
+        $citizen->serviceRequests()->create(['reference' => 'OWN-DASHBOARD-REQUEST', 'service_code' => 'identity-first-issue', 'status' => 'requires_correction']);
+        $other->serviceRequests()->create(['reference' => 'PRIVATE-OTHER-REQUEST', 'service_code' => 'identity-first-issue', 'status' => 'submitted']);
+        $this->actingAs($citizen)->get(route('citizen.dashboard'))
+            ->assertOk()->assertSee('data-workspace-heading', false)
+            ->assertSee('OWN-DASHBOARD-REQUEST')->assertDontSee('PRIVATE-OTHER-REQUEST')
+            ->assertSee('يحتاج إلى استكمال')->assertSee(route('citizen.appointments.index'))
+            ->assertSee('operations-workspace.css');
+        $this->get(route('employee.dashboard'))->assertForbidden();
+        $this->get(route('admin.dashboard'))->assertForbidden();
+        foreach (['employee', 'admin'] as $role) {
+            $this->actingAs(User::factory()->create(['role' => $role]))
+                ->get(route($role.'.dashboard'))->assertOk()->assertSee('data-workspace-heading', false)
+                ->assertDontSee('PRIVATE-OTHER-REQUEST');
+        }
+    }
+
     public function test_inbox_open_checks_current_request_permission_and_owns_read_actions(): void
     {
         $employee = User::factory()->create(['role' => 'employee']);

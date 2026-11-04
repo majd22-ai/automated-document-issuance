@@ -12,6 +12,8 @@
   </button>
   <div class="gov-dropdown-content gov-account-menu" id="gov-account-menu">
     @if($employeeAccount)
+      @if(\App\Models\NeighborhoodOfficial::authorized($account))<a href="{{ route('employee.neighborhood-attestations.index') }}">اعتماد شهادات السكن في حيي</a>@endif
+      @unless(\App\Models\NeighborhoodOfficial::residenceOnly($account))
       @can('manageCitizenActivation', \App\Models\User::class)
         <a href="{{ route('employee.accounts.index') }}">تفعيل حسابات المواطنين</a>
       @endcan
@@ -19,6 +21,7 @@
       <a href="{{ route('employee.tracking.index') }}">متابعة الطلبات</a>
       <a href="{{ route('employee.verifications.index') }}">التحقق الإلكتروني</a>
       @if($account->report_scope === 'department')<a href="{{ route('employee.reports.index') }}">تقارير القسم</a>@endif
+      @endunless
     @else
       <a href="{{ route('citizen.account.status') }}">حالة الحساب والتفعيل</a>
       <a href="{{ route('citizen.data') }}">بياناتي</a>

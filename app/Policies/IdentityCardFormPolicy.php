@@ -17,6 +17,10 @@ class IdentityCardFormPolicy
 
     public function simulate(User $actor, IdentityCardForm $form): bool
     {
+        if (data_get($form->attestation?->recipient_scope, 'employee_id')) {
+            return false;
+        }
+
         return IdentityAttestations::enabled() && $actor->is_active
             && $actor->id !== $form->user_id
             && ($actor->role === 'admin' || ($actor->role === 'employee' && $actor->canReviewService($form->government_service_id, 'can_review')));
@@ -24,7 +28,8 @@ class IdentityCardFormPolicy
 
     public function recordFingerprint(User $actor, IdentityCardForm $form): bool
     {
-        return FingerprintService::enabled() && $this->simulate($actor, $form);
+        return FingerprintService::enabled() && IdentityAttestations::enabled() && $actor->is_active && $actor->id !== $form->user_id
+            && ($actor->role === 'admin' || ($actor->role === 'employee' && $actor->canReviewService($form->government_service_id, 'can_review')));
     }
 
     public function administer(User $actor, IdentityCardForm $form): bool

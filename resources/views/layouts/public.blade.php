@@ -39,7 +39,7 @@
           defer></script>
 
   @stack('styles')
-  @if($operationsWorkspace)
+  @if($operationsWorkspace || request()->routeIs('citizen.dashboard'))
   <link rel="stylesheet" href="{{ asset('css/operations-workspace.css') }}?v={{ filemtime(public_path('css/operations-workspace.css')) }}">
   @endif
   <link rel="stylesheet" href="{{ asset('css/service-banner.css') }}?v={{ filemtime(public_path('css/service-banner.css')) }}">

@@ -1,4 +1,7 @@
 /* Content workspace only. Header markup and header styles remain untouched. */
+.ops-content .workspace-heading { text-align:start; border-bottom:1px solid var(--border-light); padding-block:20px; margin-bottom:22px; }
+.ops-content .workspace-heading h1 { overflow-wrap:anywhere; }
+.ops-content a:focus-visible,.ops-content summary:focus-visible { outline:3px solid var(--primary-gold); outline-offset:3px; }
 .ops-shell { display:grid; grid-template-columns:230px minmax(0,1fr); align-items:start; gap:24px; max-width:1600px; margin:auto; padding:28px 24px 48px; color:var(--text-main); font-family:var(--font-arabic); direction:rtl; }
 .ops-sidebar { position:sticky; top:124px; border:1px solid var(--border-light); border-radius:var(--radius-card); background:var(--background-main); box-shadow:var(--shadow-small); overflow:hidden; }
 .ops-sidebar-identity { display:grid; gap:8px; padding:20px; border-top:3px solid var(--primary-gold); border-bottom:1px solid var(--border-soft); }

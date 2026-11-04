@@ -16,5 +16,14 @@
 <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>العاقل</th><th>المحافظة والمديرية</th><th>الحي</th><th>الهاتف</th><th>الحالة</th></tr></thead><tbody>
 @forelse($officials as $official)<tr><td>{{ $official->full_name }}</td><td>{{ $official->district->governorate->name }} — {{ $official->district->name }}</td><td>{{ $official->neighborhood }}</td><td dir="ltr">{{ $official->phone }}</td><td><form method="POST" action="{{ route('admin.neighborhood-officials.update',$official) }}">@csrf @method('PATCH')<input type="hidden" name="is_active" value="{{ $official->is_active ? 0 : 1 }}"><button class="btn btn-outline">{{ $official->is_active ? 'تعطيل' : 'إعادة تفعيل' }}</button></form></td></tr>@empty<tr><td colspan="5">لم تُسجل بيانات عُقّال بعد.</td></tr>@endforelse
 </tbody></table></div>{{ $officials->links() }}
+<h2>ربط العاقل بحساب موظف ومنحه صلاحية شهادة السكن فقط</h2>
+<p>اختر حسابًا موجودًا؛ لا ينشئ الربط حسابًا ولا يمنح صلاحيات مراجعة الخدمات أو إصدار الوثائق.</p>
+@foreach($officials as $official)
+<form class="card ops-card" method="POST" action="{{ route('admin.neighborhood-officials.update', $official) }}">@csrf @method('PATCH')
+<strong>{{ $official->full_name }} — {{ $official->neighborhood }}</strong><input type="hidden" name="is_active" value="{{ (int) $official->is_active }}">
+<label>حساب الموظف<select name="user_id" class="form-control"><option value="">دون ربط</option>@foreach($employees as $employee)<option value="{{ $employee->id }}" @selected($official->user_id === $employee->id)>{{ $employee->name }}</option>@endforeach</select></label>
+@error('user_id')<p class="attestation-error">{{ $message }}</p>@enderror
+<input type="hidden" name="can_attest" value="0"><label><input type="checkbox" name="can_attest" value="1" @checked($official->can_attest)> السماح باعتماد شهادة السكن في هذا الحي</label><button class="btn btn-primary">حفظ التفويض</button>
+</form>@endforeach
 </div></section>
 @endsection
