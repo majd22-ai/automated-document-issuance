@@ -280,6 +280,7 @@ class ServiceRequirementsTest extends TestCase
         $this->post('/citizen/applications/'.$request->id.'/requirements/check')->assertForbidden();
         $employee = $this->citizen();
         $employee->forceFill(['role' => 'employee'])->save();
+        (new \App\Models\ServiceReviewPermission)->forceFill(['user_id'=>$employee->id,'government_service_id'=>$service->id,'can_review'=>true,'granted_by'=>$admin->id])->save();
         $this->actingAs($employee)->post('/employee/applications/'.$request->id.'/requirements/check', ['eligible' => true])->assertOk();
         $this->assertFalse($request->fresh()->requirements_result['eligible']);
         $this->assertSame('under_review', $request->fresh()->status);

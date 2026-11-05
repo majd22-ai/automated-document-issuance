@@ -78,7 +78,7 @@ class ApplicationReviewTest extends TestCase
         [$citizen,$reviewer,$service,$request] = $this->fixtures();
         $outside = $this->user('employee');
         $this->actingAs($outside)->get('/employee/applications/'.$request->id.'/review')->assertForbidden();
-        $this->get('/employee/applications')->assertOk()->assertDontSee($request->reference);
+        $this->get('/employee/applications')->assertForbidden();
         $this->decide($outside, $request, 'start')->assertForbidden();
         $this->decide($citizen, $request, 'approve')->assertForbidden();
         $this->actingAs($reviewer)->get('/employee/applications/'.$request->id.'/review')->assertOk();

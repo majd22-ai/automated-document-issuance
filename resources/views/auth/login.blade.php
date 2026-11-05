@@ -18,6 +18,7 @@
       </div>
     @endif
     @if(session('status'))<div class="alert alert-success" role="status">{{ session('status') }}</div>@endif
+    @if(session('mock_account_id'))<p>احتفظ بمعرّف حسابك الرقمي الداخلي لتسجيل الدخول: <bdi>{{ session('mock_account_id') }}</bdi></p>@endif
 
     <form method="POST" action="{{ url('/login') }}" class="auth-form" data-validate>
       @csrf
@@ -28,7 +29,7 @@
       @endif
 
       <div class="form-group">
-        <label class="form-label" for="identifier">الرقم الوطني أو اسم المستخدم</label>
+        <label class="form-label" for="identifier">الرقم الوطني أو معرّف الحساب الرقمي أو اسم المستخدم</label>
         <small>يمكن للحسابات الحالية الاستمرار باستخدام البريد الإلكتروني أيضًا.</small>
         <input
           type="text"

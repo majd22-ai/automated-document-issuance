@@ -14,14 +14,17 @@ class AdminUserController extends Controller
 {
     public function index(Request $request): View
     {
-        $search = $request->validate(['search' => ['nullable', 'string', 'max:100']])['search'] ?? '';
+        $filters = $request->validate(['search' => ['nullable', 'string', 'max:100'], 'role' => ['nullable', Rule::in(User::ROLES)], 'state' => ['nullable', Rule::in(['active', 'disabled'])]]);
+        $search = $filters['search'] ?? '';
         $users = User::query()->select(['id', 'name', 'username', 'email', 'role', 'is_active'])
+            ->when($filters['role'] ?? null, fn ($q, $role) => $q->where('role', $role))
+            ->when($filters['state'] ?? null, fn ($q, $state) => $q->where('is_active', $state === 'active'))
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%')
                     ->orWhere('username', 'like', '%'.$search.'%');
             }))->latest('id')->paginate(15)->withQueryString();
 
-        return view('admin.users.index', compact('users', 'search'));
+        return view('admin.users.index', compact('users', 'search', 'filters'));
     }
 
     public function update(Request $request, User $user): RedirectResponse

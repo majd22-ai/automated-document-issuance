@@ -19,6 +19,7 @@ use Tests\TestCase;
 
 class CitizenAttachmentsTest extends TestCase
 {
+    use \Tests\Support\GrantsWorkspacePermissions;
     protected function setUp(): void
     {
         parent::setUp();
@@ -44,6 +45,7 @@ class CitizenAttachmentsTest extends TestCase
         $user = User::factory()->create();
         $user->forceFill(['username' => 'FILE-'.$user->id, 'role' => $role])->save();
 
+        if ($role === 'employee') $this->grantWorkspaceServices($user, ['identity-first-issue']);
         return $user;
     }
 

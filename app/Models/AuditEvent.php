@@ -10,9 +10,11 @@ class AuditEvent extends Model
 
     protected $guarded = ['*'];
 
+    protected $hidden = ['private_reason'];
+
     protected function casts(): array
     {
-        return ['changes' => 'array', 'occurred_at' => 'immutable_datetime'];
+        return ['changes' => 'array', 'occurred_at' => 'immutable_datetime', 'private_reason' => 'encrypted'];
     }
 
     public function actor()

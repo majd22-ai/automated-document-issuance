@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Operations\RecordExamination;
 use App\Services\Operations\RequestCharges;
 use App\Services\ServiceEligibility;
+use App\Services\Workspace\EmployeeWorkspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -42,7 +43,7 @@ class RequestOperationsController extends Controller
             Gate::authorize('searchCitizens', User::class);
         }
         $request->validate(['page' => ['sometimes', 'integer', 'min:1']]);
-        $charges = RequestCharge::with(['application', 'payment'])->when(! $employee, fn ($q) => $q->where('user_id', $request->user()->id))->latest('id')->paginate(15);
+        $charges = RequestCharge::with(['application', 'payment'])->when($employee, fn ($q) => $q->whereHas('application', fn ($q) => $q->whereIn('government_service_id', app(EmployeeWorkspace::class)->serviceIds($request->user(), ['can_review']))))->when(! $employee, fn ($q) => $q->where('user_id', $request->user()->id))->latest('id')->paginate(15);
 
         return response()->view('operations.payments', compact('charges', 'employee'))->header('Cache-Control', 'no-store, private');
     }

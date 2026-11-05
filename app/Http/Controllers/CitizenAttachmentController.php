@@ -10,6 +10,7 @@ use App\Models\GovernmentService;
 use App\Models\User;
 use App\Services\Attachments\AttachmentRules;
 use App\Services\Attachments\ManageAttachments;
+use App\Services\Workspace\EmployeeWorkspace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -105,6 +106,7 @@ class CitizenAttachmentController extends Controller
         Gate::authorize('searchCitizens', User::class);
         $filters = $request->validate(['review_status' => ['nullable', 'in:pending,uploaded,approved,rejected,replacement_required'], 'page' => ['sometimes', 'integer', 'min:1']]);
         $attachments = CitizenAttachment::with(['citizen', 'service', 'application'])
+            ->whereIn('government_service_id', app(EmployeeWorkspace::class)->serviceIds($request->user(), ['can_review']))
             ->whereHas('citizen', fn ($q) => $q->where('role', 'citizen'))
             ->when($filters['review_status'] ?? null, fn ($q, $state) => $q->where('review_status', $state))->latest('id')->paginate(15)->withQueryString();
 

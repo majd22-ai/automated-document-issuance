@@ -126,7 +126,7 @@ class TrackingNotificationsTest extends TestCase
         $this->assertSame(['submitted', 'start', 'accept'], collect($rows->items())->pluck('action')->all());
         $this->actingAs($employee)->get('/employee/tracking/'.$request->id)->assertOk();
         $this->actingAs($this->user('employee'))->get('/employee/tracking/'.$request->id)->assertForbidden();
-        $this->get('/employee/tracking')->assertOk()->assertDontSee($request->reference);
+        $this->get('/employee/tracking')->assertForbidden();
     }
 
     public function test_expiry_thresholds_are_configured_deduplicated_and_expired_policy_is_explicit(): void

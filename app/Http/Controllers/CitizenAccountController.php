@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ConfirmCitizenAccountRequest;
-use App\Models\ActivationFingerprintAttempt;
 use App\Models\CitizenAccountConfirmation;
 use App\Models\User;
 use App\Services\Registration\ActivationRequests;
 use App\Services\Registration\CitizenAccountActivation;
 use App\Services\Registration\InPersonActivation;
+use App\Services\Registration\MockCivilSystems;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -17,21 +17,22 @@ class CitizenAccountController extends Controller
 {
     public function status(Request $request)
     {
+        if (MockCivilSystems::enabled() && str_ends_with((string) $request->user()->activation_source, '_local_mock')) {
+            return response()->view('citizen.mock-activation', ['citizen' => $request->user(), 'activationRequest' => $request->user()->activationRequest])->header('Cache-Control', 'no-store, private');
+        }
+
         return response()->view('citizen.account-status', ['citizen' => $request->user(), 'activationRequest' => $request->user()->activationRequest])->header('Cache-Control', 'no-store, private');
     }
 
     public function submit(Request $request, ActivationRequests $requests)
     {
-        $request->validate(['acknowledged' => ['required', 'accepted']], ['acknowledged.required' => 'أكد مراجعة بياناتك وتعليمات التفعيل.', 'acknowledged.accepted' => 'أكد مراجعة بياناتك وتعليمات التفعيل.']);
-        $requests->submit($request->user());
-
-        return redirect()->route('citizen.account.status')->with('status', 'تم تسجيل طلب التفعيل وإتاحته للموظفين المخوّلين. إذا سبق إرساله فلن يُكرر.');
+        abort(410, 'انتقل إلى صفحة تفعيل حسابي لإتمام التحقق ورفع الوثائق أولًا.');
     }
 
     public function index(Request $request)
     {
         Gate::authorize('manageCitizenActivation', User::class);
-        $data = $request->validate(['submitted' => ['sometimes', 'boolean'], 'search' => ['nullable', 'string', 'max:100'], 'state' => ['nullable', 'in:initial_account,identity_verification_pending,active,review_required'], 'page' => ['sometimes', 'integer', 'min:1']]);
+        $data = $request->validate(['submitted' => ['sometimes', 'boolean'], 'search' => ['nullable', 'string', 'max:100'], 'state' => ['nullable', 'in:initial_account,identity_verification_pending,active,review_required,pending_activation,under_review,action_required,suspended'], 'page' => ['sometimes', 'integer', 'min:1']]);
         $citizens = User::where('role', 'citizen')->with('activationRequest')->when($request->boolean('submitted'), fn ($q) => $q->whereHas('activationRequest', fn ($q) => $q->where('status', 'pending')))->when($data['search'] ?? null, fn ($q, $search) => $q->where(fn ($q) => $q->where('username', $search)->orWhere('national_id', $search)->orWhere('name', $search)))
             ->when($data['state'] ?? null, fn ($q, $state) => $q->where('registration_status', $state))->orderBy('id')->paginate(15)->withQueryString();
 
@@ -45,70 +46,35 @@ class CitizenAccountController extends Controller
         $confirmations = $citizen->accountConfirmations()->with('actor')->latest('id')->paginate(15);
 
         $visit = $citizen->activationRequest;
-        $flow = app(InPersonActivation::class);
-        $visitReady = $visit && $visit->visit_actor_id === auth()->id() && ! $visit->visit_consumed_at
-            && $visit->visit_expires_at?->isFuture() && hash_equals($visit->account_binding ?? '', $flow->binding($citizen));
-        $rightPassed = $visitReady && $flow->passed($visit, 'right_index');
-        $leftPassed = $visitReady && $flow->passed($visit, 'left_index');
-        $fingerAttempts = $visit ? ActivationFingerprintAttempt::where('activation_request_id', $visit->id)->latest('id')->limit(20)->get() : collect();
 
-        return response()->view('employee.accounts.show', compact('citizen', 'requests', 'confirmations', 'visit', 'visitReady', 'rightPassed', 'leftPassed', 'fingerAttempts') + ['operationToken' => (string) Str::uuid()])->header('Cache-Control', 'no-store, private');
+        return response()->view('employee.accounts.show', compact('citizen', 'requests', 'confirmations', 'visit') + ['operationToken' => (string) Str::uuid()])->header('Cache-Control', 'no-store, private');
     }
 
     public function prepare(Request $request, User $citizen, InPersonActivation $flow)
     {
-        Gate::authorize('activateCitizen', $citizen);
-        if (preg_match('/^7[0-9]{8}$/D', (string) $request->input('phone'))) {
-            $request->merge(['phone' => '+967'.$request->input('phone')]);
-        }
-        $data = $request->validate(['identity_type' => ['required', 'in:national_id,birth_certificate'],
-            'identity_number' => ['required', 'string', 'regex:/^[0-9]{5,50}$/'],
-            'phone' => ['required', 'string', 'regex:/^\+9677[0-9]{8}$/'], 'phone_change_confirmed' => ['sometimes', 'accepted']],
-            ['*.required' => 'هذا الحقل مطلوب.', 'identity_number.regex' => 'أدخل رقم الهوية أو شهادة الميلاد من 5 إلى 50 رقمًا.',
-                'phone.regex' => 'أدخل رقم جوال يمني صحيحًا: +967 ثم تسعة أرقام تبدأ بـ7.', 'phone_change_confirmed.accepted' => 'أكد تعديل الهاتف قبل حفظ البيانات.']);
-        $visit = $flow->begin($request->user(), $citizen, $data);
-        if ($request->expectsJson()) {
-            return response()->json(['visit_token' => $visit->visit_token, 'phone' => $visit->visit_phone,
-                'right_token' => (string) Str::uuid(), 'left_token' => (string) Str::uuid(),
-                'registry' => $flow->registryCheck($citizen, $data['identity_type'], $data['identity_number'])])->header('Cache-Control', 'no-store, private');
-        }
-
-        return back()->with('status', 'حُفظت بيانات الحضور للمراجعة. تعديل الهاتف المقترح سيطبق عند نجاح الاعتماد فقط.');
+        abort(410, 'أُوقف التفعيل بالحضور. ينفذ المواطن التحقق ورفع الوثائق من حسابه.');
     }
 
     public function finger(Request $request, User $citizen, InPersonActivation $flow)
     {
-        Gate::authorize('activateCitizen', $citizen);
-        $data = $request->validate(['visit_token' => ['required', 'uuid'], 'operation_token' => ['required', 'uuid'],
-            'finger' => ['required', 'in:right_index,left_index'], 'force_failure' => ['sometimes', 'boolean'],
-            'source' => ['missing'], 'result' => ['missing'], 'biometric_data' => ['missing'], 'image' => ['missing'], 'template' => ['missing']]);
-        $attempt = $flow->finger($request->user(), $citizen, $data);
-
-        return response()->json(['result' => $attempt->result, 'source' => 'محاكاة بصمة محلية', 'time' => $attempt->performed_at->toISOString(), 'retry_token' => (string) Str::uuid()])->header('Cache-Control', 'no-store, private');
+        abort(410, 'أُزيلت محاكاة البصمة من تفعيل الحساب.');
     }
 
     public function verifyActivationCode(Request $request, User $citizen, InPersonActivation $flow)
     {
-        Gate::authorize('activateCitizen', $citizen);
-        $data = $request->validate(['visit_token' => ['required', 'uuid'], 'otp' => ['required', 'string', 'regex:/^[0-9]{6}$/']]);
-        $flow->verify($request->user(), $citizen, $data['visit_token'], $data['otp']);
-
-        return response()->json(['verified' => true, 'message' => 'تم التحقق من الرمز. يمكنك الآن تأكيد تفعيل الحساب بعد استكمال المراجعة المطلوبة.'])->header('Cache-Control', 'no-store, private');
+        abort(410, 'التحقق من الجوال أصبح من حساب المواطن.');
     }
 
     public function sendActivationCode(Request $request, User $citizen, InPersonActivation $flow)
     {
-        Gate::authorize('activateCitizen', $citizen);
-        $data = $request->validate(['visit_token' => ['required', 'uuid']]);
-
-        return response()->json($flow->send($request->user(), $citizen, $data['visit_token']))->header('Cache-Control', 'no-store, private');
+        abort(410, 'إرسال الرمز أصبح من حساب المواطن.');
     }
 
     public function confirm(ConfirmCitizenAccountRequest $request, User $citizen, CitizenAccountActivation $activation)
     {
         $replay = CitizenAccountConfirmation::where('operation_token', $request->validated('operation_token'))->exists();
-        if (! $replay && ! $citizen->hasActivatedIdentity()) {
-            app(InPersonActivation::class)->verify($request->user(), $citizen, $request->validated('visit_token'), $request->validated('otp'));
+        if (! $replay && $request->validated('action') === 'activate') {
+            abort_unless($citizen->activationRequest?->workflow === 'remote', 409, 'أكمل طلب التفعيل الإلكتروني من حساب المواطن أولًا.');
         }
         $activation->confirm($request->user(), $citizen, $request->validated());
 

@@ -4,13 +4,14 @@ namespace App\Policies;
 
 use App\Models\CitizenAttachment;
 use App\Models\User;
+use App\Services\Workspace\EmployeeWorkspace;
 
 class CitizenAttachmentPolicy
 {
     public function view(User $actor, CitizenAttachment $file): bool
     {
         return $actor->is_active && (($actor->role === 'citizen' && $actor->id === $file->user_id)
-            || ($actor->role === 'employee' && $actor->can('viewCitizenData', $file->citizen)));
+            || ($actor->role === 'employee' && in_array((int) $file->government_service_id, app(EmployeeWorkspace::class)->serviceIds($actor, ['can_review']), true)));
     }
 
     public function update(User $actor, CitizenAttachment $file): bool

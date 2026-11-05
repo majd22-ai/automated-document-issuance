@@ -463,7 +463,7 @@ class DocumentIssuanceTest extends TestCase
     {
         [$citizen,$employee,$service,$request] = $this->fixtures();
         $outside = $this->user('employee');
-        $this->actingAs($outside)->get('/employee/issuance')->assertOk()->assertDontSee($request->reference);
+        $this->actingAs($outside)->get('/employee/issuance')->assertForbidden();
         $this->get('/employee/issuance/'.$request->id)->assertForbidden();
         $payload = ['government_service_id' => $service->id, 'can_review' => false, 'can_approve' => false, 'can_assign' => false, 'can_issue' => true, 'can_deliver' => false];
         $this->post('/admin/users/'.$outside->id.'/review-permissions', $payload)->assertForbidden();

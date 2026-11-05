@@ -90,9 +90,16 @@
         <p>اضغط على اسم الجهة، ثم اختر الخدمة لعرض متطلباتها.</p>
       </div>
       <div class="gov-services-grid">
-        <a class="gov-service-card" href="{{ route('services.civil-registry.guide', 'birth') }}">
-          <h3>متطلبات {{ config('civil_registry_guides.birth.title') }}</h3>
-          <p>اطّلع على متطلبات ووثائق خدمة {{ config('civil_registry_guides.birth.title') }}.</p>
+        @foreach(config('civil_registry_guides') as $guideKey => $guide)
+          <a class="gov-service-card" href="{{ route('services.civil-registry.guide', $guideKey) }}">
+            <h3>متطلبات {{ $guide['title'] }}</h3>
+            <p>اطّلع على متطلبات ووثائق خدمة {{ $guide['title'] }}.</p>
+            <span class="gov-service-more">عرض المتطلبات <x-icon name="arrow-left" /></span>
+          </a>
+        @endforeach
+        <a class="gov-service-card" href="{{ route('services.passports').'#requirements' }}">
+          <h3>متطلبات جواز السفر</h3>
+          <p>المستندات المطلوبة لإصدار جواز السفر وتجديده.</p>
           <span class="gov-service-more">عرض المتطلبات <x-icon name="arrow-left" /></span>
         </a>
         <a class="gov-service-card" href="{{ route('services.driving-licenses').'#requirements' }}">
@@ -103,39 +110,15 @@
       </div>
       <div class="gov-services-grid gov-requirements-groups">
         @foreach([
-          [
-            'title' => 'متطلبات خدمات مصلحة الأحوال المدنية',
-            'icon'  => 'identity',
-            'items' => [
-              ['label' => 'متطلبات إصدار بطاقة شخصية لأول مرة',  'href' => route('services.identity.show', 'first-issue').'#requirements'],
-              ['label' => 'متطلبات تجديد بطاقة شخصية',           'href' => route('services.identity.show', 'renewal').'#requirements'],
-              ['label' => 'متطلبات إصدار بطاقة شخصية بدل فاقد', 'href' => route('services.identity.show', 'lost-replacement').'#requirements'],
-              ['label' => 'متطلبات شهادة الميلاد',               'href' => route('services.civil-registry.guide', 'birth')],
-              ['label' => 'متطلبات تصحيح القيود',                'href' => route('services.civil-registry.guide', 'corrections')],
-            ],
-          ],
-          [
-            'title' => 'متطلبات خدمات مصلحة الهجرة والجوازات والجنسية',
-            'icon'  => 'passport',
-            'items' => [
-              ['label' => 'متطلبات إصدار جواز سفر لأول مرة', 'href' => route('services.passports.show', 'first-issue').'#requirements'],
-              ['label' => 'متطلبات تجديد جواز سفر',           'href' => route('services.passports.show', 'renewal').'#requirements'],
-            ],
-          ],
-          [
-            'title' => 'متطلبات خدمات الإدارة العامة للمرور',
-            'icon'  => 'car',
-            'items' => [
-              ['label' => 'متطلبات إصدار رخصة قيادة لأول مرة', 'href' => route('services.driving-licenses.show', 'first-issue').'#requirements'],
-              ['label' => 'متطلبات تجديد رخصة قيادة',           'href' => route('services.driving-licenses.show', 'renewal').'#requirements'],
-            ],
-          ],
+          ['title'=>'متطلبات خدمات مصلحة الأحوال المدنية','icon'=>'identity','route'=>'services.identity.show','items'=>['first-issue'=>'متطلبات إصدار بطاقة شخصية لأول مرة','renewal'=>'متطلبات تجديد بطاقة شخصية','lost-replacement'=>'متطلبات إصدار بطاقة شخصية بدل فاقد']],
+          ['title'=>'متطلبات خدمات مصلحة الهجرة والجوازات والجنسية','icon'=>'passport','route'=>'services.passports.show','items'=>['first-issue'=>'متطلبات إصدار جواز سفر لأول مرة','renewal'=>'متطلبات تجديد جواز سفر']],
+          ['title'=>'متطلبات خدمات الإدارة العامة للمرور','icon'=>'car','route'=>'services.driving-licenses.show','items'=>['first-issue'=>'متطلبات إصدار رخصة قيادة لأول مرة','renewal'=>'متطلبات تجديد رخصة قيادة']],
         ] as $group)
         <details class="gov-requirements-group">
           <summary><span class="gov-service-icon" aria-hidden="true"><x-icon :name="$group['icon']" /></span><span>{{ $group['title'] }}</span><x-icon name="chevron-down" /></summary>
           <nav aria-label="{{ $group['title'] }}">
-            @foreach($group['items'] as $item)
-              <a href="{{ $item['href'] }}">{{ $item['label'] }} <x-icon name="arrow-left" /></a>
+            @foreach($group['items'] as $type=>$label)
+              <a href="{{ route($group['route'], $type).'#requirements' }}">{{ $label }} <x-icon name="arrow-left" /></a>
             @endforeach
           </nav>
         </details>

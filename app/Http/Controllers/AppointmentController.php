@@ -11,6 +11,7 @@ use App\Models\CitizenServiceRequest;
 use App\Models\GovernmentService;
 use App\Models\User;
 use App\Services\Operations\AppointmentBookings;
+use App\Services\Workspace\EmployeeWorkspace;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +27,7 @@ class AppointmentController extends Controller
         if ($employee) {
             Gate::authorize('searchCitizens', User::class);
         }
-        $appointments = CitizenAppointment::with(['slot', 'application', 'citizen'])->when(! $employee, fn ($q) => $q->where('user_id', $request->user()->id))->latest('id')->paginate(15);
+        $appointments = CitizenAppointment::with(['slot', 'application', 'citizen'])->when($employee, fn ($q) => $q->whereHas('application', fn ($q) => $q->whereIn('government_service_id', app(EmployeeWorkspace::class)->serviceIds($request->user(), ['can_review']))))->when(! $employee, fn ($q) => $q->where('user_id', $request->user()->id))->latest('id')->paginate(15);
 
         return response()->view('operations.appointments', compact('appointments', 'employee'))->header('Cache-Control', 'no-store, private');
     }
@@ -50,8 +51,9 @@ class AppointmentController extends Controller
     {
         Gate::authorize('manage', AppointmentSlot::class);
         $request->validate(['page' => ['sometimes', 'integer', 'min:1']]);
-        $slots = AppointmentSlot::with('service')->withCount(['bookings' => fn ($q) => $q->whereIn('status', ['booked', 'confirmed', 'completed', 'no_show'])])->latest('starts_at')->paginate(15);
-        $services = GovernmentService::where('is_active', true)->where('rules_approved', true)->get();
+        $serviceIds = app(EmployeeWorkspace::class)->serviceIds($request->user(), ['can_review']);
+        $slots = AppointmentSlot::whereIn('government_service_id', $serviceIds)->with('service')->withCount(['bookings' => fn ($q) => $q->whereIn('status', ['booked', 'confirmed', 'completed', 'no_show'])])->latest('starts_at')->paginate(15);
+        $services = GovernmentService::whereIn('id', $serviceIds)->where('is_active', true)->where('rules_approved', true)->get();
 
         return response()->view('operations.slots', compact('slots', 'services'))->header('Cache-Control', 'no-store, private');
     }
@@ -61,6 +63,7 @@ class AppointmentController extends Controller
         $slot = $slot?->exists ? $slot : null;
         DB::transaction(function () use ($request, $slot) {
             $service = GovernmentService::whereKey($slot?->government_service_id ?? $request->validated('government_service_id'))->lockForUpdate()->firstOrFail();
+            abort_unless($request->user()->fresh()->canReviewService($service->id, 'can_review'), 403);
             abort_unless($request->user()->fresh()?->can('manage', AppointmentSlot::class), 403);
             if ($slot) {
                 $slot = AppointmentSlot::whereKey($slot->id)->lockForUpdate()->firstOrFail();

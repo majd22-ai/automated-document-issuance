@@ -93,7 +93,9 @@
       default => null,
     };
   @endphp
-  @if($serviceBanner)
+  @if($operationsWorkspace)
+    <div class="workspace-brand" dir="rtl"><strong>منصة الإصدار الآلي للوثائق الرسمية</strong><span>{{ auth()->user()->role === 'admin' ? 'مساحة الإدارة والرقابة' : 'مساحة الموظف المختص' }}</span></div>
+  @elseif($serviceBanner)
     @include('components.service-banner')
   @else
     @include('components.page-banner')

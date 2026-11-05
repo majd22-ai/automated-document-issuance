@@ -45,6 +45,8 @@ Route::get('/integrations/civil-registry-demo', [CivilRegistrySimulationControll
     ->name('integrations.civil-registry-demo');
 
 Route::get('/reset-password/{token}', [EmployeePasswordController::class, 'form'])->middleware('guest')->name('password.reset');
+Route::get('/account-activation/{citizen}/images/{field}', [\App\Http\Controllers\RemoteActivationController::class, 'image'])->middleware(['auth','throttle:60,1'])->name('account-activation.image');
+Route::get('/mock-activation/{citizen}/images/{kind}', [\App\Http\Controllers\MockActivationController::class, 'image'])->middleware(['auth','throttle:60,1'])->name('mock-activation.image');
 Route::post('/reset-password', [EmployeePasswordController::class, 'reset'])->middleware(['guest', 'throttle:6,1'])->name('password.update');
 
 // =====================================================
@@ -123,6 +125,7 @@ Route::post('/login', [AuthController::class, 'login'])->middleware(['guest', 't
 
 Route::get('/register', [RegistrationController::class, 'show'])->middleware('guest')->name('register');
 Route::post('/register', [RegistrationController::class, 'store'])->middleware(['guest', 'throttle:10,1'])->name('register.post');
+Route::match(['get','post'], '/register/password', [\App\Http\Controllers\LinkedRegistrationController::class, 'password'])->middleware(['guest','throttle:10,1'])->name('register.password');
 Route::middleware('guest')->controller(RegistrationController::class)->group(function () {
     Route::get('/register/captcha', 'captcha')->middleware('throttle:30,1')->name('register.captcha');
     Route::post('/register/captcha/check', 'checkCaptcha')->middleware('throttle:10,1')->name('register.captcha.check');
@@ -232,7 +235,12 @@ Route::middleware(['auth', 'role:citizen'])
 
         Route::get('/data', [CitizenDataController::class, 'show'])->name('data');
         Route::get('/account/status', [CitizenAccountController::class, 'status'])->name('account.status');
+        Route::post('/account/mock-face', [\App\Http\Controllers\MockActivationController::class, 'capture'])->middleware('throttle:6,1,mock-face:')->name('account.mock-face');
+        Route::post('/account/mock-correction', [\App\Http\Controllers\MockActivationController::class, 'correct'])->middleware('throttle:6,1,mock-correction:')->name('account.mock-correction');
         Route::post('/account/activation-request', [CitizenAccountController::class, 'submit'])->middleware('throttle:6,1')->name('account.activation-request');
+        Route::post('/account/activation/code', [\App\Http\Controllers\RemoteActivationController::class, 'send'])->middleware('throttle:6,1')->name('account.remote.code');
+        Route::post('/account/activation/verify', [\App\Http\Controllers\RemoteActivationController::class, 'verify'])->middleware('throttle:10,1')->name('account.remote.verify');
+        Route::post('/account/activation/documents', [\App\Http\Controllers\RemoteActivationController::class, 'submit'])->middleware('throttle:6,1')->name('account.remote.submit');
         Route::get('/services/{service}/attachments', [CitizenAttachmentController::class, 'index'])->name('services.attachments.index');
         Route::post('/services/{service}/attachments', [CitizenAttachmentController::class, 'store'])->middleware('throttle:20,1')->name('services.attachments.store');
         Route::get('/applications/{id}/attachments', [CitizenAttachmentController::class, 'application'])->name('applications.attachments.index');
@@ -281,9 +289,7 @@ Route::middleware(['auth', 'role:employee'])
     ->name('employee.')
     ->group(function () {
 
-        Route::get('/dashboard', function () {
-            return view('employee.dashboard');
-        })->name('dashboard');
+        Route::get('/dashboard', [\App\Http\Controllers\WorkspaceController::class, 'employee'])->name('dashboard');
         Route::get('/neighborhood-attestations', [NeighborhoodAttestationController::class, 'index'])->name('neighborhood-attestations.index');
         Route::get('/neighborhood-attestations/{attestation}', [NeighborhoodAttestationController::class, 'show'])->name('neighborhood-attestations.show');
         Route::post('/neighborhood-attestations/{attestation}/confirm', [NeighborhoodAttestationController::class, 'confirm'])->middleware('throttle:6,1')->name('neighborhood-attestations.confirm');
@@ -319,6 +325,8 @@ Route::middleware(['auth', 'role:employee'])
 
         Route::get('/accounts', [CitizenAccountController::class, 'index'])->name('accounts.index');
         Route::get('/accounts/{citizen}', [CitizenAccountController::class, 'show'])->name('accounts.show');
+        Route::post('/accounts/{citizen}/review', [\App\Http\Controllers\RemoteActivationController::class, 'review'])->middleware('throttle:10,1')->name('accounts.review');
+        Route::post('/accounts/{citizen}/mock-review', [\App\Http\Controllers\MockActivationController::class, 'review'])->middleware('throttle:10,1')->name('accounts.mock-review');
         Route::get('/notifications', [EmployeeNotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/read-all', [EmployeeNotificationController::class, 'readAll'])->name('notifications.read-all');
         Route::post('/notifications/{id}/read', [EmployeeNotificationController::class, 'read'])->whereUuid('id')->name('notifications.read');
@@ -353,6 +361,7 @@ Route::middleware(['auth', 'role:admin'])
     ->group(function () {
 
         Route::get('/neighborhood-officials', [NeighborhoodOfficialController::class, 'index'])->name('neighborhood-officials.index');
+        Route::get('/mock-systems', [\App\Http\Controllers\MockActivationController::class, 'systems'])->name('mock-systems.index');
         Route::post('/neighborhood-officials', [NeighborhoodOfficialController::class, 'store'])->middleware('throttle:20,1')->name('neighborhood-officials.store');
         Route::patch('/neighborhood-officials/{official}', [NeighborhoodOfficialController::class, 'update'])->name('neighborhood-officials.update');
 
