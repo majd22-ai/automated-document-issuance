@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Attachments\ManageAttachments;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -18,6 +19,8 @@ class IdentityCardWizardTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Workflow tests isolate the external image engine; protocol failures are tested below.
+        Process::fake(['*photo_quality.py*' => Process::result(output: '{"version":1,"status":"completed","accepted":true,"errors":[]}')]);
         $db = DB::connection();
         if ($db->getDatabaseName() !== ':memory:' && ! str_ends_with($db->getDatabaseName(), '_testing')) {
             throw new \RuntimeException('Isolated testing database required');
@@ -69,10 +72,74 @@ class IdentityCardWizardTest extends TestCase
         $witnesses = [];
         for ($i = 0; $i < 2; $i++) {
             $witnesses[] = ['name' => 'شاهد اختبار '.$i, 'document_type' => 'بطاقة شخصية', 'document_number' => '100000'.$i,
-                'issued_place' => 'صنعاء', 'issued_at' => '2020-01-01', 'employer' => '', 'work_address' => '', 'phone' => '777123456', 'address' => 'عنوان اختبار'];
+                'issued_place' => 'صنعاء', 'issued_at' => '2020-01-01', 'employer' => '', 'work_address' => '', 'phone' => '777123456', 'address' => 'عنوان اختبار', 'selfie' => UploadedFile::fake()->image('witness-'.$i.'.jpg', 600, 600)];
         }
         $this->save($form, 5, ['witnesses' => $witnesses])->assertSessionHasNoErrors()->assertRedirect();
         $this->get('/citizen/identity-card/'.$form->id.'?step=6')->assertOk()->assertSee('شاهد اختبار 0');
+    }
+
+    public function test_photo_engine_rejection_is_shown_without_saving_or_advancing(): void
+    {
+        $form = $this->draft();
+        for ($step = 1; $step <= 3; $step++) {
+            $this->save($form, $step, ['data' => $this->data($step)])->assertSessionHasNoErrors();
+        }
+        Process::fake(['*photo_quality.py*' => Process::result(output: '{"version":1,"status":"completed","accepted":false,"errors":["blur","background","multiple_faces"]}')]);
+        $this->save($form, 4, ['photo' => UploadedFile::fake()->image('bad.jpg', 600, 600)])
+            ->assertSessionHasErrors('photo');
+        $this->assertStringContainsString('ضبابية', implode(' ', session('errors')->get('photo')));
+        $this->assertSame(4, $form->fresh()->current_step);
+        $this->assertNull($form->fresh()->citizen_attachment_id);
+        $this->assertSame([], Storage::disk('attachments')->allFiles());
+    }
+
+    public function test_photo_engine_failure_cannot_replace_an_existing_private_photo(): void
+    {
+        $form = $this->draft();
+        $this->ready($form);
+        $previous = $form->fresh()->photo;
+        Process::fake(['*photo_quality.py*' => Process::result(output: 'unavailable', exitCode: 2)]);
+        $this->save($form, 4, ['photo' => UploadedFile::fake()->image('replacement.jpg', 600, 600)], 'save')->assertSessionHasErrors('photo');
+        $this->assertSame($previous->storage_path, $form->fresh()->photo->storage_path);
+        Storage::disk('attachments')->assertExists($previous->storage_path);
+        $this->get('/citizen/identity-card/'.$form->id.'?step=6')->assertOk();
+        $reviews = session('identity_card_reviews');
+        $this->post('/citizen/identity-card/'.$form->id.'/submit', ['version' => $form->fresh()->version, 'declaration' => '1', 'review_token' => array_key_last($reviews)])
+            ->assertSessionHasErrors('photo');
+        $this->assertNull($form->fresh()->submitted_at);
+    }
+
+    public function test_birth_date_selectors_save_real_dates_and_keep_location_names(): void
+    {
+        $form = $this->draft();
+        $this->save($form, 1, ['data' => $this->data(1)])->assertSessionHasNoErrors();
+        $this->get('/citizen/identity-card/'.$form->id.'?step=2')->assertOk()
+            ->assertSee('birth_dates[birth_gregorian][day]', false)
+            ->assertSee('birth_dates[birth_hijri][year]', false)
+            ->assertSee('data-birth-locations', false);
+        $data = $this->data(2);
+        $data['birth_country'] = 'اليمن';
+        $data['birth_village'] = 'اسم قرية من الوثيقة';
+        $this->save($form, 2, ['data' => $data, 'birth_dates' => [
+            'birth_gregorian' => ['year' => '2000', 'month' => '2', 'day' => '29'],
+            'birth_hijri' => ['year' => '1420', 'month' => '11', 'day' => '24'],
+        ]])->assertSessionHasNoErrors();
+        $this->assertSame('2000-02-29', $form->fresh()->data['birth_gregorian']);
+        $this->assertSame('1420-11-24', $form->fresh()->data['birth_hijri']);
+        $this->assertSame('اسم قرية من الوثيقة', $form->fresh()->data['birth_village']);
+    }
+
+    public function test_birth_selector_rejects_invalid_or_partial_dates_even_when_saving_draft(): void
+    {
+        $form = $this->draft();
+        $this->save($form, 1, ['data' => $this->data(1)])->assertSessionHasNoErrors();
+        foreach ([['year' => '2001', 'month' => '2', 'day' => '29'], ['year' => '2000', 'month' => '', 'day' => '1']] as $parts) {
+            $this->save($form, 2, ['data' => $this->data(2), 'birth_dates' => ['birth_gregorian' => $parts]], 'save')
+                ->assertSessionHasErrors('data.birth_gregorian');
+        }
+        $this->save($form, 2, ['data' => $this->data(2), 'birth_dates' => ['birth_hijri' => ['year' => '1420', 'month' => '13', 'day' => '1']]])
+            ->assertSessionHasErrors('data.birth_hijri');
+        $this->assertArrayNotHasKey('birth_gregorian', $form->fresh()->data);
     }
 
     public function test_draft_can_be_saved_incomplete_resumed_and_rejects_stale_or_foreign_changes(): void
@@ -146,6 +213,7 @@ class IdentityCardWizardTest extends TestCase
         $this->actingAs($employee)->get('/employee/identity-card/'.$form->id)->assertForbidden();
         (new ServiceReviewPermission)->forceFill(['user_id' => $employee->id, 'government_service_id' => $service->id, 'can_review' => true, 'granted_by' => $admin->id])->save();
         $this->get('/employee/identity-card/'.$form->id)->assertOk()->assertSee('شاهد اختبار 0');
+        $this->get(route('citizen.identity-card.witness-selfie', ['form' => $form, 'position' => 1]))->assertOk()->assertHeader('Cache-Control', 'no-store, private');
         $this->get('/identity-card/forms/'.$form->id.'/photo')->assertOk();
         $this->actingAs(User::factory()->create())->get('/citizen/identity-card/'.$form->id)->assertForbidden();
     }
@@ -155,6 +223,68 @@ class IdentityCardWizardTest extends TestCase
         $this->get('/citizen/identity-card')->assertRedirect('/login');
         $this->actingAs(User::factory()->create(['role' => 'employee']))->post('/citizen/identity-card')->assertForbidden();
         $this->assertSame(0, IdentityCardForm::count());
+    }
+
+    private function witnessPayload(): array
+    {
+        return array_map(fn ($position) => ['name' => 'الشاهد '.$position, 'document_type' => 'بطاقة شخصية',
+            'document_number' => '200000'.$position, 'issued_place' => 'صنعاء', 'issued_at' => '2020-01-01',
+            'phone' => '777123456', 'address' => 'عنوان الشاهد', 'nearby_landmark' => 'قرب المسجد',
+            'selfie' => UploadedFile::fake()->image('selfie-'.$position.'.jpg', 600, 600)], [1, 2]);
+    }
+
+    public function test_witness_selfies_are_required_for_next_and_partial_upload_rolls_back_without_orphans(): void
+    {
+        $form = $this->draft();
+        $form->forceFill(['current_step' => 5])->save();
+        $witnesses = $this->witnessPayload();
+        unset($witnesses[1]['selfie']);
+        $this->save($form, 5, ['witnesses' => $witnesses])->assertSessionHasErrors('witnesses.1.selfie');
+        $this->assertSame(0, $form->witnesses()->count());
+        $this->assertSame([], Storage::disk('attachments')->allFiles());
+        $this->assertSame(5, $form->fresh()->current_step);
+        $this->save($form, 5, ['witnesses' => $this->witnessPayload()])->assertSessionHasNoErrors();
+        $this->assertSame(6, $form->fresh()->current_step);
+        $this->assertTrue($form->witnesses()->first()->selfieIntact());
+        $this->assertSame('قرب المسجد', $form->witnesses()->first()->nearby_landmark);
+        $this->assertSame('not_verified', $form->witnesses()->first()->verification_status);
+    }
+
+    public function test_witness_selfie_is_private_and_replacement_validation_preserves_previous_file(): void
+    {
+        $form = $this->draft();
+        $this->ready($form);
+        $witness = $form->witnesses()->firstWhere('position', 1);
+        $url = route('citizen.identity-card.witness-selfie', ['form' => $form, 'position' => 1]);
+        $this->get($url)->assertOk()->assertHeader('Cache-Control', 'no-store, private');
+        $this->assertStringStartsWith('witness-selfies/', $witness->selfie_path);
+        $this->assertArrayNotHasKey('selfie_path', $witness->toArray());
+        $replacement = $this->witnessPayload();
+        $replacement[0]['selfie'] = UploadedFile::fake()->image('too-small.jpg', 200, 200);
+        $this->save($form, 5, ['witnesses' => $replacement], 'save')->assertSessionHasErrors('witnesses.0.selfie');
+        $this->assertSame($witness->selfie_path, $witness->fresh()->selfie_path);
+        Storage::disk('attachments')->assertExists($witness->selfie_path);
+        $owner = $form->citizen;
+        $this->actingAs(User::factory()->create())->get($url)->assertForbidden();
+        $this->actingAs(User::factory()->create(['role' => 'employee']))->get($url)->assertForbidden();
+        $this->actingAs($owner);
+        $this->app['auth']->guard()->logout();
+        $this->get($url)->assertRedirect('/login');
+    }
+
+    public function test_witness_draft_can_be_saved_without_selfies_but_missing_saved_selfie_blocks_submission(): void
+    {
+        $form = $this->draft();
+        $form->forceFill(['current_step' => 5])->save();
+        $this->save($form, 5, ['witnesses' => [['name' => 'اسم شاهد'], []]], 'save')->assertSessionHasNoErrors();
+        $this->assertNull($form->witnesses()->first()->selfie_path);
+        $form->forceFill(['current_step' => 1])->save();
+        $this->ready($form);
+        $reviews = session('identity_card_reviews');
+        Storage::disk('attachments')->delete($form->witnesses()->first()->selfie_path);
+        $this->post('/citizen/identity-card/'.$form->id.'/submit', ['version' => $form->fresh()->version, 'declaration' => '1', 'review_token' => array_key_last($reviews)])
+            ->assertSessionHasErrors('witnesses.0.selfie');
+        $this->assertNull($form->fresh()->submitted_at);
     }
 
     public function test_confirmation_detects_photo_changes_outside_the_wizard(): void

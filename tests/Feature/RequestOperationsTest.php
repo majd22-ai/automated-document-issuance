@@ -21,6 +21,7 @@ use Tests\TestCase;
 
 class RequestOperationsTest extends TestCase
 {
+    use \Tests\Support\GrantsWorkspacePermissions;
     protected function setUp(): void
     {
         parent::setUp();
@@ -41,6 +42,7 @@ class RequestOperationsTest extends TestCase
         $user = User::factory()->create();
         $user->forceFill(['role' => $role, 'username' => 'OPS-'.$user->id])->save();
 
+        if ($role === 'employee') $this->grantWorkspaceServices($user, \App\Models\GovernmentService::pluck('code')->all());
         return $user;
     }
 

@@ -11,6 +11,7 @@ use Tests\TestCase;
 
 class CitizenDataTest extends TestCase
 {
+    use \Tests\Support\GrantsWorkspacePermissions;
     protected function setUp(): void
     {
         parent::setUp();
@@ -31,6 +32,7 @@ class CitizenDataTest extends TestCase
         $user = User::factory()->create();
         $user->forceFill(['role' => $role, 'username' => 'NATIONAL-'.$user->id])->save();
 
+        if ($role === 'employee') $this->grantWorkspaceServices($user, ['identity-first-issue']);
         return $user;
     }
 
@@ -94,13 +96,15 @@ class CitizenDataTest extends TestCase
     public function test_employee_search_requires_input_and_returns_paginated_citizens_only(): void
     {
         $employee = $this->user('employee');
-        User::factory()->count(16)->create(['name' => 'Matching Citizen']);
+        User::factory()->count(16)->create(['name' => 'Matching Citizen'])->each(fn ($citizen) => $citizen->serviceRequests()->create(['reference'=>'SEARCH-'.$citizen->id,'service_code'=>'identity-first-issue','status'=>'submitted']));
         $this->actingAs($employee)->get('/employee/citizens')->assertOk()->assertSee('أدخل الاسم أو الرقم الوطني')->assertViewHas('citizens', null);
         $response = $this->get('/employee/citizens?search=Matching&page=2')->assertOk();
         $this->assertSame(16, $response->viewData('citizens')->total());
         $this->assertCount(1, $response->viewData('citizens')->items());
         $citizen = $this->user();
-        $citizen->documents()->create(['document_type' => 'بطاقة', 'document_number' => 'EMP-DOC']);
+        $citizen->serviceRequests()->create(['reference'=>'SEARCH-OWNER','service_code'=>'identity-first-issue','status'=>'submitted']);
+        $document=$citizen->documents()->create(['document_type' => 'بطاقة', 'document_number' => 'EMP-DOC']);
+        $document->forceFill(['government_service_id'=>\App\Models\GovernmentService::where('code','identity-first-issue')->value('id')])->save();
         $this->get('/employee/citizens?search='.$citizen->username)->assertOk()->assertSee($citizen->name)->assertDontSee($employee->email);
         $this->get('/employee/citizens/'.$citizen->id)->assertOk()->assertSee($citizen->username)->assertSee('EMP-DOC');
         $this->get('/employee/citizens/'.$employee->id)->assertForbidden();
@@ -142,6 +146,8 @@ class CitizenDataTest extends TestCase
         $this->assertTrue($owner->can('viewCitizenData', $owner));
         $this->assertFalse($owner->can('viewCitizenData', $other));
         $this->assertFalse($employee->can('viewCitizenData', $this->user('admin')));
+        $this->assertFalse($employee->can('viewCitizenData', $owner));
+        $owner->serviceRequests()->create(['reference'=>'RELATED-SCOPE','service_code'=>'identity-first-issue','status'=>'submitted']);
         $this->assertTrue($employee->can('viewCitizenData', $owner));
     }
 

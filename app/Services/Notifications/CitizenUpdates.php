@@ -17,7 +17,7 @@ class CitizenUpdates
     public function accountConfirmation(User $citizen, CitizenAccountConfirmation $record): void
     {
         $this->notify($citizen, 'account-confirmation:'.$record->id, 'account_status', $record->result === 'conflict' ? 'حسابك يحتاج إلى مراجعة' : 'تحديث حالة حسابك',
-            $record->result === 'conflict' ? 'تحتاج بيانات ربط الهوية إلى مراجعة لدى الجهة المختصة. لم تُدمج حسابات ولم تعتمد الهوية.' : $citizen->accountStatusLabel().'. راجع صفحة حالة الحساب.', $record->citizen_service_request_id);
+            $record->result === 'conflict' ? 'تحتاج بيانات ربط الهوية إلى مراجعة لدى الجهة المختصة. لم تُدمج حسابات ولم تعتمد الهوية.' : 'تم تفعيل حسابك إلى منصة الإصدار الآلي بنجاح. '.$citizen->accountStatusLabel().'. راجع صفحة حالة الحساب.', $record->citizen_service_request_id);
     }
 
     private function notify(User $citizen, string $key, string $kind, string $title, string $body, ?int $request = null, ?int $document = null, bool $email = false): void

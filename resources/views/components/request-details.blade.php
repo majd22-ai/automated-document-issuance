@@ -8,6 +8,9 @@
   <dt>خطوة البصمة ومصدرها</dt><dd>{{ $application->identityCardForm->fingerprintStatusLabel() }}</dd>
   @if(auth()->user()->role === 'citizen')<dt>المصادقة والبيانات التفصيلية</dt><dd><a href="{{ route('citizen.identity-card.show', $application->identityCardForm) }}">فتح استمارة البطاقة وحالة المصادقة</a></dd>@endif
   @endif
+  @if($application->issuedDocument?->birthCertificate)
+    <dt>نموذج شهادة الميلاد</dt><dd><a href="{{ route(auth()->user()->role === 'employee' ? 'employee.documents.download' : 'citizen.documents.download', $application->issuedDocument->id) }}">تنزيل ملف PDF التجريبي</a></dd>
+  @endif
   <dt>تاريخ التقديم</dt><dd>{{ $application->submitted_at?->format('Y-m-d H:i') ?? $application->created_at?->format('Y-m-d') ?? 'غير متوفر' }}</dd>
   @foreach($application->service_snapshot['application_fields'] ?? [] as $field)
     <dt>{{ $field['label'] }}</dt><dd>{{ $application->request_data[$field['key']] ?? 'غير مسجل' }}</dd>

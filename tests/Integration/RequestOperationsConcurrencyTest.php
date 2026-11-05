@@ -46,7 +46,9 @@ class RequestOperationsConcurrencyTest extends TestCase
             DB::table('citizen_service_requests')->whereIn('id', $requestIds)->delete();
             DB::table('government_services')->where('id', $this->service->id)->delete();
         }
-        DB::table('users')->whereIn('id', $this->users)->delete();
+        if ($this->users) {
+            DB::table('users')->whereIn('id', $this->users)->delete();
+        }
         $this->cleanAuditFixtures();
         parent::tearDown();
     }

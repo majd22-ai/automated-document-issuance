@@ -34,6 +34,9 @@ class CivilRegistrySimulationTest extends TestCase
     {
         $user = User::factory()->create();
         $user->forceFill(['role' => $role, 'is_active' => true])->save();
+        if ($role === 'employee') {
+            (new \App\Models\ServiceReviewPermission)->forceFill(['user_id'=>$user->id,'government_service_id'=>\App\Models\GovernmentService::where('code','identity-first-issue')->value('id'),'can_verify'=>true,'granted_by'=>$user->id])->save();
+        }
 
         return $user;
     }

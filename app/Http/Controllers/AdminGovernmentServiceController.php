@@ -35,6 +35,13 @@ class AdminGovernmentServiceController extends Controller
         return response()->view('admin.services.edit', compact('service'))->header('Cache-Control', 'no-store, private');
     }
 
+    public function assessmentForm(GovernmentService $service): Response
+    {
+        Gate::authorize('manage', GovernmentService::class);
+
+        return response()->view('admin.services.assessment', compact('service'))->header('Cache-Control', 'no-store, private');
+    }
+
     public function store(SaveGovernmentServiceRequest $request): RedirectResponse
     {
         GovernmentService::create($request->validated());
@@ -80,6 +87,6 @@ class AdminGovernmentServiceController extends Controller
             $service->assessments()->updateOrCreate(['user_id' => $citizen->id], $data);
         });
 
-        return redirect()->route('admin.services.edit', $service)->with('status', 'تم حفظ التقييم الموثق؛ سيعاد فحص الأهلية عند بدء الخدمة.');
+        return redirect()->route('admin.services.assessments.create', $service)->with('status', 'تم حفظ التقييم الموثق؛ سيعاد فحص الأهلية عند بدء الخدمة.');
     }
 }

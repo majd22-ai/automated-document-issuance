@@ -27,6 +27,10 @@ class EnsureAccountIsActive
             return redirect()->route('login')->withErrors(['identifier' => $message]);
         }
 
+        if ($request->user()?->activation_source && $request->user()->needsCitizenActivation() && $request->routeIs('profile.*')) {
+            return redirect()->route('citizen.account.status');
+        }
+
         return $next($request);
     }
 }

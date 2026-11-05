@@ -19,7 +19,7 @@ while (microtime(true) < (float) $argv[4]) {
     usleep(1000);
 }
 try {
-    app(IdentityAttestations::class)->decide(User::findOrFail($argv[1]), IdentityCardAttestation::findOrFail($argv[2]), ['decision' => $argv[3], 'reason' => 'TEST-only concurrent decision']);
+    app(IdentityAttestations::class)->decide(User::findOrFail($argv[1]), IdentityCardAttestation::findOrFail($argv[2]), ['decision' => $argv[3], 'reason' => 'TEST-only concurrent decision', 'verification_method' => 'fingerprint']);
     echo json_encode(['result' => 'saved']);
 } catch (HttpExceptionInterface $error) {
     if ($error->getStatusCode() !== 409) {

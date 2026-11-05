@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\RegisterCitizenRequest;
 use App\Services\Registration\CitizenRegistration;
+use App\Services\Registration\LinkedRegistration;
 use App\Services\Registration\LocalSms;
+use App\Services\Registration\MockCivilSystems;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,11 +17,19 @@ class RegistrationController extends Controller
 {
     public function show(Request $request)
     {
+        if (MockCivilSystems::enabled()) {
+            return app(LinkedRegistrationController::class)->show($request);
+        }
+
         return response()->view('auth.register', ['step' => 1, 'form' => $request->session()->get('registration_form', [])])->header('Cache-Control', 'no-store, private');
     }
 
-    public function store(RegisterCitizenRequest $request, CitizenRegistration $registration)
+    public function store(Request $request, CitizenRegistration $registration)
     {
+        if (MockCivilSystems::enabled()) {
+            return app(LinkedRegistrationController::class)->start($request);
+        }
+        $request = app(RegisterCitizenRequest::class);
         $data = $request->validated();
         $request->session()->put('registration_form', $request->safe()->except(['password', 'password_confirmation', 'captcha']));
         $registration->start($request, $data);
@@ -29,6 +39,9 @@ class RegistrationController extends Controller
 
     public function verifyPage(Request $request, CitizenRegistration $registration)
     {
+        if (MockCivilSystems::enabled()) {
+            return app(LinkedRegistrationController::class)->show($request, 2);
+        }
         $pending = $registration->pending($request);
         if (! $pending) {
             return redirect()->route('register')->with('status', 'انتهت جلسة التحقق. أدخل بيانات التسجيل مجددًا.');
@@ -40,6 +53,9 @@ class RegistrationController extends Controller
 
     public function verify(Request $request, CitizenRegistration $registration)
     {
+        if (MockCivilSystems::enabled()) {
+            return app(LinkedRegistrationController::class)->verify($request);
+        }
         $data = $request->validate(['code' => ['required', 'regex:/^[0-9]{6}$/']], ['code.required' => 'أدخل رمز التحقق.', 'code.regex' => 'أدخل رمزًا من 6 أرقام.']);
         $user = $registration->verify($request, $data['code']);
         Auth::login($user);
@@ -51,6 +67,11 @@ class RegistrationController extends Controller
 
     public function resend(Request $request, CitizenRegistration $registration)
     {
+        if (MockCivilSystems::enabled()) {
+            app(LinkedRegistration::class)->resend($request);
+
+            return redirect()->route('register.verify')->with('status', 'تم توليد رمز تجريبي جديد؛ لم تُرسل رسالة حقيقية.');
+        }
         $registration->resend($request);
 
         return redirect()->route('register.verify')->with('status', 'تم إرسال رمز جديد وإبطال الرمز السابق.');

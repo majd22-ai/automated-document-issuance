@@ -1,7 +1,7 @@
 @php
     $summaryGroups = config('identity_card.fields', []);
     $groupTitles = [1 => 'البيانات الشخصية', 2 => 'بيانات الميلاد', 3 => 'العنوان والحالة الاجتماعية'];
-    $witnessLabels = ['name'=>'الاسم الكامل','document_type'=>'نوع الوثيقة','document_number'=>'رقم الوثيقة','issued_place'=>'مكان الإصدار','issued_at'=>'تاريخ الإصدار','employer'=>'جهة العمل','work_address'=>'عنوان العمل','phone'=>'رقم الهاتف','address'=>'عنوان السكن'];
+    $witnessLabels = ['name'=>'الاسم الكامل','document_type'=>'نوع البطاقة','document_number'=>'رقم البطاقة','issued_place'=>'محل صدورها','issued_at'=>'تاريخ صدورها','employer'=>'جهة العمل','work_address'=>'مقر جهة العمل','phone'=>'رقم التلفون','address'=>'عنوان السكن','nearby_landmark'=>'جوار / أقرب معلم'];
 @endphp
 <div class="identity-summary">
     @include('components.identity-attestation-stamp', ['attestation' => $identityForm->attestation])
@@ -30,6 +30,8 @@
         @php($witness = $identityForm->witnesses->firstWhere('position', $position))
         <section class="identity-panel"><h3>الشاهد {{ $position === 1 ? 'الأول' : 'الثاني' }}</h3>
             <dl class="identity-details">@foreach($witnessLabels as $key => $label)<div><dt>{{ $label }}</dt><dd>{{ data_get($witness, $key) ?: 'غير مسجل' }}</dd></div>@endforeach</dl>
+            @if($witness?->selfie_path)<p>صورة الشاهد وهو يحمل بطاقته الشخصية — للمراجعة</p><a href="{{ route('citizen.identity-card.witness-selfie',['form'=>$identityForm,'position'=>$position]) }}" target="_blank" rel="noopener"><img class="identity-photo" src="{{ route('citizen.identity-card.witness-selfie',['form'=>$identityForm,'position'=>$position]) }}" alt="صورة سلفي الشاهد {{ $position }} مع بطاقته"></a>@else<p>صورة السلفي مع البطاقة غير مرفقة.</p>@endif
+            @error('witnesses.'.($position-1).'.selfie')<p class="identity-field-error">{{ $message }}</p>@enderror
             <p>الحضور: {{ ['present'=>'حاضر','absent'=>'غائب','not_recorded'=>'غير مسجل'][$witness?->attendance_status ?? 'not_recorded'] ?? 'غير مسجل' }} · التحقق: {{ ['approved'=>'تم التحقق في المراجعة التجريبية','rejected'=>'لم يُقبل التحقق','not_verified'=>'لم يتم التحقق'][$witness?->verification_status ?? 'not_verified'] ?? 'لم يتم التحقق' }}</p>
             @if($witness?->reviewed_at)<p>وقت تسجيل المراجعة: {{ $witness->reviewed_at->format('Y-m-d H:i') }}</p>@endif
         </section>

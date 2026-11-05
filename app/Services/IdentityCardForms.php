@@ -52,8 +52,9 @@ class IdentityCardForms
     public function save(User $actor, IdentityCardForm $form, array $input, ?UploadedFile $photo): IdentityCardForm
     {
         $newPath = null;
+        $witnessPaths = [];
         try {
-            return DB::transaction(function () use ($actor, $form, $input, $photo, &$newPath) {
+            return DB::transaction(function () use ($actor, $form, $input, $photo, &$newPath, &$witnessPaths) {
                 $form = $this->locked($actor, $form);
                 $correction = $this->authorizedCorrection($form);
                 abort_if($form->submitted_at && ! $correction, 409, 'أُرسل الطلب؛ لا يمكن تعديل المسودة.');
@@ -72,6 +73,34 @@ class IdentityCardForms
                 if ($step === 5) {
                     foreach ($input['witnesses'] ?? [] as $index => $data) {
                         $witness = $form->witnesses()->where('position', $index + 1)->first() ?? new IdentityCardWitness;
+                        $selfie = $data['selfie'] ?? null;
+                        unset($data['selfie']);
+                        if ($selfie instanceof UploadedFile) {
+                            try {
+                                $meta = app(ValidateAttachmentFile::class)->inspect($selfie, ['max_kb' => 2048, 'allowed_mime_types' => ['image/jpeg', 'image/png']]);
+                            } catch (ValidationException $error) {
+                                throw ValidationException::withMessages(['witnesses.'.$index.'.selfie' => $error->errors()['file']]);
+                            }
+                            Validator::make(['selfie' => $selfie], ['selfie' => ['image', 'dimensions:min_width=600,min_height=600']], ['selfie.dimensions' => 'أبعاد صورة الشاهد يجب ألا تقل عن 600 × 600 بكسل.'])->validate();
+                            $oldSelfie = $witness->selfie_path;
+                            $path = 'witness-selfies/'.Str::uuid().'.'.$meta['extension'];
+                            $witnessPaths[] = $path;
+                            $stream = fopen($selfie->getRealPath(), 'rb');
+                            try {
+                                abort_unless(Storage::disk('attachments')->put($path, $stream, ['visibility' => 'private']), 503);
+                            } finally {
+                                if (is_resource($stream)) {
+                                    fclose($stream);
+                                }
+                            }
+                            $witness->forceFill(['selfie_path' => $path, 'selfie_sha256' => $meta['sha256'], 'selfie_mime' => $meta['mime_type'], 'selfie_size' => $meta['size']]);
+                            if ($oldSelfie) {
+                                DB::afterCommit(fn () => $this->removeBytes($oldSelfie));
+                            }
+                        }
+                        if ($input['action'] === 'next' && ! $witness->selfieIntact()) {
+                            throw ValidationException::withMessages(['witnesses.'.$index.'.selfie' => 'أرفق صورة سلفي واضحة للشاهد وهو يحمل بطاقته الشخصية.']);
+                        }
                         if ($correction) {
                             $data = array_merge($data, ['verification_status' => 'not_verified', 'attendance_status' => 'not_recorded', 'reviewed_by' => null, 'reviewed_at' => null, 'review_note' => null]);
                         }
@@ -89,6 +118,9 @@ class IdentityCardForms
             if ($newPath) {
                 $this->removeBytes($newPath);
             }
+            foreach ($witnessPaths as $path) {
+                $this->removeBytes($path);
+            }
             throw $error;
         }
     }
@@ -100,6 +132,7 @@ class IdentityCardForms
         } catch (ValidationException $error) {
             throw ValidationException::withMessages(['photo' => $error->errors()['file'] ?? ['تعذر التحقق من الصورة.']]);
         }
+        app(PhotoQuality::class)->inspect($file->getRealPath());
         $extension = $metadata['extension'];
         unset($metadata['extension']);
         $rule = collect($form->service->verification_rules['documents'] ?? [])->firstWhere('kind', 'photo');
@@ -162,6 +195,7 @@ class IdentityCardForms
         return hash('sha256', json_encode([
             'owner' => $actor->id, 'form' => $form->id, 'version' => $form->version,
             'photo' => $form->photo?->only(['id', 'version_token', 'sha256', 'review_status', 'rules_version']),
+            'witnesses' => $form->witnesses()->orderBy('position')->get()->map(fn ($witness) => $witness->only(['id', 'name', 'document_type', 'document_number', 'issued_place', 'issued_at', 'employer', 'work_address', 'phone', 'address', 'nearby_landmark', 'selfie_sha256']))->all(),
             'service' => $form->service->submissionFingerprint(),
             'citizen' => ServiceRequestSubmission::citizenFingerprint($actor),
         ], JSON_THROW_ON_ERROR));
@@ -188,6 +222,11 @@ class IdentityCardForms
             }
             unset($witness);
             Validator::make(['data' => $form->data, 'witnesses' => $witnesses], SaveIdentityCardForm::dataRules() + SaveIdentityCardForm::witnessRules(true), SaveIdentityCardForm::validationMessages())->validate();
+            foreach ($form->witnesses as $witness) {
+                if (! $witness->selfieIntact()) {
+                    throw ValidationException::withMessages(['witnesses.'.($witness->position - 1).'.selfie' => 'صورة الشاهد مفقودة أو غير سليمة؛ عد إلى خطوة الشاهدين وأرفقها.']);
+                }
+            }
             $photo = $form->photo;
             if (! $photo || ! $photo->intact() || in_array($photo->review_status, ['rejected', 'replacement_required'], true)) {
                 throw ValidationException::withMessages(['photo' => 'الصورة مفقودة أو مرفوضة؛ عد لمرحلة الصورة واستبدلها.']);
@@ -198,6 +237,7 @@ class IdentityCardForms
                 || ! in_array($photo->mime_type, ['image/jpeg', 'image/png'], true)) {
                 throw ValidationException::withMessages(['photo' => 'الصورة الحالية لا تستوفي الحجم أو الأبعاد أو الصيغة المطلوبة؛ عد لمرحلة الصورة واستبدلها.']);
             }
+            app(PhotoQuality::class)->inspect(Storage::disk('attachments')->path($photo->storage_path));
             if ($correction) {
                 $application = CitizenServiceRequest::whereKey($form->citizen_service_request_id)->lockForUpdate()->firstOrFail();
                 abort_unless($application->user_id === $actor->id && $application->government_service_id === $form->government_service_id

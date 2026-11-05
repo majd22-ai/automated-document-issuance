@@ -2,6 +2,15 @@
   'use strict';
   const workspace = document.querySelector('.ops-content');
   if (!workspace) return;
+  const menuButton = document.querySelector('[data-workspace-menu]');
+  const menu = document.getElementById('ops-navigation');
+  if (menuButton && menu) {
+    const smallScreen = window.matchMedia('(max-width:900px)');
+    const setOpen = open => { menu.hidden = !open; menuButton.setAttribute('aria-expanded', String(open)); };
+    setOpen(!smallScreen.matches);
+    menuButton.addEventListener('click', () => setOpen(menu.hidden));
+    smallScreen.addEventListener('change', event => setOpen(!event.matches));
+  }
   workspace.querySelectorAll('table').forEach(table => {
     if (table.closest('.ops-table-wrap')) return;
     const wrapper = document.createElement('div');

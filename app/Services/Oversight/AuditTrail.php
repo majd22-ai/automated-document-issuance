@@ -11,6 +11,16 @@ class AuditTrail
 {
     public function record(string $event, string $type, int|string|null $id, ?User $actor = null, string $result = 'success', array $changes = []): ?AuditEvent
     {
+        return $this->write($event, $type, $id, $actor, $result, $changes);
+    }
+
+    public function recordPrivate(string $event, string $type, int|string|null $id, User $actor, array $changes, string $privateReason): ?AuditEvent
+    {
+        return $this->write($event, $type, $id, $actor, 'success', $changes, $privateReason);
+    }
+
+    private function write(string $event, string $type, int|string|null $id, ?User $actor = null, string $result = 'success', array $changes = [], ?string $privateReason = null): ?AuditEvent
+    {
         // Compatibility while installing migrations; never swallow a persistence failure.
         if (! Schema::hasTable('audit_events')) {
             return null;
@@ -22,6 +32,9 @@ class AuditTrail
             }
         }
         $entry = (new AuditEvent)->forceFill(['trace_id' => (string) Str::uuid(), 'event' => $event, 'subject_type' => $type, 'subject_id' => $id === null ? null : (string) $id, 'actor_id' => $actor?->id, 'department_id' => $actor?->department_id, 'result' => $result, 'changes' => $safe, 'occurred_at' => now()]);
+        if ($privateReason !== null) {
+            $entry->forceFill(['private_reason' => $privateReason]);
+        }
         $entry->save();
 
         return $entry;

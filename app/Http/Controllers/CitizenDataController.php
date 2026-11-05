@@ -7,6 +7,7 @@ use App\Models\CitizenServiceRequest;
 use App\Models\GovernmentService;
 use App\Models\User;
 use App\Services\ServiceEligibility;
+use App\Services\Workspace\EmployeeWorkspace;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -112,7 +113,7 @@ class CitizenDataController extends Controller
             // Escape LIKE wildcards using a portable escape character, not raw SQL input.
             $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search).'%';
             $citizens = User::query()->select(['id', 'name', 'username', 'national_id', 'registration_status'])
-                ->where('role', 'citizen')->where(function ($query) use ($pattern, $search) {
+                ->where('role', 'citizen')->whereHas('serviceRequests', fn ($q) => $q->whereIn('government_service_id', app(EmployeeWorkspace::class)->serviceIds($request->user())))->where(function ($query) use ($pattern, $search) {
                     $query->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])->orWhere('national_id', $search)->orWhere(function ($legacy) use ($search) {
                         $legacy->whereNull('registration_status')->where('username', $search);
                     });
@@ -125,11 +126,12 @@ class CitizenDataController extends Controller
     public function employeeShow(User $citizen): Response
     {
         Gate::authorize('viewCitizenData', $citizen);
+        $serviceIds = app(EmployeeWorkspace::class)->serviceIds(auth()->user());
 
         return $this->page('employee.citizens.show', [
             'citizen' => $citizen, 'missing' => $citizen->missingCitizenFields(),
-            'documents' => $citizen->documents()->latest('id')->paginate(15, ['*'], 'documents_page'),
-            'applications' => $citizen->serviceRequests()->latest('id')->paginate(15, ['*'], 'applications_page'),
+            'documents' => $citizen->documents()->whereIn('government_service_id', $serviceIds)->latest('id')->paginate(15, ['*'], 'documents_page'),
+            'applications' => $citizen->serviceRequests()->whereIn('government_service_id', $serviceIds)->latest('id')->paginate(15, ['*'], 'applications_page'),
         ]);
     }
 }

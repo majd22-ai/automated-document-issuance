@@ -21,8 +21,10 @@ class ConfirmCitizenAccountRequest extends FormRequest
             'official_issuance_confirmed' => ['required', 'boolean', 'accepted_if:action,confirm_issuance', 'declined_if:action,activate'],
             'evidence_reference' => ['required', 'string', 'min:8', 'max:255'],
             'operation_token' => ['required', 'uuid'],
-            'visit_token' => ['required', 'uuid'],
-            'otp' => ['required', 'string', 'regex:/^[0-9]{6}$/'],
+            'visit_token' => ['nullable', 'required_if:action,activate', 'uuid'],
+            'otp' => ['nullable', 'string', 'regex:/^[0-9]{6}$/'],
+            'revision' => ['sometimes', 'integer', 'min:1'],
+            'documents_reviewed' => ['sometimes', 'accepted'], 'selfie_reviewed' => ['sometimes', 'accepted'], 'birth_reviewed' => ['sometimes', 'accepted'],
             'is_active' => ['missing'], 'role' => ['missing'], 'account_activated_at' => ['missing'], 'identity_verified_at' => ['missing'], 'registration_status' => ['missing'],
         ];
     }

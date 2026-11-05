@@ -3,7 +3,9 @@
 namespace App\Policies;
 
 use App\Models\GovernmentService;
+use App\Models\NeighborhoodOfficial;
 use App\Models\User;
+use App\Services\Workspace\EmployeeWorkspace;
 
 class UserPolicy
 {
@@ -22,11 +24,12 @@ class UserPolicy
     public function viewCitizenData(User $actor, User $citizen): bool
     {
         return $actor->is_active && $citizen->role === 'citizen'
-            && (($actor->role === 'citizen' && $actor->is($citizen)) || $actor->role === 'employee');
+            && (($actor->role === 'citizen' && $actor->is($citizen)) || ($this->searchCitizens($actor) && $citizen->serviceRequests()->whereIn('government_service_id', app(EmployeeWorkspace::class)->serviceIds($actor))->exists()));
     }
 
     public function searchCitizens(User $actor): bool
     {
-        return $actor->is_active && $actor->role === 'employee';
+        return $actor->is_active && $actor->role === 'employee' && ! NeighborhoodOfficial::residenceOnly($actor)
+            && app(EmployeeWorkspace::class)->serviceIds($actor) !== [];
     }
 }

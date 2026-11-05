@@ -24,7 +24,7 @@ class AuthController extends Controller
         $field = filter_var($validated['identifier'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
         $accounts = User::where(fn ($query) => $field === 'email'
             ? $query->where('email', $validated['identifier'])
-            : $query->where('username', $validated['identifier'])->orWhere('national_id', $validated['identifier']))->limit(2)->get(['id']);
+            : $query->where('username', $validated['identifier'])->orWhere('national_id', $validated['identifier'])->orWhere('digital_account_id', $validated['identifier']))->limit(2)->get(['id']);
         if ($accounts->count() !== 1) {
             event(new Failed(config('auth.defaults.guard'), null, []));
         }
@@ -39,7 +39,7 @@ class AuthController extends Controller
         if ($request->user()->needsCitizenActivation()) {
             $request->session()->forget('url.intended');
 
-            return redirect()->route('citizen.account.status');
+            return redirect()->route('citizen.account.status')->with('status', 'تم إنشاء حسابك بنجاح. يرجى استكمال إجراءات تفعيل الحساب للتحقق من هويتك والاستفادة من الخدمات الإلكترونية.');
         }
         $role = $request->user()->role;
         if (! in_array($role, User::ROLES, true)) {

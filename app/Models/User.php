@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Services\Registration\MockCivilSystems;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -82,6 +83,9 @@ class User extends Authenticatable
 
     public function allowsCitizenService(GovernmentService $service): bool
     {
+        if ($this->activation_source && ! MockCivilSystems::enabled()) {
+            return false;
+        }
         if ($this->registration_status === null) {
             return true; // Preserve legacy per-service assessment policy; do not claim global verification.
         }
@@ -91,6 +95,10 @@ class User extends Authenticatable
 
     public function hasActivatedIdentity(): bool
     {
+        if (in_array($this->activation_source, ['automated_local_mock', 'employee_local_mock'], true) && ! MockCivilSystems::enabled()) {
+            return false;
+        }
+
         return $this->registration_status === 'active' && $this->account_activated_at?->lte(now()) && $this->identity_verified_at?->lte(now()) && filled($this->national_id);
     }
 
@@ -101,12 +109,20 @@ class User extends Authenticatable
 
     public function accountStatusLabel(): string
     {
+        if (in_array($this->activation_source, ['automated_local_mock', 'employee_local_mock'], true) && $this->hasActivatedIdentity()) {
+            return 'حساب مفعّل تجريبيًا — مصدره محاكاة محلية';
+        }
+
         return match ($this->registration_status) {
+            'pending_activation' => 'بانتظار استكمال التفعيل',
+            'under_review' => 'قيد مراجعة الموظف المختص',
+            'action_required' => 'يحتاج إلى استكمال إجراء',
+            'suspended' => 'حساب موقوف',
             'initial_account' => 'حساب أولي — إصدار بطاقة لأول مرة فقط',
             'review_required' => 'الحساب يحتاج إلى مراجعة آمنة لدى الجهة المختصة',
             'active' => $this->hasActivatedIdentity() ? 'حساب مفعّل وهوية مؤكدة بإجراء إداري موثق' : 'حساب مفعّل — توثيق الهوية لم يكتمل',
             null => 'حساب سابق — يخضع للتحقق المعتمد لكل خدمة',
-            default => 'بانتظار الحضور والتحقق والتفعيل',
+            default => 'بانتظار التحقق الإلكتروني ومراجعة التفعيل',
         };
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\CitizenServiceRequest;
 use App\Models\GovernmentService;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PreviewServiceRequest extends FormRequest
 {
@@ -31,6 +32,11 @@ class PreviewServiceRequest extends FormRequest
                 'text', 'textarea' => ['string', 'max:'.($field['max_length'] ?? 1000)],
                 'integer' => ['integer'], 'date' => ['date_format:Y-m-d'], default => ['prohibited'],
             }];
+        }
+        if ($service->code === 'birth-certificate-first-issue') {
+            $rules['data.child_gender'] = ['required', Rule::in(['ذكر', 'أنثى'])];
+            $rules['data.birth_date'][] = 'before_or_equal:today';
+            $rules['data.birth_record_date'] = ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'];
         }
 
         return $rules;

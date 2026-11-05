@@ -45,7 +45,7 @@ class PublicFooterTest extends TestCase
         }
         $this->assertStringContainsString('© '.date('Y'), $html);
         $this->assertStringContainsString('مشروع تخرج أكاديمي — نسخة تجريبية', $html);
-        $this->assertStringNotContainsString('footer-mobile.js', $html);
+        $this->assertStringContainsString('footer-mobile.js', $html);
     }
 
     public function test_information_pages_are_public_and_unknown_page_is_rejected(): void

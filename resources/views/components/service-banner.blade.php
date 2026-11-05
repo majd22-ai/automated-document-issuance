@@ -2,9 +2,9 @@
   <div class="gov-container service-banner-grid">
     <div class="service-banner-identity">
       <div class="service-banner-logos" aria-label="شعارات المنصة والجهة المختصة">
-        <img class="service-banner-emblem" src="{{ asset('assets/images/banner/yemen-eagle.png') }}" alt="شعار الجمهورية اليمنية" width="2560" height="1492">
-        <img class="service-banner-platform" src="{{ asset('assets/images/logos/unified-issuance-logo.png') }}" alt="شعار مركز الإصدار الآلي الموحد">
-        <img class="service-banner-agency {{ $serviceBanner['agencyClass'] ?? '' }}" src="{{ asset($serviceBanner['agency']) }}" alt="{{ $serviceBanner['agencyAlt'] }}" width="{{ $serviceBanner['agencyWidth'] }}" height="{{ $serviceBanner['agencyHeight'] }}">
+        <x-responsive-image class="service-banner-emblem" src="assets/images/banner/yemen-eagle.webp" sizes="(max-width:900px) 76px, 94px" alt="شعار الجمهورية اليمنية" />
+        <x-responsive-image class="service-banner-platform" src="assets/images/logos/unified-issuance-logo.webp" sizes="(max-width:900px) 90px, 104px" alt="شعار مركز الإصدار الآلي الموحد" />
+        <x-responsive-image class="service-banner-agency {{ $serviceBanner['agencyClass'] ?? '' }}" :src="$serviceBanner['agency']" sizes="(max-width:900px) 76px, 94px" :alt="$serviceBanner['agencyAlt']" />
       </div>
       <div class="service-banner-copy">
         <p class="service-banner-eyebrow">منصة الإصدار الآلي للوثائق الرسمية</p>
@@ -13,7 +13,7 @@
       </div>
     </div>
     <figure class="service-banner-document">
-      <img src="{{ asset($serviceBanner['document']) }}" alt="{{ $serviceBanner['documentAlt'] }}" width="{{ $serviceBanner['documentWidth'] }}" height="{{ $serviceBanner['documentHeight'] }}" fetchpriority="high">
+      <x-responsive-image :src="$serviceBanner['document']" sizes="(max-width:640px) 100vw, 65vw" :alt="$serviceBanner['documentAlt']" priority="high" />
     </figure>
   </div>
 </section>

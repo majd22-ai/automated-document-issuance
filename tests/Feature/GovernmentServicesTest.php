@@ -32,6 +32,28 @@ class GovernmentServicesTest extends TestCase
         return $user;
     }
 
+    public function test_home_agency_requirement_menus_link_to_each_service_requirements(): void
+    {
+        $response = $this->get('/')->assertOk()
+            ->assertSee('خدمات مصلحة الأحوال المدنية')
+            ->assertSee('خدمات مصلحة الهجرة والجوازات والجنسية')
+            ->assertSee('خدمات الإدارة العامة للمرور')
+            ->assertDontSee('3 خدمات')->assertDontSee('خدمتان');
+        $dom = new \DOMDocument;
+        @$dom->loadHTML('<?xml encoding="utf-8" ?>'.$response->getContent());
+        $xpath = new \DOMXPath($dom);
+        $this->assertCount(3, $xpath->query('//section[@id="service-requirements"]//details'));
+        $links = $xpath->query('//section[@id="service-requirements"]//details/nav/a');
+        $this->assertCount(7, $links);
+        foreach ($links as $link) {
+            $this->assertSame('requirements', parse_url($link->getAttribute('href'), PHP_URL_FRAGMENT));
+            $this->get(parse_url($link->getAttribute('href'), PHP_URL_PATH))->assertOk()->assertSee('id="requirements"', false);
+        }
+        foreach (['identity', 'passport', 'car'] as $icon) {
+            $this->assertStringContainsString('outline.svg#'.$icon, $response->getContent());
+        }
+    }
+
     private function service(string $code = 'identity-first-issue'): GovernmentService
     {
         $service = GovernmentService::where('code', $code)->firstOrFail();
@@ -52,7 +74,8 @@ class GovernmentServicesTest extends TestCase
 
     public function test_catalog_uses_database_and_inactive_services_are_not_offered(): void
     {
-        $this->assertSame(7, GovernmentService::count());
+        $this->assertSame(8, GovernmentService::count());
+        $this->assertDatabaseHas('government_services', ['code' => 'birth-certificate-first-issue', 'is_active' => false]);
         $this->get('/services')->assertOk()->assertSee('لا توجد خدمات مفعّلة');
         $service = $this->service();
         $this->get('/services')->assertOk()->assertSee($service->name);
@@ -60,6 +83,25 @@ class GovernmentServicesTest extends TestCase
         $this->get('/services/passports/renewal')->assertOk()->assertSee('غير مفعّلة');
         $this->get('/services/identity/unknown')->assertNotFound();
         $this->get('/services/catalog/not-found')->assertNotFound();
+    }
+
+    public function test_birth_certificate_is_listed_with_civil_registry_services_only_when_active(): void
+    {
+        $birthCertificate = GovernmentService::where('code', 'birth-certificate-first-issue')->firstOrFail();
+        $this->get('/services/identity')->assertOk()->assertDontSee($birthCertificate->name);
+
+        $birthCertificate->fill([
+            'is_active' => true,
+            'rules_approved' => true,
+            'source_reference' => 'TEST-ONLY approval',
+        ])->save();
+
+        $this->get('/services/identity')
+            ->assertOk()
+            ->assertSee('خدمات الأحوال المدنية')
+            ->assertSee($birthCertificate->name)
+            ->assertSee($birthCertificate->publicUrl());
+        $this->get('/services/passports')->assertOk()->assertDontSee($birthCertificate->name);
     }
 
     public function test_start_requires_login_citizen_role_and_complete_data(): void
@@ -74,6 +116,22 @@ class GovernmentServicesTest extends TestCase
         $citizen->forceFill(['username' => null])->save();
         $this->actingAs($citizen)->get('/citizen/applications/new?service='.$service->code)->assertRedirect('/citizen/data');
         $this->post($path, ['user_id' => $this->user()->id])->assertRedirect('/citizen/data');
+    }
+
+    public function test_service_detail_offers_role_appropriate_actions(): void
+    {
+        $service = $this->service();
+        foreach (['admin', 'employee'] as $role) {
+            $this->actingAs($this->user($role))->get('/services/identity/first-issue')
+                ->assertOk()->assertDontSee('href="'.route('citizen.identity-card.index').'"', false)
+                ->assertSee('تقديم الطلب متاح من حساب المواطن.')
+                ->assertSee(route($role.'.dashboard'));
+        }
+        $this->actingAs($this->user())->get('/services/identity/first-issue')
+            ->assertOk()->assertSee('بدء الطلب أو استكمال مسودتي')
+            ->assertSee('href="'.route('citizen.identity-card.index').'"', false);
+        $service->update(['is_active' => false]);
+        $this->get('/services/identity/first-issue')->assertOk()->assertDontSee('بدء الطلب أو استكمال مسودتي');
     }
 
     public function test_unapproved_disabled_or_unassessed_service_cannot_start(): void
@@ -224,5 +282,79 @@ class GovernmentServicesTest extends TestCase
         $this->assertSame($oldName, $request->service_snapshot['name']);
         $this->assertSame('12.50', $request->service_snapshot['fee']);
         $this->assertSame(1, $citizen->serviceRequests()->count());
+    }
+
+    public function test_settings_form_round_trip_preserves_advanced_rules_without_editing_them(): void
+    {
+        $service = $this->service();
+        $service->update([
+            'required_documents' => ['صورة شخصية'], 'required_fields' => ['name', 'phone'],
+            'application_fields' => [['key' => 'address', 'label' => 'العنوان', 'type' => 'text', 'required' => true, 'max_length' => 200]],
+            'verification_rules' => ['documents' => [['code' => 'photo', 'name' => 'صورة شخصية', 'kind' => 'photo', 'allowed_mime_types' => ['image/jpeg', 'image/png'], 'requires_review' => true]]],
+            'workflow_rules' => ['payment' => ['required' => true, 'stage' => 'approved']],
+            'integration_rules' => ['identity' => ['required' => false, 'provider' => 'test_provider', 'max_age_minutes' => 60]],
+        ]);
+        $keys = ['application_fields', 'verification_rules', 'workflow_rules', 'integration_rules', 'issuance_rules', 'required_fields', 'required_documents'];
+        $before = $service->fresh()->only($keys);
+        $html = $this->actingAs($this->user('admin'))->get(route('admin.services.edit', $service))->assertOk()->getContent();
+        $document = new \DOMDocument;
+        @$document->loadHTML('<?xml encoding="UTF-8">'.$html);
+        $xpath = new \DOMXPath($document);
+        $this->assertSame(1, $xpath->query('//form[@data-service-settings]')->length);
+        $this->assertSame(0, $xpath->query('//form[@data-service-settings]//details[contains(@class,"setting-advanced")]/@open')->length);
+        $this->assertSame(0, $xpath->query('//input[@name="verification_reference"]')->length);
+        $payload = [];
+        foreach ($xpath->query('//form[@data-service-settings]//*[self::input or self::textarea or self::select][@name]') as $field) {
+            $name = $field->getAttribute('name');
+            if (str_starts_with($name, '_')) {
+                continue;
+            }
+            if ($field->getAttribute('type') === 'checkbox' && ! $field->hasAttribute('checked')) {
+                continue;
+            }
+            if ($field->tagName === 'textarea') {
+                $value = $field->textContent;
+            } elseif ($field->tagName === 'select') {
+                $option = $xpath->query('option[@selected]', $field)->item(0) ?? $xpath->query('option', $field)->item(0);
+                $value = $option->getAttribute('value');
+            } else {
+                $value = $field->getAttribute('value');
+            }
+            if (str_ends_with($name, '[]')) {
+                $key = substr($name, 0, -2);
+                if (! is_array($payload[$key] ?? null)) {
+                    $payload[$key] = [];
+                }
+                $payload[$key][] = $value;
+            } else {
+                $payload[$name] = $value;
+            }
+        }
+        $payload['name'] = 'اسم أوضح للخدمة';
+        $this->patch(route('admin.services.update', $service), $payload)->assertSessionHasNoErrors()->assertRedirect(route('admin.services.index'));
+        $this->assertSame($before, $service->fresh()->only($keys));
+        $this->assertSame('اسم أوضح للخدمة', $service->fresh()->name);
+    }
+
+    public function test_assessment_has_separate_admin_only_page_and_create_screen_still_works(): void
+    {
+        $service = $this->service();
+        foreach (['citizen', 'employee'] as $role) {
+            $this->actingAs($this->user($role))->get(route('admin.services.assessments.create', $service))->assertForbidden();
+        }
+        $this->actingAs($this->user('admin'))->get(route('admin.services.assessments.create', $service))->assertOk()->assertSee('verification_reference', false)->assertDontSee('data-service-settings', false);
+        $this->get(route('admin.services.create'))->assertOk()->assertSee('name="code"', false)->assertSee('name="document_type"', false);
+    }
+
+    public function test_invalid_advanced_input_is_preserved_and_its_section_opens_after_validation(): void
+    {
+        $service = $this->service();
+        $this->actingAs($this->user('admin'))->from(route('admin.services.edit', $service))->patch(route('admin.services.update', $service), ['name' => $service->name, 'verification_rules' => 'invalid-json'])->assertSessionHasErrors('verification_rules');
+        $html = $this->get(route('admin.services.edit', $service))->assertOk()->assertSee('invalid-json')->getContent();
+        $document = new \DOMDocument;
+        @$document->loadHTML('<?xml encoding="UTF-8">'.$html);
+        $xpath = new \DOMXPath($document);
+        $this->assertSame(1, $xpath->query('//details[contains(@class,"setting-advanced") and @open]')->length);
+        $this->assertSame(1, $xpath->query('//textarea[@name="verification_rules"]/ancestor::details[contains(@class,"setting-subsection") and @open]')->length);
     }
 }

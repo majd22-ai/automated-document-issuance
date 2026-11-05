@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GovernmentService;
 use App\Services\Integrations\LocalCivilRegistryProvider;
 use Illuminate\Http\Request;
 
@@ -10,6 +11,8 @@ class CivilRegistrySimulationController extends Controller
     public function preview(Request $request, LocalCivilRegistryProvider $provider)
     {
         abort_unless(LocalCivilRegistryProvider::enabled(), 404);
+        $serviceId = GovernmentService::where('code', 'identity-first-issue')->value('id');
+        abort_unless($request->user()->role === 'admin' || $request->user()->canReviewService($serviceId, 'can_verify') || $request->user()->canReviewService($serviceId, 'can_activate'), 403);
         $outcome = null;
         $input = [];
         if ($request->isMethod('post')) {
@@ -22,6 +25,10 @@ class CivilRegistrySimulationController extends Controller
                 'name.required' => 'أدخل الاسم التجريبي.',
             ]);
             $outcome = $provider->simulate($input['national_id'], $input['name']);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['outcome' => $outcome])->header('Cache-Control', 'no-store, private');
         }
 
         return response()->view('verifications.civil-registry-demo', [

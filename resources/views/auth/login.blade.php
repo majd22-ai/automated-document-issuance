@@ -7,7 +7,7 @@
   <div class="auth-card">
 
     <div class="auth-logo">
-      <img class="auth-platform-logo" src="{{ asset('assets/images/logos/unified-issuance-logo.png') }}" alt="شعار مركز الإصدار الآلي الموحد">
+      <img class="auth-platform-logo" src="{{ asset('assets/images/logos/unified-issuance-logo.webp') }}" alt="شعار مركز الإصدار الآلي الموحد">
       <h2>تسجيل الدخول</h2>
       <p>أدخل بيانات حسابك للوصول إلى خدمات المنصة</p>
     </div>
@@ -18,6 +18,7 @@
       </div>
     @endif
     @if(session('status'))<div class="alert alert-success" role="status">{{ session('status') }}</div>@endif
+    @if(session('mock_account_id'))<p>احتفظ بمعرّف حسابك الرقمي الداخلي لتسجيل الدخول: <bdi>{{ session('mock_account_id') }}</bdi></p>@endif
 
     <form method="POST" action="{{ url('/login') }}" class="auth-form" data-validate>
       @csrf
@@ -28,8 +29,7 @@
       @endif
 
       <div class="form-group">
-        <label class="form-label" for="identifier">الرقم الوطني أو اسم المستخدم</label>
-        <small>يمكن للحسابات الحالية الاستمرار باستخدام البريد الإلكتروني أيضًا.</small>
+        <label class="form-label" for="identifier">الرقم الوطني أو معرّف الحساب الرقمي أو اسم المستخدم</label>
         <input
           type="text"
           id="identifier"

@@ -38,3 +38,41 @@
 @media (max-width: 600px) { .registration-grid { grid-template-columns: 1fr; } .registration-steps li { flex-direction: column; text-align: center; font-size: .78rem; } .registration-wrapper { padding-inline: 12px; } }
 
 #national_id::placeholder { color: #64748b; opacity: .65; }
+
+/* Linked registration shares the sign-in card, with room for family details. */
+.linked-registration .registration-card { max-width: 820px; border-top: 4px solid var(--primary-gold, #c7a84d); }
+.linked-registration .registration-heading { margin-bottom: 18px; }
+.linked-registration .registration-heading h1 { margin: 0 0 8px; font-size: clamp(1.4rem, 3vw, 1.9rem); }
+.linked-registration .auth-platform-logo { width: 96px; height: 96px; }
+.linked-registration .registration-steps { margin-block: 18px 24px; }
+.linked-registration .registration-steps .current { color: #222; border-color: var(--primary-gold, #c7a84d); }
+.linked-demo-notice { margin-block: 0 26px; background: #faf8f0; border-color: var(--primary-gold, #c7a84d); color: #665b3d; border-radius: 8px; }
+.linked-path-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.linked-registration .linked-path-options label { display: flex; align-items: center; gap: 12px; border: 1px solid #d9e3e8; border-radius: 10px; padding: 16px; margin: 0; cursor: pointer; background: #fff; }
+.linked-path-options label:has(input:checked) { border-color: #b69b43; background: #fcfaf2; box-shadow: 0 0 0 1px #b69b43; }
+.linked-path-options label:focus-within { outline: 2px solid #b69b43; outline-offset: 3px; }
+.linked-path-options input, .linked-registration .registration-terms input { accent-color: #222; flex-shrink: 0; }
+.linked-path-options input { width: 18px; height: 18px; }
+.linked-path-options strong { font-size: .98rem; }
+.linked-registration .linked-path-options small { font-weight: 400; margin-top: 4px; }
+.linked-registration .registration-grid [hidden] { display: none !important; }
+.linked-registration .form-control { min-height: 50px; }
+.linked-registration .text-danger { font-size: .85rem; margin-top: 6px; }
+.linked-registration .linked-submit { width: 100%; min-height: 52px; background: #111; border-color: #111; color: #fff; }
+.linked-registration .linked-submit:hover { background: #333; border-color: #333; }
+.linked-registration .linked-password .form-group { margin-bottom: 20px; }
+.linked-registration .linked-password > .form-control { margin-bottom: 20px; }
+.linked-verification .otp-input { max-width: 100%; }
+.linked-resend { margin-block: 16px; }
+.linked-login-link { border-top: 1px solid #e3e8ed; padding-top: 22px; margin-top: 26px; gap: 8px; font-size: .9rem; }
+.linked-registration dialog { width: min(480px, calc(100% - 32px)); border: 1px solid #d9e3e8; border-top: 4px solid #b69b43; border-radius: 12px; padding: 24px; color: #223746; }
+.linked-registration dialog::backdrop { background: rgb(0 0 0 / 50%); }
+.linked-registration dialog .btn { margin-block: 10px; }
+@media (max-width: 600px) {
+  .linked-registration { padding-block: 22px; }
+  .linked-path-options { grid-template-columns: 1fr; }
+  .linked-registration .linked-path-options label { padding: 14px; }
+  .linked-registration .registration-card { padding: 24px 18px; }
+  .linked-registration .registration-steps { gap: 6px; }
+  .linked-demo-notice { font-size: .78rem; padding: 10px 12px; }
+}

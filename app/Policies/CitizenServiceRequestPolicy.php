@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Enums\ServiceRequestStatus;
 use App\Models\CitizenServiceRequest;
 use App\Models\User;
+use App\Services\Workspace\EmployeeWorkspace;
 
 class CitizenServiceRequestPolicy
 {
@@ -44,7 +45,7 @@ class CitizenServiceRequestPolicy
     public function view(User $user, CitizenServiceRequest $application): bool
     {
         return $user->is_active && (($user->role === 'citizen' && $application->user_id === $user->id)
-            || ($user->role === 'employee' && $user->can('viewCitizenData', $application->citizen)));
+            || ($user->role === 'employee' && in_array((int) $application->government_service_id, app(EmployeeWorkspace::class)->serviceIds($user), true)));
     }
 
     public function viewReview(User $user, CitizenServiceRequest $application): bool
@@ -102,6 +103,6 @@ class CitizenServiceRequestPolicy
 
     public function recordOperations(User $user, CitizenServiceRequest $application): bool
     {
-        return $user->role === 'employee' && $this->operate($user, $application);
+        return $user->canReviewService($application->government_service_id, 'can_review') && $this->operate($user, $application);
     }
 }

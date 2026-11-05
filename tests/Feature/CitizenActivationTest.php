@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AuditEvent;
 use App\Models\CitizenAccountConfirmation;
+use App\Models\CitizenActivationRequest;
 use App\Models\CitizenDocument;
 use App\Models\GovernmentService;
 use App\Models\ServiceReviewPermission;
@@ -11,8 +12,14 @@ use App\Models\User;
 use App\Notifications\CitizenActivity;
 use App\Services\Oversight\AuditTrail;
 use App\Services\Registration\CitizenAccountActivation;
+use App\Services\Registration\InPersonActivation;
+use App\Services\Registration\LocalSms;
+use App\Services\Registration\RemoteActivation;
 use App\Services\Tracking\ApplicationTimeline;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\Support\PreparesActivationProof;
 use Tests\TestCase;
@@ -29,6 +36,7 @@ class CitizenActivationTest extends TestCase
             throw new \RuntimeException('Isolated testing database required');
         }
         $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+        Storage::fake('attachments');
         $connection->beginTransaction();
         $this->beforeApplicationDestroyed(function () use ($connection) {
             $connection->rollBack();
@@ -57,9 +65,38 @@ class CitizenActivationTest extends TestCase
     private function proof(User $user, array $overrides = []): array
     {
         $actor = User::where('role', 'employee')->whereHas('reviewPermissions', fn ($q) => $q->where('can_activate', true))->latest('id')->first();
-        $visit = $actor ? $this->prepareActivationProof($user, $actor) : ['visit_token' => (string) Str::uuid(), 'otp' => '123456'];
+        $visit = $actor ? ($user->registration_status === 'initial_account' ? $this->prepareActivationProof($user, $actor) : $this->remoteFixture($user)) : ['visit_token' => (string) Str::uuid(), 'otp' => '123456'];
 
         return array_replace(['action' => 'activate', 'national_id' => $user->national_id, 'identity_confirmed' => true, 'official_issuance_confirmed' => false, 'evidence_reference' => 'TEST-ONLY official in-person reference', 'operation_token' => (string) Str::uuid()] + $visit, $overrides);
+    }
+
+    private function remoteFixture(User $user): array
+    {
+        $this->app['env'] = 'local';
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+        config(['registration.local_otp' => true]);
+        $row = $user->activationRequest()->first() ?? (new CitizenActivationRequest)->forceFill(['user_id' => $user->id]);
+        $evidence = [];
+        foreach (['front', 'back', 'selfie'] as $field) {
+            $path = 'activation-test/'.$user->id.'/'.$field.'.jpg';
+            Storage::disk('attachments')->put($path, 'private test fixture');
+            $evidence[$field] = ['path' => $path, 'mime' => 'image/jpeg'];
+        }
+        $row->forceFill(['revision' => 1, 'workflow' => 'remote', 'status' => 'pending', 'submitted_at' => now(), 'document_kind' => 'identity_card', 'evidence' => $evidence, 'visit_token' => (string) Str::uuid(), 'visit_phone' => $user->phone, 'otp_verified_at' => now(), 'otp_source' => 'local_trial', 'account_binding' => app(InPersonActivation::class)->binding($user->fresh()), 'visit_consumed_at' => null])->save();
+
+        return ['visit_token' => $row->visit_token, 'revision' => $row->revision, 'documents_reviewed' => true, 'selfie_reviewed' => true];
+    }
+
+    private function submitRemote(User $citizen)
+    {
+        $this->app['env'] = 'local';
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+        config(['registration.local_otp' => true]);
+        $flow = new RemoteActivation(new LocalSms);
+        $code = $flow->send($citizen, ['national_id' => $citizen->national_id, 'phone' => $citizen->phone]);
+        $flow->verify($citizen, $code);
+
+        return $this->actingAs($citizen)->post(route('citizen.account.remote.submit'), ['document_kind' => 'identity_card', 'selfie_capture_acknowledged' => 1, 'declaration' => 1, 'front' => UploadedFile::fake()->image('front.jpg', 600, 600), 'back' => UploadedFile::fake()->image('back.jpg', 600, 600), 'selfie' => UploadedFile::fake()->image('selfie.jpg', 600, 600)]);
     }
 
     private function completedRequest(User $user, User $employee)
@@ -80,7 +117,7 @@ class CitizenActivationTest extends TestCase
         @$dom->loadHTML('<?xml encoding="UTF-8">'.$html);
         $xpath = new \DOMXPath($dom);
         $this->assertSame(1, $xpath->query('//*[@id="gov-account-menu"]')->length);
-        foreach (['employee.accounts.index', 'employee.citizens.index', 'employee.tracking.index', 'employee.verifications.index'] as $route) {
+        foreach (['employee.accounts.index'] as $route) {
             $this->assertSame(1, $xpath->query('//*[@id="gov-account-menu"]//a[@href="'.route($route).'"]')->length);
         }
         foreach (['employee.notifications.index', 'profile.edit'] as $route) {
@@ -120,8 +157,8 @@ class CitizenActivationTest extends TestCase
         $citizen = $this->citizen();
         $staff = $this->employee();
         $other = $this->employee(false);
-        $this->actingAs($citizen)->post('/citizen/account/activation-request', ['acknowledged' => '1', 'user_id' => $other->id])->assertRedirect(route('citizen.account.status'));
-        $this->post('/citizen/account/activation-request', ['acknowledged' => '1'])->assertRedirect();
+        $this->submitRemote($citizen)->assertRedirect(route('citizen.account.status'));
+        $this->post(route('citizen.account.remote.submit'), [])->assertSessionHasErrors('document_kind');
         $this->assertDatabaseCount('citizen_activation_requests', 1);
         $this->assertDatabaseHas('citizen_activation_requests', ['user_id' => $citizen->id, 'status' => 'pending']);
         $this->assertSame(1, $staff->notifications()->count());
@@ -131,7 +168,7 @@ class CitizenActivationTest extends TestCase
 
     public function test_activation_request_requires_acknowledgment_and_citizen_role(): void
     {
-        $this->actingAs($this->citizen())->post('/citizen/account/activation-request', [])->assertSessionHasErrors('acknowledged');
+        $this->actingAs($this->citizen())->post(route('citizen.account.remote.submit'), [])->assertSessionHasErrors('declaration');
         $this->actingAs($this->employee(false))->post('/citizen/account/activation-request', ['acknowledged' => '1'])->assertForbidden();
         $this->assertDatabaseCount('citizen_activation_requests', 0);
     }
@@ -140,7 +177,7 @@ class CitizenActivationTest extends TestCase
     {
         $citizen = $this->citizen();
         $staff = $this->employee();
-        $this->actingAs($citizen)->post('/citizen/account/activation-request', ['acknowledged' => '1'])->assertRedirect();
+        $this->submitRemote($citizen)->assertRedirect();
         $this->actingAs($staff)->post(route('employee.accounts.confirm', $citizen), $this->proof($citizen))->assertRedirect();
         $this->assertDatabaseHas('citizen_activation_requests', ['user_id' => $citizen->id, 'status' => 'approved', 'reviewed_by' => $staff->id]);
         $this->assertTrue($citizen->fresh()->hasActivatedIdentity());
@@ -152,7 +189,7 @@ class CitizenActivationTest extends TestCase
         $citizen = $this->citizen();
         $staff = $this->employee();
         $other = $this->employee(false);
-        $this->actingAs($citizen)->post('/citizen/account/activation-request', ['acknowledged' => '1']);
+        $this->submitRemote($citizen);
         $notification = $staff->notifications()->firstOrFail();
         $this->actingAs($other)->post('/employee/notifications/'.$notification->id.'/open')->assertNotFound();
         $this->actingAs($staff)->get('/employee/notifications')->assertOk();
@@ -176,7 +213,7 @@ class CitizenActivationTest extends TestCase
     {
         $citizen = $this->citizen();
         $staff = $this->employee();
-        $this->actingAs($citizen)->post('/citizen/account/activation-request', ['acknowledged' => 1]);
+        $this->submitRemote($citizen);
         $this->actingAs($staff)->post(route('employee.accounts.confirm', $citizen), $this->proof($citizen, ['identity_confirmed' => false]))->assertRedirect();
         $this->assertDatabaseHas('citizen_activation_requests', ['user_id' => $citizen->id, 'status' => 'pending', 'reviewed_by' => null]);
         $this->assertFalse($citizen->fresh()->hasActivatedIdentity());
@@ -185,10 +222,10 @@ class CitizenActivationTest extends TestCase
     public function test_initial_account_without_identity_and_fully_activated_account_cannot_submit(): void
     {
         $initial = $this->citizen('initial_account');
-        $this->actingAs($initial)->post('/citizen/account/activation-request', ['acknowledged' => 1])->assertSessionHasErrors('activation');
+        $this->actingAs($initial)->post(route('citizen.account.remote.code'), ['national_id' => '123456789', 'phone' => '777123456', 'phone_change_confirmed' => 1])->assertSessionHasErrors('activation');
         $active = $this->citizen();
         $active->forceFill(['registration_status' => 'active', 'account_activated_at' => now(), 'identity_verified_at' => now()])->save();
-        $this->actingAs($active)->post('/citizen/account/activation-request', ['acknowledged' => 1])->assertSessionHasErrors('activation');
+        $this->actingAs($active)->post(route('citizen.account.remote.code'), ['national_id' => '123456789', 'phone' => '777123456', 'phone_change_confirmed' => 1])->assertSessionHasErrors('activation');
         $this->assertDatabaseCount('citizen_activation_requests', 0);
     }
 
@@ -197,7 +234,7 @@ class CitizenActivationTest extends TestCase
         $citizen = $this->citizen();
         $notSubmitted = $this->citizen();
         $staff = $this->employee();
-        $this->actingAs($citizen)->post('/citizen/account/activation-request', ['acknowledged' => 1]);
+        $this->submitRemote($citizen);
         $this->actingAs($notSubmitted)->get(route('citizen.account.status'))->assertViewHas('activationRequest', null);
         $this->actingAs($staff)->get(route('employee.accounts.index', ['submitted' => 1]))->assertOk()->assertViewHas('citizens', fn ($citizens) => $citizens->count() === 1 && $citizens->first()->id === $citizen->id);
     }

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\GovernmentService;
+use App\Models\IdentityCardAttestation;
 use App\Models\IdentityCardForm;
 use App\Models\ServiceReviewPermission;
 use App\Models\User;
@@ -11,6 +12,7 @@ use App\Services\FingerprintService;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -26,6 +28,7 @@ class IdentityFingerprintWorkflowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Process::fake(['*photo_quality.py*' => Process::result(output: '{"version":1,"status":"completed","accepted":true,"errors":[]}')]);
         $db = DB::connection();
         if ($db->getDatabaseName() !== ':memory:' && ! str_ends_with($db->getDatabaseName(), '_testing')) {
             throw new \RuntimeException('Isolated testing database required');
@@ -75,7 +78,7 @@ class IdentityFingerprintWorkflowTest extends TestCase
         $this->save($form, 4, $photo ? ['photo' => UploadedFile::fake()->image('portrait.png', 600, 600)] : []);
         $witnesses = [];
         foreach ([1, 2] as $position) {
-            $witnesses[] = ['name' => 'شاهد '.$position, 'document_type' => 'بطاقة', 'document_number' => '123456'.$position, 'issued_place' => 'صنعاء', 'issued_at' => '2020-01-01', 'phone' => '777123456', 'address' => 'عنوان الاختبار'];
+            $witnesses[] = ['name' => 'شاهد '.$position, 'document_type' => 'بطاقة', 'document_number' => '123456'.$position, 'issued_place' => 'صنعاء', 'issued_at' => '2020-01-01', 'phone' => '777123456', 'address' => 'عنوان الاختبار', 'selfie' => UploadedFile::fake()->image('witness-'.$position.'.jpg', 600, 600)];
         }
         $this->save($form, 5, ['witnesses' => $witnesses]);
         $this->actingAs($this->citizen)->get('/citizen/identity-card/'.$form->id.'?step=6')->assertOk();
@@ -96,7 +99,14 @@ class IdentityFingerprintWorkflowTest extends TestCase
 
     private function attest(IdentityCardForm $form, string $type = 'workplace'): void
     {
-        $this->actingAs($this->citizen)->post('/citizen/identity-card/'.$form->id.'/attestation', ['authority_type' => $type, 'recipient_name' => 'جهة اختبار'])->assertSessionHasNoErrors();
+        $form = $form->fresh();
+        // Continue exercising historical requests without exposing legacy choices to new applicants.
+        (new IdentityCardAttestation)->forceFill([
+            'identity_card_form_id' => $form->id, 'form_revision' => $form->revision, 'reference' => 'SIM-ATT-'.Str::ulid(),
+            'authority_type' => $type, 'recipient_name' => 'جهة اختبار', 'created_by' => $this->citizen->id,
+            'status' => 'pending', 'security_required' => $type === 'neighborhood', 'security_status' => $type === 'neighborhood' ? 'pending' : 'not_required',
+            'notification_created_at' => now(),
+        ])->save();
         $row = $form->fresh()->attestation;
         $this->actingAs($this->employee)->post('/simulation/identity-attestations/'.$row->id.'/decision', ['decision' => 'approved'])->assertSessionHasNoErrors()->assertRedirect();
     }
@@ -126,7 +136,7 @@ class IdentityFingerprintWorkflowTest extends TestCase
         $this->assertSame('pending_fingerprint_attendance', $form->fresh()->status);
         $this->actingAs($this->employee)->get('/identity-workflow/reception?reference='.$form->application->reference)->assertOk()->assertSee('اختبار محلي');
         $this->arrive($form);
-        $this->get('/identity-workflow/'.$form->id.'/fingerprint')->assertOk()->assertSee('جهاز البصمة');
+        $this->get('/identity-workflow/'.$form->id.'/fingerprint')->assertOk()->assertSee('جهاز بصمة الأصابع');
         $this->capture($form)->assertOk()->assertJson(['result' => 'success']);
         $operation = $form->operations()->firstOrFail();
         $this->assertSame('simulation', $operation->source);

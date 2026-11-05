@@ -10,13 +10,14 @@ test('poll refreshes the existing badge text without changing header appearance'
   const badge = { textContent: '0', className: 'gov-notification-count', style: 'original' };
   let calls = 0;
   let interval;
+  const window = { addEventListener() {} };
   const document = { visibilityState: 'visible', addEventListener() {}, querySelector: selector => selector === '.gov-notification-count' ? badge : { dataset: { countUrl: '/notifications/unread-count' } } };
-  vm.runInNewContext(badgeSource, { document, fetch: async (url, options) => {
+  vm.runInNewContext(badgeSource, { document, window, AbortController, fetch: async (url, options) => {
     calls++;
     assert.equal(url, '/notifications/unread-count');
     assert.equal(options.credentials, 'same-origin');
     return { ok: true, headers: { get: () => 'application/json' }, json: async () => ({ unread: 7 }) };
-  }, setInterval: (callback, ms) => { interval = callback; assert.equal(ms, 30000); } });
+  }, setInterval: (callback, ms) => { interval = callback; assert.equal(ms, 120000); } });
   await tick();
   assert.equal(badge.textContent, '7');
   assert.equal(badge.className, 'gov-notification-count');
@@ -32,7 +33,7 @@ test('missing header badge causes no background request', () => {
 
 test('failed polling preserves the displayed count', async () => {
   const badge = { textContent: '4' };
-  vm.runInNewContext(badgeSource, { document: { visibilityState: 'visible', querySelector: selector => selector === '.gov-notification-count' ? badge : { dataset: { countUrl: '/notifications/unread-count' } }, addEventListener() {} }, fetch: async () => { throw new Error('Offline'); }, setInterval() {} });
+  vm.runInNewContext(badgeSource, { window: { addEventListener() {} }, AbortController, document: { visibilityState: 'visible', querySelector: selector => selector === '.gov-notification-count' ? badge : { dataset: { countUrl: '/notifications/unread-count' } }, addEventListener() {} }, fetch: async () => { throw new Error('Offline'); }, setInterval() {} });
   await tick();
   assert.equal(badge.textContent, '4');
 });

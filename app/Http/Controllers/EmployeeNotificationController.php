@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\CitizenServiceRequest;
+use App\Models\IdentityCardAttestation;
 use App\Models\User;
+use App\Services\IdentityAttestations;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -25,6 +27,13 @@ class EmployeeNotificationController extends Controller
     {
         $notification = $request->user()->notifications()->findOrFail($id);
         $kind = $notification->data['kind'] ?? null;
+        if ($kind === 'neighborhood_attestation') {
+            $attestation = IdentityCardAttestation::findOrFail($notification->data['attestation_id'] ?? 0);
+            abort_unless(app(IdentityAttestations::class)->canAttest($request->user()->fresh(), $attestation), 403);
+            $notification->markAsRead();
+
+            return redirect()->route('employee.neighborhood-attestations.show', $attestation);
+        }
         if (in_array($kind, ['employee_account', 'employee_permission'], true)) {
             abort_unless((int) ($notification->data['target_user_id'] ?? $request->user()->id) === (int) $request->user()->id, 403);
             $notification->markAsRead();

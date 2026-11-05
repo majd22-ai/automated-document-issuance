@@ -56,14 +56,21 @@ class CitizenAccountActivation
                 throw ValidationException::withMessages(['action' => 'الاعتماد المطلوب مكتمل بالفعل. لا يسمح بتفعيل مكرر.']);
             }
             $conflict = $this->identifiers->conflicts($data['national_id'], $citizen->id);
-            $visit = app(InPersonActivation::class)->consume($actor, $citizen, $data, ! $conflict);
+            $remote = $citizen->activationRequest?->workflow === 'remote';
+            if ($remote) {
+                $visit = app(RemoteActivation::class)->consume($actor, $citizen, $data, ! $conflict);
+            } elseif ($data['action'] === 'confirm_issuance' && empty($data['visit_token'])) {
+                $visit = null; // The completed official issuance evidence above remains mandatory.
+            } else {
+                $visit = app(InPersonActivation::class)->consume($actor, $citizen, $data, ! $conflict);
+            }
             $record = (new CitizenAccountConfirmation)->forceFill([
                 'user_id' => $citizen->id, 'actor_id' => $actor->id, 'citizen_service_request_id' => $request?->id,
                 'operation_token' => $data['operation_token'], 'action' => $data['action'], 'result' => $conflict ? 'conflict' : 'confirmed',
                 'evidence_reference' => $data['evidence_reference'], 'payload_fingerprint' => $fingerprint,
                 'identity_confirmed' => (bool) $data['identity_confirmed'], 'confirmed_at' => now(),
-                'fingerprint_source' => 'local_simulation', 'phone_verification_source' => $visit->otp_source,
-                'activation_visit_token' => $visit->visit_token,
+                'fingerprint_source' => $remote || ! $visit ? null : 'local_simulation', 'phone_verification_source' => $visit?->otp_source,
+                'activation_visit_token' => $visit?->visit_token,
             ]);
             $record->save();
             if ($conflict) {

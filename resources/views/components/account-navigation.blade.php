@@ -12,17 +12,15 @@
   </button>
   <div class="gov-dropdown-content gov-account-menu" id="gov-account-menu">
     @if($employeeAccount)
-      @can('manageCitizenActivation', \App\Models\User::class)
-        <a href="{{ route('employee.accounts.index') }}">تفعيل حسابات المواطنين</a>
-      @endcan
-      <a href="{{ route('employee.citizens.index') }}">بيانات المواطنين</a>
-      <a href="{{ route('employee.tracking.index') }}">متابعة الطلبات</a>
-      <a href="{{ route('employee.verifications.index') }}">التحقق الإلكتروني</a>
-      @if($account->report_scope === 'department')<a href="{{ route('employee.reports.index') }}">تقارير القسم</a>@endif
+      @unless(request()->routeIs('employee.*','profile.*','identity-workflow.*'))
+        @foreach(app(\App\Services\Workspace\EmployeeWorkspace::class)->modules($account) as $item)
+        <a href="{{ route($item['route']) }}">{{ $item['label'] }}</a>
+        @endforeach
+      @endunless
     @else
-      <a href="{{ route('citizen.account.status') }}">حالة الحساب والتفعيل</a>
-      <a href="{{ route('citizen.data') }}">بياناتي</a>
-      <a href="{{ route('citizen.applications.index') }}">طلباتي</a>
+      @foreach(['citizen.dashboard'=>'ملخص حسابي','citizen.account.status'=>'تفعيل حسابي','citizen.data'=>'بياناتي','citizen.identity-card.index'=>'إصدار البطاقة الشخصية','citizen.applications.index'=>'طلباتي','citizen.appointments.index'=>'مواعيدي','citizen.payments.index'=>'رسومي ومدفوعاتي','citizen.documents.index'=>'وثائقي'] as $destination=>$label)
+      <a href="{{ route($destination) }}" @if(request()->routeIs($destination)) aria-current="page" @endif>{{ $label }}</a>
+      @endforeach
     @endif
     <form method="POST" action="{{ route('logout') }}" class="gov-account-logout">@csrf<button type="submit"><x-icon name="log-out" /> تسجيل الخروج</button></form>
   </div>

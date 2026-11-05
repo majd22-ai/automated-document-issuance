@@ -4,9 +4,55 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class SaveIdentityCardForm extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ((int) $this->input('step') !== 2) {
+            return;
+        }
+        $data = $this->input('data', []);
+        if (! is_array($data)) {
+            return;
+        }
+        foreach (['birth_gregorian', 'birth_hijri'] as $field) {
+            $parts = $this->input('birth_dates.'.$field);
+            if (! is_array($parts)) {
+                continue;
+            }
+            $values = array_map(fn ($part) => $parts[$part] ?? '', ['year', 'month', 'day']);
+            if (count(array_filter($values, fn ($value) => $value !== '' && $value !== null)) === 0) {
+                // Preserve only legacy written dates which cannot be represented by these selectors.
+                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($data[$field] ?? ''))) {
+                    $data[$field] = null;
+                }
+
+                continue;
+            }
+            $validParts = count(array_filter($values, fn ($v) => is_scalar($v) && ctype_digit((string) $v))) === 3;
+            [$year, $month, $day] = array_map(fn ($v) => is_scalar($v) ? (int) $v : 0, $values);
+            $valid = $validParts && ($field === 'birth_gregorian' ? checkdate($month, $day, $year) : ($year >= 1 && $year <= 1500 && $month >= 1 && $month <= 12 && $day >= 1 && $day <= 30));
+            $data[$field] = $valid ? sprintf('%04d-%02d-%02d', $year, $month, $day) : null;
+            if (! $valid) {
+                $this->merge(['invalid_birth_date_'.$field => true]);
+            }
+        }
+        $this->merge(['data' => $data]);
+    }
+
+    public function after(): array
+    {
+        return [function (Validator $validator) {
+            foreach (['birth_gregorian', 'birth_hijri'] as $field) {
+                if ($this->input('invalid_birth_date_'.$field)) {
+                    $validator->errors()->add('data.'.$field, 'اختر يومًا وشهرًا وسنة لتاريخ صحيح.');
+                }
+            }
+        }];
+    }
+
     public function authorize(): bool
     {
         return $this->user()?->is_active && $this->user()?->role === 'citizen'
@@ -43,13 +89,14 @@ class SaveIdentityCardForm extends FormRequest
     public static function witnessRules(bool $complete): array
     {
         $rules = ['witnesses' => [$complete ? 'required' : 'sometimes', 'array', 'list', 'size:2']];
-        foreach (['name', 'document_type', 'document_number', 'issued_place', 'phone', 'address', 'employer', 'work_address'] as $key) {
-            $rules['witnesses.*.'.$key] = [$complete && ! in_array($key, ['employer', 'work_address']) ? 'required' : 'nullable', 'string', 'max:200'];
+        foreach (['name', 'document_type', 'document_number', 'issued_place', 'phone', 'address', 'employer', 'work_address', 'nearby_landmark'] as $key) {
+            $rules['witnesses.*.'.$key] = [$complete && ! in_array($key, ['employer', 'work_address', 'nearby_landmark']) ? 'required' : 'nullable', 'string', 'max:200'];
         }
         $rules['witnesses.*.issued_at'] = [$complete ? 'required' : 'nullable', 'date_format:Y-m-d', 'before_or_equal:today'];
         $rules['witnesses.*.phone'][] = 'regex:/^\+?[0-9]{7,15}$/';
         $rules['witnesses.1.document_number'][] = 'different:witnesses.0.document_number';
-        $rules['witnesses.*'] = ['array:name,document_type,document_number,issued_place,issued_at,employer,work_address,phone,address'];
+        $rules['witnesses.*'] = ['array:name,document_type,document_number,issued_place,issued_at,employer,work_address,phone,address,nearby_landmark,selfie'];
+        $rules['witnesses.*.selfie'] = ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png', 'extensions:jpg,jpeg,png', 'max:2048', 'dimensions:min_width=600,min_height=600'];
 
         return $rules;
     }
@@ -88,7 +135,13 @@ class SaveIdentityCardForm extends FormRequest
 
     public function messages(): array
     {
-        return self::validationMessages();
+        return [
+            'witnesses.*.selfie.image' => 'ارفع صورة سلفي سليمة للشاهد وهو يحمل بطاقته.',
+            'witnesses.*.selfie.mimes' => 'صورة الشاهد يجب أن تكون JPG أو JPEG أو PNG.',
+            'witnesses.*.selfie.extensions' => 'امتداد صورة الشاهد يجب أن يكون JPG أو JPEG أو PNG.',
+            'witnesses.*.selfie.max' => 'حجم صورة الشاهد يجب ألا يتجاوز 2 ميجابايت.',
+            'witnesses.*.selfie.dimensions' => 'أبعاد صورة الشاهد يجب ألا تقل عن 600 × 600 بكسل.',
+        ] + self::validationMessages();
     }
 
     public static function validationMessages(): array

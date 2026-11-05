@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BirthCertificateDraft;
 use App\Models\GovernmentService;
 use App\Services\ServiceEligibility;
 use Illuminate\Http\Request;
@@ -13,8 +14,14 @@ class GovernmentServiceController extends Controller
     public function index(Request $request): Response
     {
         $type = $request->route('documentType');
-        $services = GovernmentService::where('is_active', true)->when($type, fn ($query) => $query->where('document_type', $type))->orderBy('id')->paginate(12);
-        $title = $type ? 'خدمات '.GovernmentService::DOCUMENT_TYPES[$type] : 'الخدمات الحكومية';
+        $services = GovernmentService::where('is_active', true)
+            ->when($type, fn ($query) => $query->whereIn('document_type', $type === 'identity' ? ['identity', 'birth_certificate'] : [$type]))
+            ->orderBy('id')->paginate(12);
+        $title = match ($type) {
+            'identity' => 'خدمات الأحوال المدنية',
+            null => 'الخدمات الحكومية',
+            default => 'خدمات '.GovernmentService::DOCUMENT_TYPES[$type],
+        };
 
         return response()->view('public.services.index', compact('services', 'title'));
     }
@@ -52,7 +59,10 @@ class GovernmentServiceController extends Controller
     {
         $report = $eligibility->evaluate($request->user(), $service);
         $reasons = $report->reasons();
+        $draft = $service->code === 'birth-certificate-first-issue'
+            ? BirthCertificateDraft::where('user_id', $request->user()->id)->where('government_service_id', $service->id)->first()
+            : null;
 
-        return response()->view('citizen.applications.create', compact('service', 'reasons', 'report'), $reasons ? 422 : 200)->header('Cache-Control', 'no-store, private');
+        return response()->view('citizen.applications.create', compact('service', 'reasons', 'report', 'draft'), $reasons ? 422 : 200)->header('Cache-Control', 'no-store, private');
     }
 }

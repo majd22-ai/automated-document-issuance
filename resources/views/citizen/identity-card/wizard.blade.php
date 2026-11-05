@@ -5,7 +5,7 @@
 @section('content')
 @php
     $steps = [1=>'البيانات الشخصية',2=>'بيانات الميلاد',3=>'العنوان والحالة الاجتماعية',4=>'الصورة الشخصية',5=>'الشاهدان',6=>'المراجعة والإقرار',7=>'تأكيد التقديم'];
-    $witnessFields = ['name'=>'الاسم الكامل','document_type'=>'نوع الوثيقة','document_number'=>'رقم الوثيقة','issued_place'=>'مكان الإصدار','issued_at'=>'تاريخ الإصدار','employer'=>'جهة العمل','work_address'=>'عنوان العمل','phone'=>'رقم الهاتف','address'=>'عنوان السكن'];
+    $witnessFields = ['name'=>'الاسم الكامل','employer'=>'جهة العمل','work_address'=>'مقر جهة العمل','phone'=>'رقم التلفون','document_type'=>'نوع البطاقة','document_number'=>'رقم البطاقة','issued_place'=>'محل صدور البطاقة','issued_at'=>'تاريخ صدورها','address'=>'عنوان السكن','nearby_landmark'=>'جوار / أقرب معلم'];
     $completion = (int) round(min(7, max(1, (int) $form->current_step)) / 7 * 100);
 @endphp
 <section class="section identity-wizard"><div class="container">
@@ -32,8 +32,14 @@
             @csrf<input type="hidden" name="step" value="{{ $step }}"><input type="hidden" name="version" value="{{ $form->version }}">
             @if($step <= 3)
                 <p>الحقول المشار إليها بـ * مطلوبة للانتقال إلى الخطوة التالية. يمكنك حفظ مسودة غير مكتملة.</p>
-                <div class="identity-field-grid identity-panel">
+                <div class="identity-field-grid identity-panel" @if($step === 3) data-residence-selects data-location-values="names" @endif>
+                @if($step === 3)
+                    @include('components.residence-selects', ['prefix'=>'identity-residence', 'byName'=>true, 'governorateName'=>'data[residence_governorate]', 'districtName'=>'data[residence_district]', 'selectedGovernorate'=>old('data.residence_governorate',data_get($form->data,'residence_governorate')), 'selectedDistrict'=>old('data.residence_district',data_get($form->data,'residence_district'))])
+                @endif
                 @foreach($fields[$step] as $key => $field)
+                    @if($step === 2 && $loop->first)@include('components.birth-details')@endif
+                    @continue($step === 2 && str_starts_with($key,'birth_'))
+                    @continue($step === 3 && in_array($key,['residence_governorate','residence_district']))
                     @php($errorKey = 'data.'.$key)
                     <div class="identity-field"><label for="field-{{ $key }}">{{ $field['label'] }} @if($field['required'] ?? false)<span aria-label="مطلوب">*</span>@endif</label>
                     @if(($field['type'] ?? 'text') === 'select')
@@ -45,23 +51,50 @@
                 @endforeach
                 </div>
             @elseif($step === 4)
+                <div class="identity-panel" aria-labelledby="photo-instructions-title">
+                    <h3 id="photo-instructions-title">تعليمات رفع الصورة الشخصية</h3>
+                    <p>عزيزي المواطن، يرجى التأكد من مطابقة صورتك للشروط التالية قبل رفعها:</p>
+                    <ol class="requirements-list">
+                        <li>أن تكون الصورة حديثة وملونة.</li>
+                        <li>أن تكون الخلفية بيضاء وموحدة.</li>
+                        <li>أن يكون الوجه مقابلاً للكاميرا مباشرة.</li>
+                        <li>أن تكون جميع ملامح الوجه واضحة.</li>
+                        <li>أن يظهر الرأس كاملاً دون قص.</li>
+                        <li>أن تكون الصورة بإضاءة جيدة وخالية من الظلال.</li>
+                        <li>يمنع استخدام الفلاتر أو المؤثرات أو تعديل ملامح الوجه.</li>
+                        <li>يمنع رفع صور الأشخاص الآخرين أو الصور الجماعية.</li>
+                        <li>يجب رفع صورة أصلية ملتقطة بالكاميرا وليست صورة لشاشة هاتف أو صورة مطبوعة.</li>
+                    </ol>
+                    <p class="identity-notice"><strong>تنبيه:</strong> سيتم فحص الصورة إلكترونياً، وقد يُطلب منك إعادة رفعها إذا لم تستوفِ شروط القبول.</p>
+                </div>
                 <div class="identity-panel"><label for="identity-photo">الصورة الشخصية</label><p id="photo-help">ارفع صورة شخصية واضحة بصيغة JPG أو JPEG أو PNG، بحد أقصى {{ config('identity_card.photo.max_kb', 2048) }} كيلوبايت، وأبعاد لا تقل عن {{ config('identity_card.photo.min_width', 600) }} × {{ config('identity_card.photo.min_height', 600) }} بكسل. رفع الصورة لا يغني عن إجراءات الحضور والتحقق لدى الجهة المختصة.</p>
                     <input id="identity-photo" name="photo" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" @required(!$form->photo) data-identity-photo aria-describedby="photo-help photo-error" @error('photo') aria-invalid="true" @enderror>
                     <p id="photo-error" class="identity-field-error">@error('photo'){{ $message }}@enderror</p>
+                    <p class="identity-notice" role="status" data-photo-check-status hidden>جارٍ فحص جودة الصورة إلكترونيًا، يرجى الانتظار…</p>
                     <img class="identity-photo" data-identity-photo-preview @if($form->photo) src="{{ route('citizen.identity-card.photo', $form) }}" @else hidden @endif alt="معاينة الصورة الشخصية">
                     @if($form->photo)<p>توجد صورة محفوظة. يمكنك اختيار صورة بديلة.</p>@endif
                 </div>
             @elseif($step === 5)
-                <p>سجّل بيانات شاهدين. تسجيل البيانات لا يمثل حضوراً أو تحققاً من هوية الشاهدين.</p>
+                <p>سجّل بيانات كل شاهد كما في بطاقته، وأرفق صورة سلفي يظهر فيها وجهه وهو يحمل بطاقته الشخصية بدل التوقيع والبصمة في هذه الاستمارة الإلكترونية.</p>
+                <p class="identity-notice">يجب أن يكون وجه الشاهد والبطاقة ظاهرين بوضوح، مع إظهار بيانات البطاقة دون قص أو انعكاس. رفع الصورة لا يمثل وحده إثبات الحضور أو اعتماد الهوية؛ يراجع الموظف المختص البيانات والمرفق.</p>
+                @push('scripts')<script src="{{ asset('js/witness-selfies.js') }}?v={{ filemtime(public_path('js/witness-selfies.js')) }}" defer></script>@endpush
                 @foreach([0,1] as $index)
                     @php($witness = $form->witnesses->firstWhere('position', $index + 1))
                     <fieldset class="identity-panel"><legend>الشاهد {{ $index === 0 ? 'الأول' : 'الثاني' }}</legend><div class="identity-field-grid">
                     @foreach($witnessFields as $key => $label)
                         @php($errorKey = 'witnesses.'.$index.'.'.$key)
-                        <div class="identity-field"><label for="witness-{{ $index }}-{{ $key }}">{{ $label }} @unless(in_array($key, ['employer','work_address'], true))<span aria-label="مطلوب">*</span>@endunless</label><input id="witness-{{ $index }}-{{ $key }}" name="witnesses[{{ $index }}][{{ $key }}]" @required(!in_array($key, ['employer','work_address'], true)) type="{{ $key === 'issued_at' ? 'date' : ($key === 'phone' ? 'tel' : 'text') }}" value="{{ old($errorKey, $key === 'issued_at' && data_get($witness, $key) instanceof \DateTimeInterface ? data_get($witness, $key)->format('Y-m-d') : data_get($witness, $key)) }}" @error($errorKey) aria-invalid="true" aria-describedby="witness-error-{{ $index }}-{{ $key }}" @enderror>
+                        <div class="identity-field"><label for="witness-{{ $index }}-{{ $key }}">{{ $label }} @unless(in_array($key, ['employer','work_address','nearby_landmark'], true))<span aria-label="مطلوب">*</span>@endunless</label><input id="witness-{{ $index }}-{{ $key }}" name="witnesses[{{ $index }}][{{ $key }}]" @required(!in_array($key, ['employer','work_address','nearby_landmark'], true)) type="{{ $key === 'issued_at' ? 'date' : ($key === 'phone' ? 'tel' : 'text') }}" value="{{ old($errorKey, $key === 'issued_at' && data_get($witness, $key) instanceof \DateTimeInterface ? data_get($witness, $key)->format('Y-m-d') : data_get($witness, $key)) }}" @error($errorKey) aria-invalid="true" aria-describedby="witness-error-{{ $index }}-{{ $key }}" @enderror>
                         @error($errorKey)<p class="identity-field-error" id="witness-error-{{ $index }}-{{ $key }}">{{ $message }}</p>@enderror</div>
                     @endforeach
-                    </div><p>الحضور: غير مسجل · التحقق: لم يتم التحقق</p></fieldset>
+                    </div>
+                    <div class="identity-field" data-witness-selfie>
+                        <label for="witness-selfie-{{ $index }}">صورة سلفي للشاهد وهو يحمل بطاقته الشخصية *</label>
+                        <p id="witness-selfie-help-{{ $index }}">JPG أو JPEG أو PNG، بحد أقصى 2 ميجابايت، وأبعاد لا تقل عن 600 × 600 بكسل. يمكنك حفظ مسودة دون الصورة، ويلزم إرفاقها للمتابعة. لا ترفع صورة البطاقة وحدها.</p>
+                        <input id="witness-selfie-{{ $index }}" type="file" name="witnesses[{{ $index }}][selfie]" accept="image/jpeg,image/png,.jpg,.jpeg,.png" aria-describedby="witness-selfie-help-{{ $index }} witness-selfie-error-{{ $index }}">
+                        <p id="witness-selfie-error-{{ $index }}" class="identity-field-error">@error('witnesses.'.$index.'.selfie'){{ $message }}@enderror</p>
+                        <img class="identity-photo" data-selfie-preview @if($witness?->selfie_path) src="{{ route('citizen.identity-card.witness-selfie', ['form'=>$form,'position'=>$index+1]) }}" @else hidden @endif alt="صورة الشاهد {{ $index === 0 ? 'الأول' : 'الثاني' }} وهو يحمل بطاقته">
+                        @if($witness?->selfie_path)<p>توجد صورة محفوظة. اختيار صورة جديدة يستبدلها بعد نجاح الحفظ.</p>@endif
+                    </div><p>الحضور والمراجعة يسجلهما الموظف المختص.</p></fieldset>
                 @endforeach
             @elseif($step === 6)
                 <input type="hidden" name="review_token" value="{{ $reviewToken }}">

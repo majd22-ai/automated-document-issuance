@@ -18,7 +18,8 @@ function simulation(initial) {
   const document = { hidden: false, querySelector: () => root, createElement: () => new Element(), addEventListener: (name, callback) => events[name] = callback };
   let feed = initial;
   let calls = 0;
-  const context = { document, URL, window: { location: { href: 'http://127.0.0.1:8000/employee/dashboard', origin: 'http://127.0.0.1:8000' }, setInterval: callback => events.tick = callback }, fetch: async () => { calls++; return { ok: true, json: async () => feed }; } };
+  let now = 0;
+  const context = { document, URL, AbortController, Date: { now: () => now }, window: { addEventListener() {}, clearInterval() {}, location: { href: 'http://127.0.0.1:8000/employee/dashboard', origin: 'http://127.0.0.1:8000' }, setInterval: callback => { events.tick = () => { now += 120000; return callback(); }; return 1; } }, fetch: async () => { calls++; return { ok: true, json: async () => feed }; } };
   vm.runInNewContext(fs.readFileSync('public/js/mobile-attestation-simulator.js', 'utf8'), context);
   return { nodes, events, document, calls: () => calls, setFeed: value => feed = value };
 }

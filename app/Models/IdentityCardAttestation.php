@@ -14,7 +14,12 @@ class IdentityCardAttestation extends Model
 
     protected function casts(): array
     {
-        return ['notification_created_at' => 'datetime', 'notification_read_at' => 'datetime', 'decided_at' => 'datetime', 'cancelled_at' => 'datetime', 'security_required' => 'boolean', 'form_revision' => 'integer', 'security_recorded_at' => 'datetime'];
+        return ['recipient_scope' => 'array', 'verification_attempts' => 'integer', 'verified_at' => 'datetime', 'notification_created_at' => 'datetime', 'notification_read_at' => 'datetime', 'decided_at' => 'datetime', 'cancelled_at' => 'datetime', 'security_required' => 'boolean', 'form_revision' => 'integer', 'security_recorded_at' => 'datetime'];
+    }
+
+    public function official()
+    {
+        return $this->belongsTo(NeighborhoodOfficial::class, 'neighborhood_official_id');
     }
 
     public function authorityLabel(): string

@@ -4,16 +4,16 @@
 @endphp
 <section class="gov-header-visual gov-page-banner {{ $isHome ? 'gov-banner-home' : 'gov-banner-inner' }}" aria-labelledby="gov-banner-title">
   <div class="gov-header-landscape gov-header-landscape-right" aria-hidden="true">
-    <img src="{{ asset('assets/images/banner/header-right.png') }}" alt="">
+    <x-responsive-image src="assets/images/banner/header-right.webp" sizes="(max-width:640px) 260px, (max-width:900px) 45vw, 36vw" alt="" />
   </div>
   <div class="gov-header-landscape gov-header-landscape-left" aria-hidden="true">
-    <img src="{{ asset('assets/images/banner/header-left.png') }}" alt="">
+    <x-responsive-image src="assets/images/banner/header-left.webp" sizes="(max-width:640px) 260px, (max-width:900px) 45vw, 36vw" priority="high" alt="" />
   </div>
   <div class="gov-header-identity">
     <div class="gov-header-logos">
-      <img class="gov-national-emblem" src="{{ asset('assets/images/banner/yemen-eagle.png') }}" alt="شعار الجمهورية اليمنية">
-      <img class="gov-platform-logo" src="{{ asset('assets/images/logos/unified-issuance-logo.png') }}" alt="شعار مركز الإصدار الآلي الموحد">
-      <img class="gov-ministry-logo" src="{{ asset('assets/images/banner/moi-logo.png') }}" alt="شعار وزارة الداخلية">
+      <x-responsive-image class="gov-national-emblem" src="assets/images/banner/yemen-eagle.webp" sizes="(max-width:640px) 58px, 96px" alt="شعار الجمهورية اليمنية" />
+      <x-responsive-image class="gov-platform-logo" src="assets/images/logos/unified-issuance-logo.webp" sizes="(max-width:640px) 84px, 120px" alt="شعار مركز الإصدار الآلي الموحد" />
+      <x-responsive-image class="gov-ministry-logo" src="assets/images/banner/moi-logo.webp" sizes="(max-width:640px) 58px, 96px" alt="شعار وزارة الداخلية" />
     </div>
     <h1 id="gov-banner-title" data-banner-title>{{ $isHome ? 'منصة الإصدار الآلي للوثائق الرسمية' : $pageHeading }}</h1>
     @if($isHome)

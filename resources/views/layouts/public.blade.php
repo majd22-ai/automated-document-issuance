@@ -2,19 +2,29 @@
   $operationsWorkspace = auth()->check() && in_array(auth()->user()->role, ['admin','employee'], true) && request()->routeIs('admin.*','employee.*','profile.*','integrations.civil-registry-demo*','identity-workflow.*');
 @endphp
  <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" translate="no" class="notranslate">
 <head>
   <meta charset="UTF-8">
+  <meta name="google" content="notranslate">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <title>@yield('title', 'منصة الإصدار الآلي للوثائق الرسمية')</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
-        rel="stylesheet">
+  @if(request()->routeIs('home'))
+    <x-image-preload src="assets/images/banner/platform-interior.webp" sizes="(max-width:1200px) 46vw, 560px" media="(min-width:901px)" />
+    <x-image-preload src="assets/images/banner/header-left.webp" sizes="260px" media="(max-width:640px)" />
+  @else
+    @php
+      $preloadDocument = match(request()->route()?->getName()) {
+        'services.identity' => 'assets/images/services/identity-document.webp',
+        'services.passports' => 'assets/images/services/yemeni-passport.webp',
+        'services.driving-licenses' => 'assets/images/services/driving-license.webp',
+        default => null,
+      };
+    @endphp
+    @if($preloadDocument)<x-image-preload :src="$preloadDocument" sizes="(max-width:640px) 100vw, 65vw" />@endif
+  @endif
 
   @vite([
     'resources/css/design-system.css',
@@ -29,7 +39,7 @@
           defer></script>
 
   @stack('styles')
-  @if($operationsWorkspace)
+  @if($operationsWorkspace || request()->routeIs('citizen.dashboard'))
   <link rel="stylesheet" href="{{ asset('css/operations-workspace.css') }}?v={{ filemtime(public_path('css/operations-workspace.css')) }}">
   @endif
   <link rel="stylesheet" href="{{ asset('css/service-banner.css') }}?v={{ filemtime(public_path('css/service-banner.css')) }}">
@@ -42,23 +52,23 @@
     $serviceBanner = match ($bannerRoute) {
       'services.identity' => [
         'title' => 'خدمات البطاقة الشخصية', 'subtitle' => 'إصدار الهوية الشخصية وتجديدها واستبدالها',
-        'agency' => 'assets/images/banner/الاحوال المدنية.png', 'agencyAlt' => 'شعار مصلحة الأحوال المدنية والسجل المدني',
+        'agency' => 'assets/images/banner/civil-registry-logo.webp', 'agencyAlt' => 'شعار مصلحة الأحوال المدنية والسجل المدني',
         'agencyWidth' => 1080, 'agencyHeight' => 1092,
-        'document' => 'assets/images/services/identity-document.jpg', 'documentAlt' => 'صورة البطاقة الشخصية اليمنية',
+        'document' => 'assets/images/services/identity-document.webp', 'documentAlt' => 'صورة البطاقة الشخصية اليمنية',
         'documentWidth' => 1200, 'documentHeight' => 670,
       ],
       'services.passports' => [
         'title' => 'خدمات جواز السفر', 'subtitle' => 'خدمات إصدار جواز السفر اليمني وتجديده',
-        'agency' => 'assets/images/services/passports-logo.png', 'agencyAlt' => 'شعار مصلحة الهجرة والجوازات والجنسية',
+        'agency' => 'assets/images/services/passports-logo.webp', 'agencyAlt' => 'شعار مصلحة الهجرة والجوازات والجنسية',
         'agencyWidth' => 600, 'agencyHeight' => 600,
-        'document' => 'assets/images/services/yemeni-passport.jpg', 'documentAlt' => 'صورة جواز سفر الجمهورية اليمنية',
+        'document' => 'assets/images/services/yemeni-passport.webp', 'documentAlt' => 'صورة جواز سفر الجمهورية اليمنية',
         'documentWidth' => 1200, 'documentHeight' => 896,
       ],
       'services.driving-licenses' => [
         'title' => 'خدمات رخصة القيادة', 'subtitle' => 'خدمات إصدار رخصة القيادة اليمنية وتجديدها',
-        'agency' => 'assets/images/services/traffic-logo.png', 'agencyAlt' => 'شعار الإدارة العامة للمرور',
+        'agency' => 'assets/images/services/traffic-logo.webp', 'agencyAlt' => 'شعار الإدارة العامة للمرور',
         'agencyWidth' => 423, 'agencyHeight' => 405,
-        'document' => 'assets/images/services/driving-license.jpg', 'documentAlt' => 'صورة رخصة قيادة يمنية',
+        'document' => 'assets/images/services/driving-license.webp', 'documentAlt' => 'صورة رخصة قيادة يمنية',
         'documentWidth' => 1200, 'documentHeight' => 670,
       ],
       'appointments.book', 'inquiry.reference', 'inquiry.mine', 'login', 'register' => [
@@ -75,15 +85,17 @@
           'register' => 'أنشئ حسابك للاستفادة من خدمات المنصة وتقديم طلباتك إلكترونيًا',
           default => 'الاستعلام عن الطلبات ومتابعة مراحل إنجاز المعاملات',
         },
-        'agency' => 'assets/images/banner/moi-logo.png', 'agencyAlt' => 'شعار وزارة الداخلية',
+        'agency' => 'assets/images/banner/moi-logo.webp', 'agencyAlt' => 'شعار وزارة الداخلية',
         'agencyWidth' => 1188, 'agencyHeight' => 1600,
-        'document' => 'assets/images/banner/مجمع الاصدار الالي الموحد.jpg', 'documentAlt' => 'مبنى مجمع الإصدار الآلي الموحد',
-        'documentWidth' => 2048, 'documentHeight' => 1536,
+        'document' => 'assets/images/banner/unified-issuance-building.webp', 'documentAlt' => 'مبنى مجمع الإصدار الآلي الموحد',
+        'documentWidth' => 1600, 'documentHeight' => 1200,
       ],
       default => null,
     };
   @endphp
-  @if($serviceBanner)
+  @if($operationsWorkspace)
+    <div class="workspace-brand" dir="rtl"><strong>منصة الإصدار الآلي للوثائق الرسمية</strong><span>{{ auth()->user()->role === 'admin' ? 'مساحة الإدارة والرقابة' : 'مساحة الموظف المختص' }}</span></div>
+  @elseif($serviceBanner)
     @include('components.service-banner')
   @else
     @include('components.page-banner')

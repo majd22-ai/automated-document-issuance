@@ -6,6 +6,7 @@ use App\Http\Controllers\ApplicationReviewController;
 use App\Http\Controllers\ApplicationTrackingController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BirthCertificateController;
 use App\Http\Controllers\CitizenAccountController;
 use App\Http\Controllers\CitizenAttachmentController;
 use App\Http\Controllers\CitizenDataController;
@@ -18,7 +19,12 @@ use App\Http\Controllers\EmployeeManagementController;
 use App\Http\Controllers\EmployeeNotificationController;
 use App\Http\Controllers\EmployeePasswordController;
 use App\Http\Controllers\GovernmentServiceController;
+use App\Http\Controllers\IdentityAttestationController;
+use App\Http\Controllers\IdentityCardFormController;
+use App\Http\Controllers\IdentityWorkflowController;
 use App\Http\Controllers\LocalPasswordRecoveryController;
+use App\Http\Controllers\NeighborhoodAttestationController;
+use App\Http\Controllers\NeighborhoodOfficialController;
 use App\Http\Controllers\OperationalReportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegistrationController;
@@ -39,6 +45,8 @@ Route::get('/integrations/civil-registry-demo', [CivilRegistrySimulationControll
     ->name('integrations.civil-registry-demo');
 
 Route::get('/reset-password/{token}', [EmployeePasswordController::class, 'form'])->middleware('guest')->name('password.reset');
+Route::get('/account-activation/{citizen}/images/{field}', [\App\Http\Controllers\RemoteActivationController::class, 'image'])->middleware(['auth','throttle:60,1'])->name('account-activation.image');
+Route::get('/mock-activation/{citizen}/images/{kind}', [\App\Http\Controllers\MockActivationController::class, 'image'])->middleware(['auth','throttle:60,1'])->name('mock-activation.image');
 Route::post('/reset-password', [EmployeePasswordController::class, 'reset'])->middleware(['guest', 'throttle:6,1'])->name('password.update');
 
 // =====================================================
@@ -56,6 +64,7 @@ Route::get('/platform/{page}', function (string $page) {
 Route::view('/help/technical-issue', 'public.contact', ['mode' => 'technical'])->name('help.technical-issue');
 
 Route::get('/services', [GovernmentServiceController::class, 'index'])->name('services.index');
+Route::get('/verify/birth-certificate/{token}', [BirthCertificateController::class, 'showPublic'])->where('token', '[a-f0-9]{64}')->middleware('throttle:30,1')->name('birth-certificates.verify');
 Route::get('/services/catalog/{service:code}', [GovernmentServiceController::class, 'show'])->name('services.catalog.show');
 Route::get('/services/civil-registry/{guideKey}', function (string $guideKey) {
     $guide = config('civil_registry_guides.'.$guideKey);
@@ -116,6 +125,7 @@ Route::post('/login', [AuthController::class, 'login'])->middleware(['guest', 't
 
 Route::get('/register', [RegistrationController::class, 'show'])->middleware('guest')->name('register');
 Route::post('/register', [RegistrationController::class, 'store'])->middleware(['guest', 'throttle:10,1'])->name('register.post');
+Route::match(['get','post'], '/register/password', [\App\Http\Controllers\LinkedRegistrationController::class, 'password'])->middleware(['guest','throttle:10,1'])->name('register.password');
 Route::middleware('guest')->controller(RegistrationController::class)->group(function () {
     Route::get('/register/captcha', 'captcha')->middleware('throttle:30,1')->name('register.captcha');
     Route::post('/register/captcha/check', 'checkCaptcha')->middleware('throttle:10,1')->name('register.captcha.check');
@@ -180,27 +190,30 @@ Route::get('/attachments/{attachment}/download', [CitizenAttachmentController::c
 // صفحات المواطن
 // =====================================================
 
-Route::get('/identity-card/forms/{form}/photo', [\App\Http\Controllers\IdentityCardFormController::class, 'photo'])->middleware('auth')->name('citizen.identity-card.photo');
-Route::get('/employee/identity-card/{form}', [\App\Http\Controllers\IdentityCardFormController::class, 'employee'])->middleware(['auth', 'role:employee'])->name('employee.identity-card.show');
+Route::get('/identity-card/forms/{form}/photo', [IdentityCardFormController::class, 'photo'])->middleware('auth')->name('citizen.identity-card.photo');
+Route::get('/identity-card/forms/{form}/witness-selfie/{position}', [IdentityCardFormController::class, 'witnessSelfie'])->middleware('auth')->whereIn('position', ['1', '2'])->name('citizen.identity-card.witness-selfie');
+Route::get('/employee/identity-card/{form}', [IdentityCardFormController::class, 'employee'])->middleware(['auth', 'role:employee'])->name('employee.identity-card.show');
 Route::middleware('auth')->prefix('identity-workflow')->name('identity-workflow.')->group(function () {
-    Route::get('/reception', [\App\Http\Controllers\IdentityWorkflowController::class, 'reception'])->name('reception');
-    Route::post('/{form}/arrival', [\App\Http\Controllers\IdentityWorkflowController::class, 'arrival'])->name('arrival');
-    Route::post('/{form}/security-paper', [\App\Http\Controllers\IdentityWorkflowController::class, 'security'])->name('security');
-    Route::get('/{form}/fingerprint', [\App\Http\Controllers\IdentityWorkflowController::class, 'device'])->name('device');
-    Route::post('/{form}/fingerprint', [\App\Http\Controllers\IdentityWorkflowController::class, 'capture'])->middleware('throttle:10,1')->name('capture');
-    Route::post('/{form}/manual-device-result', [\App\Http\Controllers\IdentityWorkflowController::class, 'manual'])->middleware('throttle:10,1')->name('manual');
-    Route::get('/administration', [\App\Http\Controllers\IdentityWorkflowController::class, 'administrationIndex'])->name('administration.index');
-    Route::get('/{form}/administration', [\App\Http\Controllers\IdentityWorkflowController::class, 'administrationShow'])->name('administration.show');
-    Route::post('/{form}/administration', [\App\Http\Controllers\IdentityWorkflowController::class, 'administrationDecide'])->name('administration.decide');
-    Route::post('/{form}/requeue', [\App\Http\Controllers\IdentityWorkflowController::class, 'requeue'])->name('administration.requeue');
-    Route::get('/{form}/print', [\App\Http\Controllers\IdentityWorkflowController::class, 'print'])->name('print');
+    Route::get('/reception', [IdentityWorkflowController::class, 'reception'])->name('reception');
+    Route::post('/{form}/arrival', [IdentityWorkflowController::class, 'arrival'])->name('arrival');
+    Route::post('/{form}/security-paper', [IdentityWorkflowController::class, 'security'])->name('security');
+    Route::get('/{form}/fingerprint', [IdentityWorkflowController::class, 'device'])->name('device');
+    Route::post('/{form}/fingerprint', [IdentityWorkflowController::class, 'capture'])->middleware('throttle:10,1')->name('capture');
+    Route::post('/{form}/manual-device-result', [IdentityWorkflowController::class, 'manual'])->middleware('throttle:10,1')->name('manual');
+    Route::get('/administration', [IdentityWorkflowController::class, 'administrationIndex'])->name('administration.index');
+    Route::get('/{form}/administration', [IdentityWorkflowController::class, 'administrationShow'])->name('administration.show');
+    Route::post('/{form}/administration', [IdentityWorkflowController::class, 'administrationDecide'])->name('administration.decide');
+    Route::post('/{form}/requeue', [IdentityWorkflowController::class, 'requeue'])->name('administration.requeue');
+    Route::get('/{form}/print', [IdentityWorkflowController::class, 'print'])->name('print');
 });
+Route::get('/residence/districts/{district}/officials', [NeighborhoodOfficialController::class, 'officials'])->middleware(['auth', 'throttle:60,1'])->name('residence.officials');
+
 Route::middleware('auth')->prefix('simulation/identity-attestations')->name('simulation.identity-attestations.')->group(function () {
-    Route::get('/', [\App\Http\Controllers\IdentityAttestationController::class, 'index'])->name('index');
-    Route::get('/notifications', [\App\Http\Controllers\IdentityAttestationController::class, 'feed'])->middleware('throttle:60,1')->name('feed');
-    Route::get('/{attestation}', [\App\Http\Controllers\IdentityAttestationController::class, 'show'])->name('show');
-    Route::post('/{attestation}/open', [\App\Http\Controllers\IdentityAttestationController::class, 'open'])->name('open');
-    Route::post('/{attestation}/decision', [\App\Http\Controllers\IdentityAttestationController::class, 'decide'])->middleware('throttle:20,1')->name('decide');
+    Route::get('/', [IdentityAttestationController::class, 'index'])->name('index');
+    Route::get('/notifications', [IdentityAttestationController::class, 'feed'])->middleware('throttle:60,1')->name('feed');
+    Route::get('/{attestation}', [IdentityAttestationController::class, 'show'])->name('show');
+    Route::post('/{attestation}/open', [IdentityAttestationController::class, 'open'])->name('open');
+    Route::post('/{attestation}/decision', [IdentityAttestationController::class, 'decide'])->middleware('throttle:20,1')->name('decide');
 });
 
 Route::middleware(['auth', 'role:citizen'])
@@ -208,12 +221,13 @@ Route::middleware(['auth', 'role:citizen'])
     ->name('citizen.')
     ->group(function () {
 
-        Route::get('/identity-card', [\App\Http\Controllers\IdentityCardFormController::class, 'index'])->name('identity-card.index');
-        Route::post('/identity-card', [\App\Http\Controllers\IdentityCardFormController::class, 'store'])->middleware('throttle:10,1,identity-card-create:')->name('identity-card.store');
-        Route::get('/identity-card/{form}', [\App\Http\Controllers\IdentityCardFormController::class, 'show'])->name('identity-card.show');
-        Route::post('/identity-card/{form}', [\App\Http\Controllers\IdentityCardFormController::class, 'save'])->middleware('throttle:30,1,identity-card-save:')->name('identity-card.save');
-        Route::post('/identity-card/{form}/submit', [\App\Http\Controllers\IdentityCardFormController::class, 'submit'])->middleware('throttle:10,1,identity-card-submit:')->name('identity-card.submit');
-        Route::post('/identity-card/{form}/attestation', [\App\Http\Controllers\IdentityAttestationController::class, 'store'])->middleware('throttle:10,1,identity-card-attestation:')->name('identity-card.attestation.store');
+        Route::get('/identity-card', [IdentityCardFormController::class, 'index'])->name('identity-card.index');
+        Route::post('/birth-certificates/drafts', [BirthCertificateController::class, 'saveDraft'])->middleware('throttle:20,1')->name('birth-certificates.drafts.store');
+        Route::post('/identity-card', [IdentityCardFormController::class, 'store'])->middleware('throttle:10,1,identity-card-create:')->name('identity-card.store');
+        Route::get('/identity-card/{form}', [IdentityCardFormController::class, 'show'])->name('identity-card.show');
+        Route::post('/identity-card/{form}', [IdentityCardFormController::class, 'save'])->middleware('throttle:30,1,identity-card-save:')->name('identity-card.save');
+        Route::post('/identity-card/{form}/submit', [IdentityCardFormController::class, 'submit'])->middleware('throttle:10,1,identity-card-submit:')->name('identity-card.submit');
+        Route::post('/identity-card/{form}/attestation', [IdentityAttestationController::class, 'store'])->middleware('throttle:10,1,identity-card-attestation:')->name('identity-card.attestation.store');
 
         Route::get('/dashboard', function () {
             return view('citizen.dashboard');
@@ -221,7 +235,12 @@ Route::middleware(['auth', 'role:citizen'])
 
         Route::get('/data', [CitizenDataController::class, 'show'])->name('data');
         Route::get('/account/status', [CitizenAccountController::class, 'status'])->name('account.status');
+        Route::post('/account/mock-face', [\App\Http\Controllers\MockActivationController::class, 'capture'])->middleware('throttle:6,1,mock-face:')->name('account.mock-face');
+        Route::post('/account/mock-correction', [\App\Http\Controllers\MockActivationController::class, 'correct'])->middleware('throttle:6,1,mock-correction:')->name('account.mock-correction');
         Route::post('/account/activation-request', [CitizenAccountController::class, 'submit'])->middleware('throttle:6,1')->name('account.activation-request');
+        Route::post('/account/activation/code', [\App\Http\Controllers\RemoteActivationController::class, 'send'])->middleware('throttle:6,1')->name('account.remote.code');
+        Route::post('/account/activation/verify', [\App\Http\Controllers\RemoteActivationController::class, 'verify'])->middleware('throttle:10,1')->name('account.remote.verify');
+        Route::post('/account/activation/documents', [\App\Http\Controllers\RemoteActivationController::class, 'submit'])->middleware('throttle:6,1')->name('account.remote.submit');
         Route::get('/services/{service}/attachments', [CitizenAttachmentController::class, 'index'])->name('services.attachments.index');
         Route::post('/services/{service}/attachments', [CitizenAttachmentController::class, 'store'])->middleware('throttle:20,1')->name('services.attachments.store');
         Route::get('/applications/{id}/attachments', [CitizenAttachmentController::class, 'application'])->name('applications.attachments.index');
@@ -270,9 +289,11 @@ Route::middleware(['auth', 'role:employee'])
     ->name('employee.')
     ->group(function () {
 
-        Route::get('/dashboard', function () {
-            return view('employee.dashboard');
-        })->name('dashboard');
+        Route::get('/dashboard', [\App\Http\Controllers\WorkspaceController::class, 'employee'])->name('dashboard');
+        Route::get('/neighborhood-attestations', [NeighborhoodAttestationController::class, 'index'])->name('neighborhood-attestations.index');
+        Route::get('/neighborhood-attestations/{attestation}', [NeighborhoodAttestationController::class, 'show'])->name('neighborhood-attestations.show');
+        Route::post('/neighborhood-attestations/{attestation}/confirm', [NeighborhoodAttestationController::class, 'confirm'])->middleware('throttle:6,1')->name('neighborhood-attestations.confirm');
+        Route::post('/neighborhood-attestations/{attestation}/decision', [NeighborhoodAttestationController::class, 'decide'])->middleware('throttle:10,1')->name('neighborhood-attestations.decide');
 
         Route::get('/applications', [ApplicationReviewController::class, 'index'])->name('applications.index');
         Route::get('/reports', [OperationalReportController::class, 'index'])->name('reports.index');
@@ -304,6 +325,8 @@ Route::middleware(['auth', 'role:employee'])
 
         Route::get('/accounts', [CitizenAccountController::class, 'index'])->name('accounts.index');
         Route::get('/accounts/{citizen}', [CitizenAccountController::class, 'show'])->name('accounts.show');
+        Route::post('/accounts/{citizen}/review', [\App\Http\Controllers\RemoteActivationController::class, 'review'])->middleware('throttle:10,1')->name('accounts.review');
+        Route::post('/accounts/{citizen}/mock-review', [\App\Http\Controllers\MockActivationController::class, 'review'])->middleware('throttle:10,1')->name('accounts.mock-review');
         Route::get('/notifications', [EmployeeNotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/read-all', [EmployeeNotificationController::class, 'readAll'])->name('notifications.read-all');
         Route::post('/notifications/{id}/read', [EmployeeNotificationController::class, 'read'])->whereUuid('id')->name('notifications.read');
@@ -312,6 +335,7 @@ Route::middleware(['auth', 'role:employee'])
         Route::post('/accounts/{citizen}/prepare', [CitizenAccountController::class, 'prepare'])->middleware('throttle:5,1,activation-prepare:')->name('accounts.prepare');
         Route::post('/accounts/{citizen}/finger', [CitizenAccountController::class, 'finger'])->middleware('throttle:15,1,activation-finger:')->name('accounts.finger');
         Route::post('/accounts/{citizen}/code', [CitizenAccountController::class, 'sendActivationCode'])->middleware('throttle:5,1,activation-code:')->name('accounts.code');
+        Route::post('/accounts/{citizen}/verify-code', [CitizenAccountController::class, 'verifyActivationCode'])->middleware('throttle:10,1,activation-verify:')->name('accounts.verify-code');
         Route::get('/citizens', [CitizenDataController::class, 'search'])->name('citizens.index');
         Route::get('/citizens/{citizen}', [CitizenDataController::class, 'employeeShow'])->name('citizens.show');
 
@@ -336,6 +360,11 @@ Route::middleware(['auth', 'role:admin'])
     ->name('admin.')
     ->group(function () {
 
+        Route::get('/neighborhood-officials', [NeighborhoodOfficialController::class, 'index'])->name('neighborhood-officials.index');
+        Route::get('/mock-systems', [\App\Http\Controllers\MockActivationController::class, 'systems'])->name('mock-systems.index');
+        Route::post('/neighborhood-officials', [NeighborhoodOfficialController::class, 'store'])->middleware('throttle:20,1')->name('neighborhood-officials.store');
+        Route::patch('/neighborhood-officials/{official}', [NeighborhoodOfficialController::class, 'update'])->name('neighborhood-officials.update');
+
         Route::get('/dashboard', [OperationalReportController::class, 'index'])->name('dashboard');
 
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
@@ -357,6 +386,7 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/services/create', [AdminGovernmentServiceController::class, 'create'])->name('services.create');
         Route::post('/services', [AdminGovernmentServiceController::class, 'store'])->name('services.store');
         Route::get('/services/{service}/edit', [AdminGovernmentServiceController::class, 'edit'])->name('services.edit');
+        Route::get('/services/{service}/assessment', [AdminGovernmentServiceController::class, 'assessmentForm'])->name('services.assessments.create');
         Route::patch('/services/{service}', [AdminGovernmentServiceController::class, 'update'])->name('services.update');
         Route::post('/services/{service}/assessments', [AdminGovernmentServiceController::class, 'assessment'])->name('services.assessments.store');
 
