@@ -30,7 +30,6 @@
 
       <div class="form-group">
         <label class="form-label" for="identifier">الرقم الوطني أو معرّف الحساب الرقمي أو اسم المستخدم</label>
-        <small>يمكن للحسابات الحالية الاستمرار باستخدام البريد الإلكتروني أيضًا.</small>
         <input
           type="text"
           id="identifier"
