@@ -12,10 +12,23 @@
 <form method="POST" action="{{ route('register.post') }}" class="auth-form registration-form" enctype="multipart/form-data" data-linked-register>@csrf
 <fieldset class="linked-path"><legend>اختر نوع التسجيل</legend><div class="linked-path-options"><label><input type="radio" name="identity_path" value="has_identity" required @checked(old('identity_path')==='has_identity')><span><strong>لدي بطاقة شخصية</strong><small>التسجيل باستخدام الرقم الوطني.</small></span></label><label><input type="radio" name="identity_path" value="no_identity" required @checked(old('identity_path')==='no_identity')><span><strong>لا أمتلك بطاقة شخصية</strong><small>التسجيل ببيانات الميلاد والأسرة.</small></span></label></div>@error('identity_path')<p class="text-danger">{{ $message }}</p>@enderror</fieldset>
 <div class="registration-grid">
-@foreach(['name'=>'الاسم الكامل / الرباعي','national_id'=>'الرقم الوطني — رقم البطاقة الشخصية','birth_date'=>'تاريخ الميلاد','birth_place'=>'مكان الميلاد','father_name'=>'الاسم الرباعي للأب','mother_name'=>'الاسم الرباعي للأم','father_national_id'=>'الرقم الوطني للأب (اختياري)','mother_national_id'=>'الرقم الوطني للأم (اختياري)','family_reference'=>'رقم سجل الأسرة أو القيد العائلي (اختياري)','additional_information'=>'معلومات إضافية تساعد على تحديد القيد (اختياري)','email'=>'البريد الإلكتروني','phone'=>'رقم الجوال اليمني (9 أرقام دون +967)'] as $field=>$label)
-<div class="form-group" @if($field==='national_id') data-card-fields @elseif(!in_array($field,['name','email','phone'])) data-family-fields @endif><label for="linked-{{ $field }}">{{ $label }}</label><input class="form-control" id="linked-{{ $field }}" name="{{ $field }}" value="{{ old($field) }}" type="{{ $field==='phone'?'tel':($field==='email'?'email':($field==='birth_date'?'date':'text')) }}" @if(in_array($field,['name','email','phone','national_id','birth_date','birth_place','father_name','mother_name'])) required @endif maxlength="{{ $field==='phone'?9:($field==='additional_information'?1000:150) }}" @if($field==='phone') minlength="9" inputmode="numeric" pattern="7[0-9]{8}" autocomplete="tel-national" dir="ltr" @endif>@error($field)<p class="text-danger">{{ $message }}</p>@enderror</div>
+@foreach(['name'=>'الاسم الكامل / الرباعي','national_id'=>'الرقم الوطني — رقم البطاقة الشخصية','birth_date'=>'تاريخ الميلاد','birth_place'=>'مكان الميلاد','father_name'=>'الاسم الرباعي للأب','mother_name'=>'الاسم الرباعي للأم','father_national_id'=>'الرقم الوطني للأب (اختياري)','mother_national_id'=>'الرقم الوطني للأم (اختياري)','email'=>'البريد الإلكتروني','phone'=>'رقم الجوال اليمني (9 أرقام دون +967)'] as $field=>$label)
+<div class="form-group" @if($field==='national_id') data-card-fields @elseif(!in_array($field,['name','email','phone'])) data-family-fields @endif><label for="linked-{{ $field==='birth_date'?'birth_day':$field }}">{{ $label }}</label>@if($field==='birth_date')
+<div class="linked-birth-date" role="group" aria-label="????? ???????">
+@foreach(['birth_day'=>'?????','birth_month'=>'?????','birth_year'=>'?????'] as $part=>$partLabel)
+<select class="form-control" name="{{ $part }}" id="linked-{{ $part }}" aria-label="{{ $partLabel }}" required>
+<option value="">{{ $partLabel }}</option>
+@foreach(($part==='birth_year'?range((int)date('Y'),1900):range(1,$part==='birth_month'?12:31)) as $value)
+<option value="{{ $value }}" @selected((int)old($part) === $value)>{{ $value }}</option>
 @endforeach
-<div class="form-group" data-family-fields><label for="linked-birth">صورة شهادة الميلاد (اختيارية)</label><input id="linked-birth" name="birth_certificate" type="file" accept="image/jpeg,image/png" class="form-control">@error('birth_certificate')<p class="text-danger">{{ $message }}</p>@enderror</div>
+</select>
+@endforeach
+</div>
+@else
+<input class="form-control" id="linked-{{ $field }}" name="{{ $field }}" value="{{ old($field) }}" type="{{ $field==='phone'?'tel':($field==='email'?'email':($field==='birth_date'?'date':'text')) }}" @if(in_array($field,['name','email','phone','national_id','birth_date','birth_place','father_name','mother_name'])) required @endif maxlength="{{ $field==='phone'?9:($field==='additional_information'?1000:150) }}" @if($field==='phone') minlength="9" inputmode="numeric" pattern="7[0-9]{8}" autocomplete="tel-national" dir="ltr" @endif>@endif
+@error($field)<p class="text-danger">{{ $message }}</p>@enderror</div>
+@endforeach
+<div class="form-group" data-family-fields><label for="linked-birth">صورة شهادة الميلاد (اختيارية)</label><input id="linked-birth" name="birth_certificate" type="file" accept="image/jpeg,image/png" class="form-control linked-birth-upload">@error('birth_certificate')<p class="text-danger">{{ $message }}</p>@enderror</div>
 </div>
 <label class="registration-terms"><input type="checkbox" name="terms" value="1" required> أوافق على شروط الاستخدام وإجراءات المحاكاة.</label>@error('terms')<p class="text-danger">{{ $message }}</p>@enderror
 <div class="registration-actions"><button class="btn btn-primary linked-submit">التحقق من السجل والمتابعة</button></div></form>

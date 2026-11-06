@@ -29,6 +29,17 @@ class LinkedRegistrationController extends Controller
     public function start(Request $r)
     {
         abort_unless(MockCivilSystems::enabled(), 404);
+        if ($r->input('identity_path') === 'no_identity' && $r->hasAny(['birth_day', 'birth_month', 'birth_year'])) {
+            $parts = $r->validate([
+                'birth_day' => 'required|integer|between:1,31',
+                'birth_month' => 'required|integer|between:1,12',
+                'birth_year' => 'required|integer|between:1900,'.date('Y'),
+            ], ['*.required' => '???? ????? ?????? ??????.', '*.integer' => '???? ??????? ??????.', '*.between' => '???? ???? ????? ???????.']);
+            if (! checkdate((int) $parts['birth_month'], (int) $parts['birth_day'], (int) $parts['birth_year'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['birth_date' => '????? ??????? ??? ????. ???? ?? ????? ?????? ??????.']);
+            }
+            $r->merge(['birth_date' => sprintf('%04d-%02d-%02d', $parts['birth_year'], $parts['birth_month'], $parts['birth_day'])]);
+        }
         $data = $r->validate([
             'identity_path' => 'required|in:has_identity,no_identity', 'name' => 'required|string|max:100',
             'national_id' => 'nullable|required_if:identity_path,has_identity|prohibited_if:identity_path,no_identity|regex:/^[0-9]{5,20}$/D|unique:users,national_id',

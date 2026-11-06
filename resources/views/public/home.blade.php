@@ -90,18 +90,6 @@
         <p>اضغط على اسم الجهة، ثم اختر الخدمة لعرض متطلباتها.</p>
       </div>
       <div class="gov-services-grid">
-        @foreach(config('civil_registry_guides') as $guideKey => $guide)
-          <a class="gov-service-card" href="{{ route('services.civil-registry.guide', $guideKey) }}">
-            <h3>متطلبات {{ $guide['title'] }}</h3>
-            <p>اطّلع على متطلبات ووثائق خدمة {{ $guide['title'] }}.</p>
-            <span class="gov-service-more">عرض المتطلبات <x-icon name="arrow-left" /></span>
-          </a>
-        @endforeach
-        <a class="gov-service-card" href="{{ route('services.passports').'#requirements' }}">
-          <h3>متطلبات جواز السفر</h3>
-          <p>المستندات المطلوبة لإصدار جواز السفر وتجديده.</p>
-          <span class="gov-service-more">عرض المتطلبات <x-icon name="arrow-left" /></span>
-        </a>
         <a class="gov-service-card" href="{{ route('services.driving-licenses').'#requirements' }}">
           <h3>متطلبات رخصة القيادة</h3>
           <p>المستندات والفحص الطبي ومتطلبات الإصدار والتجديد.</p>
@@ -110,7 +98,7 @@
       </div>
       <div class="gov-services-grid gov-requirements-groups">
         @foreach([
-          ['title'=>'متطلبات خدمات مصلحة الأحوال المدنية','icon'=>'identity','route'=>'services.identity.show','items'=>['first-issue'=>'متطلبات إصدار بطاقة شخصية لأول مرة','renewal'=>'متطلبات تجديد بطاقة شخصية','lost-replacement'=>'متطلبات إصدار بطاقة شخصية بدل فاقد']],
+          ['title'=>'متطلبات خدمات مصلحة الأحوال المدنية','icon'=>'identity','route'=>'services.identity.show','items'=>['first-issue'=>'متطلبات إصدار بطاقة شخصية لأول مرة','renewal'=>'متطلبات تجديد بطاقة شخصية','lost-replacement'=>'متطلبات إصدار بطاقة شخصية بدل فاقد'],'extra_links'=>[['href'=>route('services.civil-registry.guide','birth').'#requirements','label'=>'متطلبات شهادة الميلاد'],['href'=>route('services.civil-registry.guide','corrections').'#requirements','label'=>'متطلبات تصحيح القيود']]],
           ['title'=>'متطلبات خدمات مصلحة الهجرة والجوازات والجنسية','icon'=>'passport','route'=>'services.passports.show','items'=>['first-issue'=>'متطلبات إصدار جواز سفر لأول مرة','renewal'=>'متطلبات تجديد جواز سفر']],
           ['title'=>'متطلبات خدمات الإدارة العامة للمرور','icon'=>'car','route'=>'services.driving-licenses.show','items'=>['first-issue'=>'متطلبات إصدار رخصة قيادة لأول مرة','renewal'=>'متطلبات تجديد رخصة قيادة']],
         ] as $group)
@@ -119,6 +107,9 @@
           <nav aria-label="{{ $group['title'] }}">
             @foreach($group['items'] as $type=>$label)
               <a href="{{ route($group['route'], $type).'#requirements' }}">{{ $label }} <x-icon name="arrow-left" /></a>
+            @endforeach
+            @foreach($group['extra_links'] ?? [] as $extra)
+              <a href="{{ $extra['href'] }}">{{ $extra['label'] }} <x-icon name="arrow-left" /></a>
             @endforeach
           </nav>
         </details>

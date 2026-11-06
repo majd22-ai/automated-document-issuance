@@ -6,7 +6,7 @@
     for (const [selector, visible] of [['[data-card-fields]', path === 'has_identity'], ['[data-family-fields]', path === 'no_identity']]) {
       form?.querySelectorAll(selector).forEach(group => {
         group.hidden = !visible;
-        group.querySelectorAll('input').forEach(input => { input.disabled = !visible; });
+        group.querySelectorAll('input, select').forEach(input => { input.disabled = !visible; });
       });
     }
   }
