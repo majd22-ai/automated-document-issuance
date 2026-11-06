@@ -8,6 +8,8 @@
   const form = document.getElementById('registration-form');
   if (form) {
     const get = id => document.getElementById(id);
+    const panels = Array.from(document.querySelectorAll('[data-registration-step]'));
+    const progressSteps = Array.from(document.querySelectorAll('[data-progress-step]'));
     const dialog = get('identity-dialog');
     const path = get('identity_path');
     const nationalId = get('national_id');
@@ -17,7 +19,9 @@
     const next = get('registration-next');
     let busy = false;
     let checkedCaptcha = '';
-    let showFieldErrors = false;
+    let activeStep = Number(form.dataset.initialStep) || 1;
+    const attemptedSteps = new Set();
+    if (form.querySelector('[aria-invalid="true"]')) attemptedSteps.add(activeStep);
     function fieldError(input) {
       const group = input.closest('.form-group') || input.closest('.captcha-section') || input.closest('.registration-terms');
       if (!group) return;
@@ -34,8 +38,38 @@
       error.textContent = !input.disabled && !input.checkValidity() ? input.validationMessage : '';
       input.setAttribute('aria-invalid', error.textContent ? 'true' : 'false');
     }
-    function validateFields() {
-      Array.from(form.elements).filter(input => input.matches('input:not([type="hidden"]),select,textarea')).forEach(fieldError);
+    function validateFields(panel) {
+      Array.from(panel.querySelectorAll('input:not([type="hidden"]),select,textarea')).forEach(fieldError);
+    }
+    function goToStep(step) {
+      activeStep = step;
+      panels.forEach(panel => {
+        const current = Number(panel.dataset.registrationStep) === step;
+        panel.hidden = !current;
+        panel.setAttribute('aria-hidden', current ? 'false' : 'true');
+      });
+      progressSteps.forEach(item => {
+        const number = Number(item.dataset.progressStep);
+        item.classList.toggle('current', number === step);
+        item.classList.toggle('done', number < step);
+        if (number === step) item.setAttribute('aria-current', 'step');
+        else item.removeAttribute('aria-current');
+      });
+      const panel = panels.find(item => Number(item.dataset.registrationStep) === step);
+      panel?.querySelector('input:not([type="hidden"]),select,textarea,button')?.focus();
+    }
+    function validateStep(step) {
+      const panel = panels.find(item => Number(item.dataset.registrationStep) === step);
+      if (!panel) return true;
+      attemptedSteps.add(step);
+      validateFields(panel);
+      const invalid = Array.from(panel.querySelectorAll('input:not([type="hidden"]),select,textarea'))
+        .find(input => !input.disabled && !input.checkValidity());
+      if (invalid) {
+        invalid.focus();
+        return false;
+      }
+      return true;
     }
     function refresh() {
       const initial = path.value === 'no_identity';
@@ -53,8 +87,15 @@
       passwordConfirmation.setCustomValidity(mismatch ? 'كلمتا المرور غير متطابقتين' : '');
       get('password-match').textContent = mismatch ? 'كلمتا المرور غير متطابقتين' : '';
       next.disabled = busy;
-      if (showFieldErrors) validateFields();
+      if (attemptedSteps.has(activeStep)) {
+        const panel = panels.find(item => Number(item.dataset.registrationStep) === activeStep);
+        if (panel) validateFields(panel);
+      }
     }
+    document.querySelectorAll('[data-step-next]').forEach(button => button.addEventListener('click', () => {
+      if (validateStep(activeStep)) goToStep(Math.min(activeStep + 1, 3));
+    }));
+    document.querySelectorAll('[data-step-back]').forEach(button => button.addEventListener('click', () => goToStep(Math.max(activeStep - 1, 1))));
     get('no-identity').addEventListener('click', () => dialog.showModal());
     get('cancel-identity').addEventListener('click', () => dialog.close());
     get('identity-dialog-form').addEventListener('submit', event => {
@@ -67,13 +108,20 @@
     get('refresh-captcha').addEventListener('click', () => {
       get('captcha-image').src = get('captcha-image').src.split('?')[0] + '?v=' + Date.now();
       get('captcha').value = '';
+      get('captcha').setCustomValidity('');
       checkedCaptcha = '';
       get('captcha-status').textContent = '';
       refresh();
     });
     async function checkCaptcha() {
       const value = get('captcha').value;
-      if (!/^[A-Za-z2-9]{6}$/.test(value)) { get('captcha-status').textContent = 'أدخل رمز الصورة المكون من 6 خانات.'; return false; }
+      get('captcha').setCustomValidity('');
+      if (!/^[A-Za-z2-9]{6}$/.test(value)) {
+        get('captcha').setCustomValidity('أدخل رمز الصورة المكون من 6 خانات.');
+        get('captcha-status').textContent = 'أدخل رمز الصورة المكون من 6 خانات.';
+        fieldError(get('captcha'));
+        return false;
+      }
       const button = get('check-captcha');
       button.disabled = true;
       checkedCaptcha = '';
@@ -89,24 +137,40 @@
         if (response.status === 429) throw new Error('محاولات كثيرة. انتظر دقيقة وحاول مجددًا.');
         const data = response.ok ? await response.json() : { valid: false };
         if (get('captcha').value === value && data.valid) checkedCaptcha = value.toUpperCase();
+        get('captcha').setCustomValidity(checkedCaptcha ? '' : 'رمز الصورة غير صحيح أو انتهت صلاحيته.');
         get('captcha-status').textContent = checkedCaptcha ? 'تم التحقق من رمز الصورة.' : 'تعذّر التحقق. راجع الرمز أو حدّث الصورة وحاول مجددًا.';
       } catch (error) {
+        get('captcha').setCustomValidity('تعذّر التحقق من رمز الصورة.');
         get('captcha-status').textContent = error.message && /^(انتهت|محاولات)/.test(error.message) ? error.message : 'تعذّر الاتصال. أعد المحاولة.';
-      } finally { button.disabled = false; refresh(); }
+      } finally { button.disabled = false; refresh(); fieldError(get('captcha')); }
       return checkedCaptcha === get('captcha').value.toUpperCase() && !!checkedCaptcha;
     }
     get('check-captcha').addEventListener('click', checkCaptcha);
-    form.addEventListener('input', refresh);
+    form.addEventListener('input', event => {
+      if (event.target === get('captcha')) {
+        checkedCaptcha = '';
+        get('captcha').setCustomValidity('');
+      }
+      refresh();
+    });
     form.addEventListener('change', refresh);
     form.addEventListener('submit', async event => {
       refresh();
       if (busy) { event.preventDefault(); return; }
+      if (panels.length && activeStep < 3) {
+        event.preventDefault();
+        if (validateStep(activeStep)) goToStep(Math.min(activeStep + 1, 3));
+        return;
+      }
       const feedback = get('registration-feedback');
       if (!form.checkValidity()) {
         event.preventDefault();
-        showFieldErrors = true;
-        validateFields();
-        Array.from(form.elements).find(input => input.willValidate && !input.checkValidity())?.focus();
+        const invalid = Array.from(form.elements).find(input => input.willValidate && !input.checkValidity());
+        const invalidPanel = panels.find(panel => panel.contains(invalid));
+        if (invalidPanel) {
+          goToStep(Number(invalidPanel.dataset.registrationStep));
+          validateStep(activeStep);
+        }
         feedback.textContent = 'يرجى استكمال الحقول المطلوبة وتصحيح الحقل المشار إليه، والموافقة على شروط الاستخدام.';
         return;
       }
@@ -131,6 +195,7 @@
     });
     // Browsers may restore a submitted document from back/forward cache.
     window.addEventListener('pageshow', () => { busy = false; next.textContent = 'التالي'; refresh(); });
+    goToStep(activeStep);
     refresh();
   }
   document.querySelectorAll('[data-registration-submit]').forEach(otpForm => {
