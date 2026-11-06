@@ -18,17 +18,21 @@ class LinkedCivilMockSeeder extends Seeder
             // An illustration, not a citizen photograph or biometric reference.
             $photo = 'mock-registry/reference-illustration.png';
             if (! Storage::disk('attachments')->exists($photo)) {
-                $im = imagecreatetruecolor(600, 600);
-                $white = imagecolorallocate($im, 255, 255, 255);
-                $gray = imagecolorallocate($im, 90, 90, 90);
-                imagefill($im, 0, 0, $white);
-                imagefilledellipse($im, 300, 210, 140, 160, $gray);
-                imagefilledellipse($im, 300, 450, 300, 230, $gray);
-                imagestring($im, 5, 210, 30, 'SYNTHETIC MOCK', $gray);
-                ob_start();
-                imagepng($im);
-                $bytes = ob_get_clean();
-                imagedestroy($im);
+                if (function_exists('imagecreatetruecolor')) {
+                    $im = imagecreatetruecolor(600, 600);
+                    $white = imagecolorallocate($im, 255, 255, 255);
+                    $gray = imagecolorallocate($im, 90, 90, 90);
+                    imagefill($im, 0, 0, $white);
+                    imagefilledellipse($im, 300, 210, 140, 160, $gray);
+                    imagefilledellipse($im, 300, 450, 300, 230, $gray);
+                    imagestring($im, 5, 210, 30, 'SYNTHETIC MOCK', $gray);
+                    ob_start();
+                    imagepng($im);
+                    $bytes = ob_get_clean();
+                    imagedestroy($im);
+                } else {
+                    $bytes = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+                }
                 Storage::disk('attachments')->put($photo, $bytes);
             }
             foreach ([
