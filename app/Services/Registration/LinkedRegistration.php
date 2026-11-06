@@ -115,8 +115,15 @@ class LinkedRegistration
                     abort(403);
                 }
                 $national = $p['identity_path'] === 'has_identity' ? $p['national_id'] : null;
-                $account = (string) Str::uuid();
-                $username = $password['username'] ?? ('acct_'.str_replace('-', '', $account));
+                $account = $national ? (string) Str::uuid() : null;
+                if ($national) {
+                    $username = 'acct_'.str_replace('-', '', $account);
+                } else {
+                    $username = $password['username'] ?? '';
+                    if (! preg_match('/^[A-Za-z][A-Za-z0-9_]{3,19}$/D', $username)) {
+                        throw ValidationException::withMessages(['username' => 'أدخل اسم مستخدم من 4 إلى 20 خانة يبدأ بحرف إنجليزي، ويحتوي على حروف إنجليزية وأرقام أو شرطة سفلية فقط.']);
+                    }
+                }
                 if (app(CitizenIdentifiers::class)->conflicts($username) || ($national && app(CitizenIdentifiers::class)->conflicts($national))) {
                     throw ValidationException::withMessages(['username' => 'المعرف مستخدم بالفعل.']);
                 }

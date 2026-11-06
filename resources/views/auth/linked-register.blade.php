@@ -42,7 +42,7 @@
 @endif
 @else
 <h2>إنشاء كلمة المرور</h2><p>8 أحرف على الأقل، تشمل الحروف والأرقام والرموز.</p><form class="auth-form registration-form linked-password" method="POST" action="{{ route('register.password') }}">@csrf
-@if($payload['identity_path']==='no_identity')<label for="linked-username">اسم المستخدم (اختياري)</label><input id="linked-username" class="form-control" name="username" value="{{ old('username') }}">@error('username')<p class="text-danger">{{ $message }}</p>@enderror @endif
+@if($payload['identity_path']==='no_identity')<div class="form-group"><label for="linked-username">اسم المستخدم <span aria-hidden="true">*</span></label><input id="linked-username" class="form-control" name="username" value="{{ old('username') }}" required minlength="4" maxlength="20" pattern="[A-Za-z][A-Za-z0-9_]{3,19}" autocomplete="username" dir="ltr" aria-describedby="linked-username-help"><small id="linked-username-help">اختر اسمًا من 4 إلى 20 خانة يبدأ بحرف إنجليزي، باستخدام الحروف الإنجليزية والأرقام والشرطة السفلية، مثل husam23. ستستخدمه مع كلمة المرور لتسجيل الدخول بدل الرقم الوطني.</small>@error('username')<p class="text-danger">{{ $message }}</p>@enderror</div>@endif
 @foreach(['password'=>'كلمة المرور','password_confirmation'=>'تأكيد كلمة المرور'] as $field=>$label)<div class="form-group"><label for="linked-{{ $field }}">{{ $label }}</label><input id="linked-{{ $field }}" name="{{ $field }}" type="password" required autocomplete="new-password" class="form-control">@error($field)<p class="text-danger">{{ $message }}</p>@enderror</div>@endforeach
 <button class="btn btn-primary linked-submit">إنشاء الحساب والانتقال لتسجيل الدخول</button></form>
 @endif

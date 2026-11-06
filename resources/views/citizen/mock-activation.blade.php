@@ -1,26 +1,28 @@
 @extends('layouts.public')
 @section('title','استكمال تفعيل حسابي')
+@push('styles')<link rel="stylesheet" href="{{ asset('css/account-activation.css') }}?v={{ filemtime(public_path('css/account-activation.css')) }}">@endpush
 @push('scripts')<script src="{{ asset('js/linked-registration.js') }}?v={{ filemtime(public_path('js/linked-registration.js')) }}" defer></script>@endpush
 @section('content')
-<section class="section" dir="rtl"><div class="container"><article class="card" style="max-width:850px;margin:auto;padding:24px"><h1>استكمال تفعيل حسابي</h1>
+<section class="section account-activation" dir="rtl"><div class="container"><article class="card activation-card"><header class="activation-heading"><span>حساب المواطن</span><h1>استكمال تفعيل حسابي</h1><p>أرسل صورة واضحة لوجهك، ثم تابع حالة حسابك والنتيجة من هذه الصفحة أو من الإشعارات.</p></header>
 <p class="alert alert-info">بيئة تجريبية: الحيوية ومطابقة الوجه نتائج محددة ببيانات اختبار خيالية، وليست تحققًا بيومتريًا أو حكوميًا حقيقيًا.</p>@include('operations.messages')
-<h2>{{ $citizen->accountStatusLabel() }}</h2><p>معرّف الحساب الرقمي الداخلي: <bdi>{{ $citizen->digital_account_id }}</bdi> — ليس رقمًا وطنيًا.</p>
-@if($activationRequest)<p>رقم متابعة طلب المراجعة: {{ $activationRequest->id }} — {{ $activationRequest->status }}</p><p>{{ $activationRequest->review_reason }}</p>@endif
+<div class="activation-status" role="status"><span>حالة حسابك الآن</span><h2>{{ $citizen->accountStatusLabel() }}</h2>@if($citizen->identity_path==='no_identity')<p>اسم المستخدم لتسجيل الدخول: <strong dir="ltr">{{ $citizen->username }}</strong></p>@else<p>معرّف الحساب الرقمي الداخلي: <bdi>{{ $citizen->digital_account_id }}</bdi> — ليس رقمًا وطنيًا.</p>@endif</div>
+@if($activationRequest)<div class="activation-review"><p>رقم متابعة طلب المراجعة: {{ $activationRequest->id }}</p><p>{{ $activationRequest->review_reason }}</p></div>@endif
 @if($citizen->hasActivatedIdentity())<p class="alert alert-success">تم تفعيل الحساب في بيئة المحاكاة بنجاح.</p><a class="btn btn-primary" href="{{ route('citizen.dashboard') }}">الانتقال إلى لوحتي</a>
 @elseif($citizen->registration_status==='initial_account')<p>تم ربط القيد المدني المحاكي. يبقى الحساب أوليًا لإصدار البطاقة لأول مرة؛ لا يُنشأ رقم وطني تلقائيًا.</p><a class="btn btn-primary" href="{{ route('citizen.identity-card.index') }}">إصدار البطاقة لأول مرة</a>
 @elseif($citizen->registration_status==='under_review')<p>طلبك قيد المراجعة. ستجد القرار أو طلب الاستكمال في إشعاراتك.</p>
 @elseif($citizen->identity_path==='has_identity')
-<ol><li>التقاط صورة الوجه</li><li>محاكاة الحيوية</li><li>محاكاة المطابقة مع المرجع</li><li>التفعيل أو الإحالة للمراجعة</li></ol>
-<p>أظهر الوجه والرأس والكتفين كاملين، واجه الكاميرا مباشرة، واختر إضاءة وخلفية واضحتين. تجنب النظارات الشمسية وحجب الملامح أو تعديل الصورة. الفحص التقني يرفض الملفات غير الصالحة، ولا يثبت حيوية الوجه فعليًا.</p>
+<ol class="activation-steps"><li>التقط صورة واضحة</li><li>أرسل الصورة للتحقق التجريبي</li><li>تابع النتيجة في إشعاراتك</li></ol>
+<section class="activation-instructions" aria-labelledby="photo-instructions"><h2 id="photo-instructions">كيف تجهّز صورتك؟</h2><ul><li>التقط صورة حديثة لنفسك، وواجه الكاميرا مباشرة مع ظهور الرأس والكتفين.</li><li>اختر مكانًا بإضاءة جيدة وخلفية واضحة، وتجنب الظلال والنظارات الشمسية وتغطية الوجه.</li><li>لا تستخدم الفلاتر أو صورة شخص آخر. تأكد من وضوح الصورة قبل إرسالها.</li><li>ارفع ملف JPG أو PNG بحجم لا يتجاوز 2 ميجابايت، وبأبعاد 300 × 300 بكسل على الأقل.</li></ul><p>افتح الكاميرا ثم اضغط «التقاط الصورة»، أو اختر صورة من جهازك. بعد ذلك حدّد مربع الإقرار واضغط «إرسال الصورة ومتابعة التفعيل».</p></section>
 <form method="POST" enctype="multipart/form-data" action="{{ route('citizen.account.mock-face') }}">@csrf<input type="hidden" name="operation_token" value="{{ \Illuminate\Support\Str::uuid() }}">
 <button class="btn btn-outline" type="button" data-live-start>فتح الكاميرا</button><video data-live-video autoplay playsinline hidden style="width:100%;max-width:400px"></video><button type="button" class="btn btn-outline" data-live-capture hidden>التقاط الصورة</button><p data-live-message role="status"></p>
 <label for="mock-selfie">صورة مباشرة للوجه (JPG أو PNG، حتى 2 ميجابايت، 300 × 300 على الأقل)</label><input class="form-control" type="file" id="mock-selfie" name="selfie" accept="image/jpeg,image/png" capture="user" required>@error('selfie')<p class="text-danger">{{ $message }}</p>@enderror
-<label><input type="checkbox" name="camera_acknowledged" value="1" required> التقطت هذه الصورة بنفسي الآن وأفهم أن النتيجة محاكاة.</label>@error('camera_acknowledged')<p class="text-danger">{{ $message }}</p>@enderror<button class="btn btn-primary">تنفيذ محاكاة التحقق</button></form>
+<label class="activation-consent"><input type="checkbox" name="camera_acknowledged" value="1" required> أقر بأن الصورة صورتي والتقطتها بنفسي الآن، وأفهم أن التحقق في هذه النسخة تجريبي.</label>@error('camera_acknowledged')<p class="text-danger">{{ $message }}</p>@enderror<button class="btn btn-primary activation-submit">إرسال الصورة ومتابعة التفعيل</button></form>
+<aside class="activation-next"><h2>ماذا يحدث بعد الإرسال؟</h2><p>سيظهر إشعار داخل المنصة يوضح حالة حسابك: تم التفعيل تجريبيًا، أو الطلب قيد المراجعة، أو يلزم إعادة التصوير. إذا أُحيل طلبك للمراجعة، انتظر قرار الموظف ولا تعِد الإرسال حتى يُطلب منك ذلك.</p><p>نتائج هذه البيئة محاكاة محلية، ولا تثبت مطابقة الوجه أو حيويته فعليًا.</p></aside>
 @else<p>يلزم استكمال بيانات القيد المدني من خلال طلب المراجعة. لا تتاح الخدمات المقيدة حتى اعتماد المسار.</p>
 @if(in_array($activationRequest?->status,['requires_correction','rejected'],true))
 <form method="POST" action="{{ route('citizen.account.mock-correction') }}">@csrf
 @foreach(['name'=>'الاسم الرباعي','birth_date'=>'تاريخ الميلاد','birth_place'=>'مكان الميلاد','father_name'=>'الاسم الرباعي للأب','mother_name'=>'الاسم الرباعي للأم','father_national_id'=>'رقم الأب الوطني (اختياري)','mother_national_id'=>'رقم الأم الوطني (اختياري)','family_reference'=>'رقم الأسرة (اختياري)','additional_information'=>'معلومات إضافية (اختياري)'] as $field=>$label)<div class="form-group"><label for="correction-{{ $field }}">{{ $label }}</label><input class="form-control" id="correction-{{ $field }}" name="{{ $field }}" type="{{ $field==='birth_date'?'date':'text' }}" value="{{ old($field,data_get($activationRequest->evidence,'registration.'.$field)) }}" @if(in_array($field,['name','birth_date','birth_place','father_name','mother_name'])) required @endif>@error($field)<p class="text-danger">{{ $message }}</p>@enderror</div>@endforeach
 <button class="btn btn-primary">إرسال الاستكمال للمراجعة</button></form>@endif
 @endif
-<p><a href="{{ route('citizen.notifications.index') }}">إشعاراتي</a></p></article></div></section>
+<div class="activation-footer"><a class="btn btn-outline" href="{{ route('citizen.notifications.index') }}">عرض إشعارات حسابي</a></div></article></div></section>
 @endsection

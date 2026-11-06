@@ -46,7 +46,14 @@ class MockActivationController extends Controller
         $data = $r->validate(['selfie' => 'required|image|mimes:jpeg,jpg,png|max:2048|dimensions:min_width=300,min_height=300', 'operation_token' => 'required|uuid', 'camera_acknowledged' => 'accepted'], ['selfie.required' => 'التقط صورة الوجه.', 'selfie.dimensions' => 'الصورة لا تقل عن 300 × 300.', 'selfie.max' => 'حجم الصورة لا يتجاوز 2 ميجابايت.', 'camera_acknowledged.accepted' => 'أكد أنك التقطت الصورة بنفسك.']);
         $result = $flow->capture($r->user(), $data['selfie'], $data['operation_token']);
 
-        return redirect()->route('citizen.account.status')->with('status', 'نتيجة المحاكاة: '.$result.' — ليست مطابقة بيومترية حقيقية.');
+        $citizen = $r->user()->fresh();
+        $message = match ($citizen->registration_status) {
+            'active' => 'تم استلام الصورة وتفعيل حسابك تجريبيًا. يمكنك الآن الانتقال إلى لوحتك.',
+            'under_review' => 'تم استلام الصورة وإحالة طلب تفعيل حسابك إلى الموظف المختص. انتظر إشعار نتيجة المراجعة.',
+            default => 'تم استلام الصورة، ويلزم إعادة التقاطها لاستكمال التفعيل. راجع تعليمات التصوير ثم حاول مجددًا.',
+        };
+
+        return redirect()->route('citizen.account.status')->with('status', $message.' أُضيف إشعار بحالة الحساب إلى إشعاراتك داخل المنصة.');
     }
 
     public function review(Request $r, User $citizen, MockIdentityVerification $flow)

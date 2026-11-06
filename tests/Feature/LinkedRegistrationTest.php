@@ -172,7 +172,10 @@ class LinkedRegistrationTest extends TestCase
         $this->assertNull($u->mock_person_id);
         $this->assertSame('under_review', $u->registration_status);
         $this->assertNotNull($u->activationRequest);
-        $this->post('/login', ['identifier' => $u->digital_account_id, 'password' => 'StrongPass123!'])->assertRedirect(route('citizen.account.status'));
+        $this->assertNull($u->digital_account_id);
+        $this->assertSame('mock_new', $u->username);
+        $this->get(route('login'))->assertSee($u->username);
+        $this->post('/login', ['identifier' => $u->username, 'password' => 'StrongPass123!'])->assertRedirect(route('citizen.account.status'));
     }
 
     public function test_authorized_employee_reviews_but_cannot_replay_or_edit_registry(): void
@@ -203,6 +206,9 @@ class LinkedRegistrationTest extends TestCase
         $this->post('/register/verify', ['code' => $code])->assertRedirect();
         $this->post('/register/verify', ['code' => $code])->assertSessionHasErrors('code');
         $this->post('/register/password', ['username' => 'family_mock', 'password' => 'StrongPass123!', 'password_confirmation' => 'different'])->assertSessionHasErrors('password');
+        $this->assertSame(0, User::count());
+        $this->post('/register/password', ['password' => 'StrongPass123!', 'password_confirmation' => 'StrongPass123!'])->assertSessionHasErrors('username');
+        $this->post('/register/password', ['username' => '12345', 'password' => 'StrongPass123!', 'password_confirmation' => 'StrongPass123!'])->assertSessionHasErrors('username');
         $this->assertSame(0, User::count());
         $this->post('/register/password', ['username' => 'family_mock', 'password' => 'StrongPass123!', 'password_confirmation' => 'StrongPass123!'])->assertRedirect(route('login'));
         $u = User::sole();

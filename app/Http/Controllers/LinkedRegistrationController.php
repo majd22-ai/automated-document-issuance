@@ -87,9 +87,9 @@ class LinkedRegistrationController extends Controller
         if ($r->isMethod('get')) {
             return $this->show($r, 3);
         }
-        $data = $r->validate(['password' => ['required', 'string', 'max:255', 'confirmed', Password::min(8)->letters()->numbers()->symbols()], 'username' => ['nullable', 'string', 'min:4', 'max:30', 'regex:/^[A-Za-z0-9_]+$/D', 'unique:users,username', 'unique:users,national_id']], ['password.confirmed' => 'كلمتا المرور غير متطابقتين.', 'password.min' => 'كلمة المرور لا تقل عن 8 أحرف.', 'username.unique' => 'اسم المستخدم مستخدم.']);
+        $data = $r->validate(['password' => ['required', 'string', 'max:255', 'confirmed', Password::min(8)->letters()->numbers()->symbols()], 'username' => ['nullable', 'string', 'min:4', 'max:20', 'regex:/^[A-Za-z][A-Za-z0-9_]{3,19}$/D', 'unique:users,username', 'unique:users,national_id']], ['password.confirmed' => 'كلمتا المرور غير متطابقتين.', 'password.min' => 'كلمة المرور لا تقل عن 8 أحرف.', 'username.regex' => 'ابدأ بحرف إنجليزي واستخدم الحروف الإنجليزية والأرقام والشرطة السفلية فقط.', 'username.min' => 'اسم المستخدم لا يقل عن 4 خانات.', 'username.max' => 'اسم المستخدم لا يتجاوز 20 خانة.', 'username.unique' => 'اسم المستخدم مستخدم بالفعل؛ اختر اسمًا آخر.']);
         $user = app(LinkedRegistration::class)->finish($r, $data);
 
-        return redirect()->route('login')->with('status', 'تم إنشاء حسابك بنجاح. يرجى استكمال إجراءات تفعيل الحساب للتحقق من هويتك والاستفادة من الخدمات الإلكترونية.')->with('mock_account_id', $user->digital_account_id);
+        return redirect()->route('login')->with('status', 'تم إنشاء حسابك بنجاح. يرجى استكمال إجراءات تفعيل الحساب للتحقق من هويتك والاستفادة من الخدمات الإلكترونية.')->with('mock_account_id', $user->digital_account_id)->with('generated_username', $user->identity_path === 'no_identity' ? $user->username : null);
     }
 }

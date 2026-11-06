@@ -19,6 +19,7 @@
     @endif
     @if(session('status'))<div class="alert alert-success" role="status">{{ session('status') }}</div>@endif
     @if(session('mock_account_id'))<p>احتفظ بمعرّف حسابك الرقمي الداخلي لتسجيل الدخول: <bdi>{{ session('mock_account_id') }}</bdi></p>@endif
+    @if(session('generated_username'))<div class="alert alert-info"><p>اسم المستخدم الخاص بك: <strong dir="ltr">{{ session('generated_username') }}</strong></p><p>احتفظ به واستخدمه مع كلمة المرور لتسجيل الدخول بدلًا من الرقم الوطني.</p></div>@endif
 
     <form method="POST" action="{{ url('/login') }}" class="auth-form" data-validate>
       @csrf
