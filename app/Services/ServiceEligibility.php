@@ -44,7 +44,12 @@ class ServiceEligibility
             return $report;
         }
         if (! $citizen->allowsCitizenService($service)) {
-            $report->add(new RequirementResult('initial_account_scope', 'صلاحيات الحساب والتفعيل', State::Unmet, $citizen->registration_status === 'initial_account' ? 'الحساب الأولي يتيح طلب إصدار بطاقة شخصية لأول مرة فقط إلى حين التحقق من الهوية لدى السجل المدني.' : 'يلزم الحضور لتفعيل الحساب واستكمال توثيق الهوية لدى الموظف المخوّل قبل بدء الخدمات المقيدة.', 'citizen'));
+            $message = match (true) {
+                $citizen->isBirthCertificatePath() => 'يجب عليك إصدار بطاقة شخصية أولاً لتكون بقية الخدمات متاحة لك. يمكنك حاليًا تقديم طلب إصدار بطاقة شخصية أو إصدار شهادة ميلاد فقط.',
+                $citizen->registration_status === 'initial_account' => 'الحساب الأولي يتيح طلب إصدار بطاقة شخصية لأول مرة فقط إلى حين التحقق من الهوية لدى السجل المدني.',
+                default => 'يلزم الحضور لتفعيل الحساب واستكمال توثيق الهوية لدى الموظف المخوّل قبل بدء الخدمات المقيدة.',
+            };
+            $report->add(new RequirementResult('initial_account_scope', 'صلاحيات الحساب والتفعيل', State::Unmet, $message, 'citizen'));
 
             return $report;
         }

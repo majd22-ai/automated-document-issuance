@@ -1,4 +1,4 @@
-@php
+﻿@php
   $operationsWorkspace = auth()->check() && in_array(auth()->user()->role, ['admin','employee'], true) && request()->routeIs('admin.*','employee.*','profile.*','integrations.civil-registry-demo*','identity-workflow.*');
 @endphp
  <!DOCTYPE html>
@@ -127,5 +127,43 @@
   @stack('scripts')
   @if($operationsWorkspace)<script src="{{ asset('js/operations-workspace.js') }}?v={{ filemtime(public_path('js/operations-workspace.js')) }}" defer></script>@endif
   @auth<script src="{{ asset('js/notification-count.js') }}?v={{ filemtime(public_path('js/notification-count.js')) }}" data-count-url="{{ route('notifications.unread-count') }}" defer></script>@endauth
+
+  {{-- Birth-certificate path: restrict services popup --}}
+  @auth
+  @if(auth()->user()->isBirthCertificatePath())
+  <div id="bc-restrict-modal" role="dialog" aria-modal="true" aria-labelledby="bc-restrict-title" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;max-width:440px;width:90%;padding:2rem;text-align:center;position:relative;direction:rtl;">
+      <div style="font-size:2.5rem;margin-bottom:.75rem;">&#x1F512;</div>
+      <h2 id="bc-restrict-title" style="font-size:1.2rem;font-weight:700;margin-bottom:.75rem;color:#1a1a2e;">&#x627;&#x644;&#x62E;&#x62F;&#x645;&#x629; &#x63A;&#x64A;&#x631; &#x645;&#x62A;&#x627;&#x62D;&#x629;</h2>
+      <p style="color:#444;line-height:1.7;margin-bottom:1.5rem;">&#x64A;&#x62C;&#x628; &#x639;&#x644;&#x64A;&#x643; <strong>&#x625;&#x635;&#x62F;&#x627;&#x631; &#x628;&#x637;&#x627;&#x642;&#x629; &#x634;&#x62E;&#x635;&#x64A;&#x629;</strong> &#x623;&#x648;&#x644;&#x627;&#x64B; &#x644;&#x62A;&#x643;&#x648;&#x646; &#x628;&#x642;&#x64A;&#x629; &#x627;&#x644;&#x62E;&#x62F;&#x645;&#x627;&#x62A; &#x645;&#x62A;&#x627;&#x62D;&#x629; &#x644;&#x643;.<br>&#x64A;&#x645;&#x643;&#x646;&#x643; &#x62D;&#x627;&#x644;&#x64A;&#x64B;&#x627; &#x62A;&#x642;&#x62F;&#x64A;&#x645; &#x637;&#x644;&#x628; &#x625;&#x635;&#x62F;&#x627;&#x631; &#x628;&#x637;&#x627;&#x642;&#x629; &#x634;&#x62E;&#x635;&#x64A;&#x629; &#x623;&#x648; &#x625;&#x635;&#x62F;&#x627;&#x631; &#x634;&#x647;&#x627;&#x62F;&#x629; &#x645;&#x64A;&#x644;&#x627;&#x62F; &#x641;&#x642;&#x637;.</p>
+      <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
+        <a href="{{ route('services.catalog', 'identity-first-issue') }}" style="background:#1a6cad;color:#fff;padding:.6rem 1.4rem;border-radius:8px;text-decoration:none;font-weight:600;">&#x625;&#x635;&#x62F;&#x627;&#x631; &#x628;&#x637;&#x627;&#x642;&#x629; &#x634;&#x62E;&#x635;&#x64A;&#x629;</a>
+        <button onclick="document.getElementById('bc-restrict-modal').style.display='none'" style="background:#eee;color:#333;padding:.6rem 1.4rem;border-radius:8px;border:none;cursor:pointer;font-weight:600;">&#x625;&#x63A;&#x644;&#x627;&#x642;</button>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function () {
+    var ALLOWED_CODES = ['identity-first-issue', 'birth-certificate-first-issue'];
+    var modal = document.getElementById('bc-restrict-modal');
+    function isRestricted(href) {
+      if (!href || href === '#') return false;
+      var m = href.match(/\/services\/catalog\/([^?#\/]+)/);
+      if (m) return ALLOWED_CODES.indexOf(m[1]) === -1;
+      if (/\/services\/(passports|driving-licenses)(\/|$)/.test(href)) return true;
+      if (/\/services\/identity\/(renewal|lost-replacement)/.test(href)) return true;
+      return false;
+    }
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest('a[href]');
+      if (!a) return;
+      if (isRestricted(a.getAttribute('href'))) { e.preventDefault(); modal.style.display = 'flex'; }
+    });
+    modal.addEventListener('click', function (e) { if (e.target === modal) modal.style.display = 'none'; });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') modal.style.display = 'none'; });
+  })();
+  </script>
+  @endif
+  @endauth
 </body>
 </html>

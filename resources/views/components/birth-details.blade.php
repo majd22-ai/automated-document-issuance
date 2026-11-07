@@ -31,7 +31,7 @@
  @endforeach
  @foreach(['birth_place'=>'مكان الميلاد','birth_country'=>'دولة الميلاد','birth_governorate'=>'محافظة الميلاد','birth_district'=>'مديرية الميلاد','birth_village'=>'عزلة / قرية الميلاد'] as $key=>$label)
  <div class="identity-field"><label for="field-{{ $key }}">{{ $label }} {{ $key === 'birth_village' ? '(اختياري)' : '*' }}</label>
- <input id="field-{{ $key }}" name="data[{{ $key }}]" value="{{ $birthValues($key) }}" @if($key !== 'birth_village') list="options-{{ $key }}" required @endif autocomplete="off" maxlength="200" placeholder="{{ $key === 'birth_village' ? 'اكتب اسم العزلة أو القرية إن وجد' : 'اختر أو اكتب '.$label }}" @error('data.'.$key) aria-invalid="true" aria-describedby="error-{{ $key }}" @enderror>
+ <input id="field-{{ $key }}" name="data[{{ $key }}]" value="{{ $birthValues($key) ?: ($key === 'birth_country' ? 'اليمن' : '') }}" @if($key !== 'birth_village') list="options-{{ $key }}" required @endif autocomplete="off" maxlength="200" placeholder="{{ $key === 'birth_village' ? 'اكتب اسم العزلة أو القرية إن وجد' : 'اختر أو اكتب '.$label }}" @error('data.'.$key) aria-invalid="true" aria-describedby="error-{{ $key }}" @enderror>
  <datalist id="options-{{ $key }}">
  @if($key === 'birth_place')
  @foreach(['مستشفى','مركز صحي','منزل'] as $place)<option value="{{ $place }}"></option>@endforeach

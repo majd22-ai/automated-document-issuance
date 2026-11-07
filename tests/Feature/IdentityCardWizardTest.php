@@ -78,6 +78,20 @@ class IdentityCardWizardTest extends TestCase
         $this->get('/citizen/identity-card/'.$form->id.'?step=6')->assertOk()->assertSee('شاهد اختبار 0');
     }
 
+    public function test_residence_village_and_house_are_optional_and_required_errors_are_arabic(): void
+    {
+        $form = $this->draft();
+        for ($step = 1; $step <= 2; $step++) {
+            $this->save($form, $step, ['data' => $this->data($step)])->assertSessionHasNoErrors();
+        }
+        $data = $this->data(3);
+        unset($data['residence_village'], $data['house'], $data['residence_governorate']);
+        $this->save($form, 3, ['data' => $data])->assertSessionHasErrors('data.residence_governorate');
+        $this->assertSame('يرجى إدخال محافظة الإقامة للانتقال إلى الخطوة التالية.', session('errors')->first('data.residence_governorate'));
+        $data['residence_governorate'] = 'صنعاء';
+        $this->save($form, 3, ['data' => $data])->assertSessionHasNoErrors()->assertRedirect();
+    }
+
     public function test_photo_engine_rejection_is_shown_without_saving_or_advancing(): void
     {
         $form = $this->draft();

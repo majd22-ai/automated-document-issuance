@@ -90,7 +90,17 @@ class User extends Authenticatable
             return true; // Preserve legacy per-service assessment policy; do not claim global verification.
         }
 
+        // Birth-certificate path: only identity first-issue and birth-certificate issuance are allowed
+        if ($this->identity_path === 'birth_certificate') {
+            return in_array($service->code, ['identity-first-issue', 'birth-certificate-first-issue'], true);
+        }
+
         return $this->registration_status === 'initial_account' ? $service->code === 'identity-first-issue' : $this->hasActivatedIdentity();
+    }
+
+    public function isBirthCertificatePath(): bool
+    {
+        return $this->identity_path === 'birth_certificate';
     }
 
     public function hasActivatedIdentity(): bool

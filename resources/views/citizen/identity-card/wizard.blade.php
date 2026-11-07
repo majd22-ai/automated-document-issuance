@@ -1,6 +1,6 @@
 @extends('layouts.public')
 @section('title', 'استمارة طلب البطاقة الشخصية')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/identity-card-wizard.css') }}">@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/identity-card-wizard.css') }}?v={{ filemtime(public_path('css/identity-card-wizard.css')) }}">@endpush
 @push('scripts')<script src="{{ asset('js/identity-card-wizard.js') }}" defer></script>@endpush
 @section('content')
 @php

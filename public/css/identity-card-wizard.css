@@ -8,3 +8,10 @@
 .birth-date-parts select{min-height:52px;text-align:center;min-width:0;width:100%;font-size:1rem}
 .birth-details small{display:block;color:#526172;line-height:1.8;margin-top:6px}
 .birth-details input[hidden]{display:none}
+
+/* Match the shared residence selectors to the wizard fields. */
+.identity-wizard .attestation-field.identity-field{margin:0;min-width:0}
+.identity-wizard .attestation-field.identity-field label{display:block;margin-bottom:.4rem;font-weight:600}
+.identity-wizard .attestation-field.identity-field select{display:block;width:100%;min-height:52px;padding:.7rem 1rem;box-sizing:border-box;font:inherit;color:#152c3c;background-color:#fff;border:1px solid #aabcc8;border-radius:.45rem;direction:rtl}
+.identity-wizard .attestation-field.identity-field select:disabled{background-color:#f2f5f7;color:#64748b;cursor:not-allowed}
+.identity-wizard .attestation-field.identity-field .identity-field-error{color:#a51d22;font-size:.9rem;line-height:1.7;margin-block:.4rem 0}

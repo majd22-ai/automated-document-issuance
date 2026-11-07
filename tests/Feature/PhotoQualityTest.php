@@ -62,7 +62,7 @@ class PhotoQualityTest extends TestCase
                 app(PhotoQuality::class)->inspect('private.jpg');
                 $this->fail('Invalid engine result passed');
             } catch (ValidationException $error) {
-                $this->assertStringContainsString('تعذر تشغيل', $error->errors()['photo'][0]);
+                $this->assertStringContainsString('عطل تقني في خدمة الفحص', $error->errors()['photo'][0]);
                 $this->assertStringNotContainsString('SECRET', $error->getMessage());
             }
         }

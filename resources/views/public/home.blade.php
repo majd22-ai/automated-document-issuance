@@ -89,13 +89,7 @@
         <h2 id="service-requirements-heading">متطلبات الخدمات</h2>
         <p>اضغط على اسم الجهة، ثم اختر الخدمة لعرض متطلباتها.</p>
       </div>
-      <div class="gov-services-grid">
-        <a class="gov-service-card" href="{{ route('services.driving-licenses').'#requirements' }}">
-          <h3>متطلبات رخصة القيادة</h3>
-          <p>المستندات والفحص الطبي ومتطلبات الإصدار والتجديد.</p>
-          <span class="gov-service-more">عرض المتطلبات <x-icon name="arrow-left" /></span>
-        </a>
-      </div>
+
       <div class="gov-services-grid gov-requirements-groups">
         @foreach([
           ['title'=>'متطلبات خدمات مصلحة الأحوال المدنية','icon'=>'identity','route'=>'services.identity.show','items'=>['first-issue'=>'متطلبات إصدار بطاقة شخصية لأول مرة','renewal'=>'متطلبات تجديد بطاقة شخصية','lost-replacement'=>'متطلبات إصدار بطاقة شخصية بدل فاقد'],'extra_links'=>[['href'=>route('services.civil-registry.guide','birth').'#requirements','label'=>'متطلبات شهادة الميلاد'],['href'=>route('services.civil-registry.guide','corrections').'#requirements','label'=>'متطلبات تصحيح القيود']]],

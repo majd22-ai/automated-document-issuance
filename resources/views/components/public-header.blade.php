@@ -131,7 +131,7 @@
           <a class="gov-nav-link" href="{{ route('profile.edit') }}"><x-icon name="user" /> الملف الشخصي</a>
           <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button class="gov-nav-link" type="submit"><x-icon name="log-out" /> تسجيل الخروج</button>
+            <button class="gov-nav-link gov-logout-button" type="submit"><x-icon name="log-out" /> تسجيل الخروج</button>
           </form>
           @endif
         @endauth

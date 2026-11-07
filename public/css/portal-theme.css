@@ -284,3 +284,27 @@ html { scroll-padding-top:120px; }
 }
 /* PORTAL THEME END */
 
+
+/* Shared logout actions and unread count, including mobile navigation. */
+.gov-account-logout button,
+button.gov-logout-button {
+  background: #b91c1c !important;
+  border-color: #b91c1c !important;
+  color: #fff !important;
+}
+.gov-account-logout button:hover,
+button.gov-logout-button:hover {
+  background: #991b1b !important;
+  border-color: #991b1b !important;
+}
+.gov-account-logout button:focus-visible,
+button.gov-logout-button:focus-visible {
+  outline: 2px solid #fca5a5;
+  outline-offset: 3px;
+}
+.gov-notification-count {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #fff;
+  font-weight: 700;
+}

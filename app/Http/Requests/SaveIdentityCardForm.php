@@ -146,6 +146,16 @@ class SaveIdentityCardForm extends FormRequest
 
     public static function validationMessages(): array
     {
-        return ['*.required' => 'هذا الحقل مطلوب.', '*.max' => 'القيمة تتجاوز الحد المسموح.', '*.date_format' => 'أدخل تاريخًا صحيحًا.', '*.before_or_equal' => 'لا يمكن أن يكون التاريخ في المستقبل.', '*.regex' => 'أدخل رقم هاتف صحيحًا من 7 إلى 15 رقمًا.', '*.in' => 'اختر قيمة صحيحة.', 'witnesses.1.document_number.different' => 'يجب أن يكون الشاهد الثاني مختلفًا عن الشاهد الأول.', 'photo.image' => 'ارفع صورة سليمة بصيغة JPG أو JPEG أو PNG.', 'photo.mimes' => 'الصيغ المسموحة JPG وJPEG وPNG فقط.', 'photo.extensions' => 'امتداد الصورة غير مسموح.', 'photo.max' => 'حجم الصورة الأقصى 2 ميجابايت وفق الإعدادات الحالية.', 'photo.dimensions' => 'أبعاد الصورة أقل من الحد المطلوب الموضح في الحقل.', 'declaration.accepted' => 'يجب الإقرار بصحة البيانات قبل الإرسال.'];
+        $messages = [
+            'data.*.required' => 'يرجى إدخال :attribute للانتقال إلى الخطوة التالية.',
+            'data.*.string' => 'يرجى إدخال نص صحيح في حقل :attribute.',
+            'data.*.max' => 'يجب ألا يتجاوز حقل :attribute 200 حرف.',
+            'data.*.in' => 'يرجى اختيار قيمة صحيحة لحقل :attribute.',
+            'data.*.date_format' => 'يرجى اختيار تاريخ صحيح لحقل :attribute.',
+            'data.*.before_or_equal' => 'لا يمكن أن يكون :attribute في المستقبل.',
+            'data.*.regex' => 'أدخل رقم هاتف صحيحًا من 7 إلى 15 رقمًا.',
+        ];
+
+        return $messages + ['*.required' => 'هذا الحقل مطلوب.', '*.max' => 'القيمة تتجاوز الحد المسموح.', '*.date_format' => 'أدخل تاريخًا صحيحًا.', '*.before_or_equal' => 'لا يمكن أن يكون التاريخ في المستقبل.', '*.regex' => 'أدخل رقم هاتف صحيحًا من 7 إلى 15 رقمًا.', '*.in' => 'اختر قيمة صحيحة.', 'witnesses.1.document_number.different' => 'يجب أن يكون الشاهد الثاني مختلفًا عن الشاهد الأول.', 'photo.image' => 'ارفع صورة سليمة بصيغة JPG أو JPEG أو PNG.', 'photo.mimes' => 'الصيغ المسموحة JPG وJPEG وPNG فقط.', 'photo.extensions' => 'امتداد الصورة غير مسموح.', 'photo.max' => 'حجم الصورة الأقصى 2 ميجابايت وفق الإعدادات الحالية.', 'photo.dimensions' => 'أبعاد الصورة أقل من الحد المطلوب الموضح في الحقل.', 'declaration.accepted' => 'يجب الإقرار بصحة البيانات قبل الإرسال.'];
     }
 }

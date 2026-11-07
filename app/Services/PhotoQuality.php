@@ -21,7 +21,7 @@ class PhotoQuality
     public function inspect(string $path, string $field = 'photo'): void
     {
         $unavailable = fn () => throw ValidationException::withMessages([
-            $field => 'تعذر تشغيل فحص الصورة الإلكتروني حاليًا. لم تُعتمد الصورة؛ حاول لاحقًا أو تواصل مع الدعم الفني.',
+            $field => 'لم يكتمل فحص الصورة بسبب عطل تقني في خدمة الفحص داخل المنصة، وليس بسبب ثبوت مخالفة صورتك للشروط. لم تُعتمد الصورة ولم يتم الانتقال إلى الخطوة التالية. لا تحتاج إلى تعديل الصورة بسبب هذه الرسالة؛ حاول لاحقًا، وإذا تكررت المشكلة فتواصل مع الدعم الفني لإصلاح خدمة الفحص.',
         ]);
         try {
             $result = Process::timeout(config('photo_quality.timeout', 12))
