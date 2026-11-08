@@ -33,7 +33,7 @@
 @csrf
 <fieldset data-registration-step="1" class="registration-panel"><legend>المعلومات الشخصية</legend>
 <div class="registration-grid">
-<div class="form-group"><label for="name">الاسم الكامل</label><input class="form-control{{ $errors->has('name') ? ' is-invalid' : '' }}" id="name" name="name" value="{{ $values['name'] ?? '' }}" required maxlength="100" autocomplete="name" @if($errors->has('name')) aria-invalid="true" @endif>@error('name')<small class="field-error">{{ $message }}</small>@enderror</div>
+<div class="form-group"><label for="name">الاسم الكامل / الرباعي</label><input class="form-control{{ $errors->has('name') ? ' is-invalid' : '' }}" id="name" name="name" value="{{ $values['name'] ?? '' }}" required maxlength="100" autocomplete="name" pattern="^\s*\S+(?:\s+\S+){3,}\s*$" title="أدخل الاسم الرباعي (أربعة مقاطع على الأقل)" placeholder="الاسم الأول اسم الأب اسم الجد اللقب" @if($errors->has('name')) aria-invalid="true" @endif>@error('name')<small class="field-error">{{ $message }}</small>@enderror</div>
 <div class="form-group"><label for="identity_path">حالة السجل المدني</label><select class="form-control{{ $errors->has('identity_path') ? ' is-invalid' : '' }}" id="identity_path" name="identity_path" @if($errors->has('identity_path')) aria-invalid="true" @endif>
 <option value="has_identity" @selected(($values['identity_path'] ?? '') === 'has_identity')>لدي رقم هوية</option>
 <option value="no_identity" @selected(($values['identity_path'] ?? '') === 'no_identity')>لا أملك رقم هوية — حساب أولي</option>

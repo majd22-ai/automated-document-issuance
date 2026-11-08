@@ -82,6 +82,22 @@
       nationalId.pattern = initial ? '[0-9]{1,50}' : '[0-9]{5,20}';
       nationalId.maxLength = initial ? 50 : 20;
       document.querySelector('label[for="national_id"]')?.replaceChildren(initial ? 'رقم شهادة الميلاد' : 'رقم الهوية');
+      const nameInput = get('name');
+      if (nameInput) {
+        const nameVal = nameInput.value.trim();
+        const parts = nameVal ? nameVal.split(/\s+/).filter(Boolean) : [];
+        nameInput.setCustomValidity(nameVal && parts.length < 4 ? 'يجب إدخال الاسم الرباعي كاملًا (أربعة مقاطع على الأقل).' : '');
+      }
+      const emailInput = get('email');
+      if (emailInput) {
+        const emailVal = emailInput.value.trim();
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (emailVal && (emailInput.validity.typeMismatch || !emailPattern.test(emailVal))) {
+          emailInput.setCustomValidity('صيغة البريد الإلكتروني غير صحيحة (مثال: name@example.com)');
+        } else {
+          emailInput.setCustomValidity('');
+        }
+      }
       password.setCustomValidity(password.value && !validPassword(password.value) ? 'أدخل 8 خانات على الأقل تشمل حروفًا وأرقامًا ورموزًا.' : '');
       const mismatch = passwordConfirmation.value && password.value !== passwordConfirmation.value;
       passwordConfirmation.setCustomValidity(mismatch ? 'كلمتا المرور غير متطابقتين' : '');
@@ -146,6 +162,15 @@
       return checkedCaptcha === get('captcha').value.toUpperCase() && !!checkedCaptcha;
     }
     get('check-captcha').addEventListener('click', checkCaptcha);
+    get('email')?.addEventListener('blur', () => {
+      const emailInput = get('email');
+      const emailVal = emailInput?.value.trim();
+      const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (emailVal && (emailInput.validity.typeMismatch || !emailPattern.test(emailVal))) {
+        emailInput.setCustomValidity('صيغة البريد الإلكتروني غير صحيحة (مثال: name@example.com)');
+        emailInput.reportValidity();
+      }
+    });
     form.addEventListener('input', event => {
       if (event.target === get('captcha')) {
         checkedCaptcha = '';

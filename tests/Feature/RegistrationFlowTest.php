@@ -20,6 +20,7 @@ class RegistrationFlowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['citizen_mock.enabled' => false]);
         $connection = DB::connection();
         if ($connection->getDatabaseName() !== ':memory:' && ! str_ends_with($connection->getDatabaseName(), '_testing')) {
             throw new \RuntimeException('Registration tests require an isolated testing database.');
@@ -34,7 +35,13 @@ class RegistrationFlowTest extends TestCase
 
     private function data(array $overrides = []): array
     {
-        return array_replace(['name' => 'مواطن اختبار', 'identity_path' => 'has_identity', 'national_id' => '12345678901', 'username' => 'citizen_test', 'phone' => '777123456', 'email' => 'registration@example.test', 'password' => 'StrongPass123!', 'password_confirmation' => 'StrongPass123!', 'terms' => '1', 'captcha' => 'ABC234'], $overrides);
+        return array_replace(['name' => 'مواطن اختبار تجريبي كامل', 'identity_path' => 'has_identity', 'national_id' => '12345678901', 'username' => 'citizen_test', 'phone' => '777123456', 'email' => 'registration@example.test', 'password' => 'StrongPass123!', 'password_confirmation' => 'StrongPass123!', 'terms' => '1', 'captcha' => 'ABC234'], $overrides);
+    }
+
+    public function test_registration_rejects_non_quadruple_name(): void
+    {
+        $this->start(['name' => 'مواطن ثنائي'])->assertSessionHasErrors(['name']);
+        $this->start(['name' => 'مواطن ثلاثي تجريبي'])->assertSessionHasErrors(['name']);
     }
 
     private function start(array $overrides = [])
@@ -104,7 +111,7 @@ class RegistrationFlowTest extends TestCase
 
     public function test_registration_page_has_guarded_steps_and_modal(): void
     {
-        $this->get(route('register'))->assertOk()->assertSee('إنشاء حساب جديد — بوابة خدمات السجل المدني')->assertSee('بيانات المستخدم')->assertSee('لا أملك رقم هوية')->assertSee('registration.js')->assertDontSee('confirmed_phone')->assertDontSee('modal-phone')->assertSee('registration-feedback');
+        $this->get(route('register'))->assertOk()->assertSee('إنشاء حساب جديد — بوابة خدمات السجل المدني')->assertSee('البيانات الشخصية')->assertSee('لا أملك رقم هوية')->assertSee('registration.js')->assertDontSee('confirmed_phone')->assertDontSee('modal-phone')->assertSee('registration-feedback');
         $this->get('/register/verify')->assertRedirect(route('register'));
         $this->get('/register/complete')->assertRedirect(route('register'));
     }

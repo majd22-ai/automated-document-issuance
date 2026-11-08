@@ -32,13 +32,25 @@ class LinkedRegistrationTest extends TestCase
 
     private function data(array $extra = []): array
     {
-        return $extra + ['identity_path' => 'has_identity', 'name' => 'مواطن محاكاة ناجح', 'national_id' => '99010000001', 'email' => 'mock@example.test', 'phone' => '777123456', 'terms' => '1'];
+        return $extra + ['identity_path' => 'has_identity', 'name' => 'مواطن محاكاة ناجح كامل', 'national_id' => '99010000001', 'email' => 'mock@example.test', 'phone' => '777123456', 'terms' => '1'];
     }
 
     public function test_registry_requires_matching_name_and_card(): void
     {
         $this->post('/register', $this->data(['national_id' => '99999999999']))->assertSessionHasErrors('national_id');
-        $this->post('/register', $this->data(['name' => 'اسم مخالف']))->assertSessionHasErrors('national_id');
+        $this->post('/register', $this->data(['name' => 'اسم مخالف غير مطابق']))->assertSessionHasErrors('national_id');
+    }
+
+    public function test_registration_requires_quadruple_name(): void
+    {
+        $this->post('/register', $this->data(['name' => 'مواطن ثنائي']))->assertSessionHasErrors('name');
+        $this->post('/register', $this->data(['name' => 'مواطن ثلاثي تجريبي']))->assertSessionHasErrors('name');
+    }
+
+    public function test_no_identity_registration_requires_father_and_mother_national_id(): void
+    {
+        $this->post('/register', $this->data(['identity_path' => 'no_identity', 'national_id' => null, 'name' => 'طفل محاكاة أسري كامل', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أب محاكاة أسرة تجريبية', 'mother_name' => 'أم محاكاة أسرة تجريبية']))
+            ->assertSessionHasErrors(['father_national_id', 'mother_national_id']);
     }
 
     public function test_otp_then_password_creates_pending_account_without_logging_in(): void
@@ -162,7 +174,7 @@ class LinkedRegistrationTest extends TestCase
 
     public function test_unmatched_no_card_account_has_reference_but_no_national_id(): void
     {
-        $data = $this->data(['identity_path' => 'no_identity', 'national_id' => null, 'name' => 'مواطن خيالي غير موجود', 'birth_date' => '2001-01-01', 'birth_place' => 'مكان خيالي', 'father_name' => 'اسم أب خيالي كامل', 'mother_name' => 'اسم أم خيالية كاملة']);
+        $data = $this->data(['identity_path' => 'no_identity', 'national_id' => null, 'name' => 'مواطن خيالي غير موجود', 'birth_date' => '2001-01-01', 'birth_place' => 'مكان خيالي', 'father_name' => 'اسم أب خيالي كامل', 'mother_name' => 'اسم أم خيالية كاملة', 'father_national_id' => '99010000901', 'mother_national_id' => '99010000902']);
         $this->post('/register', $data)->assertRedirect();
         $code = Crypt::decryptString(session('mock_registration_code'));
         $this->post('/register/verify', ['code' => $code])->assertRedirect();
@@ -200,7 +212,7 @@ class LinkedRegistrationTest extends TestCase
 
     public function test_no_card_linked_family_retains_first_issuance_constraints(): void
     {
-        $this->post('/register', $this->data(['identity_path' => 'no_identity', 'national_id' => null, 'name' => 'طفل محاكاة أسري كامل', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أب محاكاة أسرة تجريبية', 'mother_name' => 'أم محاكاة أسرة تجريبية']))->assertRedirect();
+        $this->post('/register', $this->data(['identity_path' => 'no_identity', 'national_id' => null, 'name' => 'طفل محاكاة أسري كامل', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أب محاكاة أسرة تجريبية', 'mother_name' => 'أم محاكاة أسرة تجريبية', 'father_national_id' => '99010000901', 'mother_national_id' => '99010000902']))->assertRedirect();
         $code = Crypt::decryptString(session('mock_registration_code'));
         $this->post('/register/password', ['password' => 'StrongPass123!', 'password_confirmation' => 'StrongPass123!'])->assertForbidden();
         $this->post('/register/verify', ['code' => $code])->assertRedirect();
@@ -271,7 +283,7 @@ class LinkedRegistrationTest extends TestCase
         $staff = User::factory()->create(['role' => 'employee']);
         (new ServiceReviewPermission)->forceFill(['user_id' => $staff->id, 'government_service_id' => GovernmentService::where('code', 'identity-first-issue')->value('id'), 'can_activate' => true, 'granted_by' => User::factory()->create(['role' => 'admin'])->id])->save();
         $this->actingAs($staff)->post(route('employee.accounts.mock-review', $u), ['revision' => $row->revision, 'decision' => 'requires_correction', 'reason' => 'استكمل معلومات الأسرة'])->assertRedirect();
-        $this->actingAs($u)->post(route('citizen.account.mock-correction'), ['name' => $p->name, 'birth_date' => $p->birth_date, 'birth_place' => $p->birth_place, 'father_name' => $p->father_name, 'mother_name' => $p->mother_name])->assertRedirect();
+        $this->actingAs($u)->post(route('citizen.account.mock-correction'), ['name' => $p->name, 'birth_date' => $p->birth_date, 'birth_place' => $p->birth_place, 'father_name' => $p->father_name, 'mother_name' => $p->mother_name, 'father_national_id' => '99010000901', 'mother_national_id' => '99010000902'])->assertRedirect();
         $this->assertSame('under_review', $u->fresh()->registration_status);
         $this->assertNull($u->fresh()->national_id);
         $row->refresh();

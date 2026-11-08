@@ -11,6 +11,58 @@
     }
   }
   form?.addEventListener('change', sync); sync();
+  form?.querySelectorAll('[data-quad-name]').forEach(input => {
+    function validateQuad() {
+      if (input.disabled) {
+        input.setCustomValidity('');
+        return;
+      }
+      const val = input.value.trim();
+      const parts = val ? val.split(/\s+/).filter(Boolean) : [];
+      if (val && parts.length < 4) {
+        input.setCustomValidity('يجب إدخال الاسم الرباعي كاملًا (أربعة مقاطع على الأقل).');
+      } else {
+        input.setCustomValidity('');
+      }
+    }
+    input.addEventListener('input', validateQuad);
+    input.addEventListener('change', validateQuad);
+  });
+  const emailInput = form?.querySelector('#linked-email') || form?.querySelector('input[type="email"]');
+  if (emailInput) {
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    function validateEmail(report = false) {
+      if (emailInput.disabled) {
+        emailInput.setCustomValidity('');
+        return true;
+      }
+      const val = emailInput.value.trim();
+      if (val && (emailInput.validity.typeMismatch || !emailPattern.test(val))) {
+        emailInput.setCustomValidity('صيغة البريد الإلكتروني غير صحيحة (مثال: name@example.com)');
+        if (report) {
+          emailInput.reportValidity();
+        }
+        return false;
+      } else {
+        emailInput.setCustomValidity('');
+        return true;
+      }
+    }
+    emailInput.addEventListener('input', () => {
+      const val = emailInput.value.trim();
+      if (!val || emailPattern.test(val)) {
+        emailInput.setCustomValidity('');
+      }
+    });
+    emailInput.addEventListener('blur', () => {
+      if (emailInput.value.trim()) {
+        validateEmail(true);
+      }
+    });
+    emailInput.addEventListener('change', () => {
+      validateEmail(false);
+    });
+  }
   document.querySelectorAll('[data-dialog-open]').forEach(b => b.addEventListener('click', () => document.getElementById(b.dataset.dialogOpen)?.showModal()));
   document.querySelectorAll('dialog[data-dialog-auto]').forEach(d => d.showModal());
   document.querySelectorAll('[data-copy-local]').forEach(b => b.addEventListener('click', async () => {

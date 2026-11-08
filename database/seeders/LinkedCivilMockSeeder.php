@@ -38,12 +38,12 @@ class LinkedCivilMockSeeder extends Seeder
             foreach ([
                 ['father', 'أب محاكاة أسرة تجريبية', '99010000901', 'MATCH', true, true],
                 ['mother', 'أم محاكاة أسرة تجريبية', '99010000902', 'MATCH', true, true],
-                ['match', 'مواطن محاكاة ناجح', '99010000001', 'MATCH', true, true],
-                ['review', 'مواطن محاكاة مراجعة', '99010000002', 'REVIEW', true, true],
+                ['match', 'مواطن محاكاة ناجح كامل', '99010000001', 'MATCH', true, true],
+                ['review', 'مواطن محاكاة مراجعة كامل', '99010000002', 'REVIEW', true, true],
                 ['no-photo', 'مواطن محاكاة بلا صورة', '99010000003', 'NO_REFERENCE_IMAGE', true, true],
                 ['no-match', 'مواطن محاكاة غير مطابق', '99010000004', 'NO_MATCH', true, true],
-                ['quality', 'مواطن محاكاة جودة', '99010000005', 'IMAGE_QUALITY_FAILED', true, true],
-                ['liveness', 'مواطن محاكاة حيوية', '99010000006', 'MATCH', false, true],
+                ['quality', 'مواطن محاكاة جودة كامل', '99010000005', 'IMAGE_QUALITY_FAILED', true, true],
+                ['liveness', 'مواطن محاكاة حيوية كامل', '99010000006', 'MATCH', false, true],
                 ['child', 'طفل محاكاة أسري كامل', null, 'REVIEW', true, true],
                 ['incomplete', 'طفل محاكاة بيانات ناقصة', null, 'REVIEW', true, false],
             ] as [$key, $name, $national, $scenario, $live, $complete]) {

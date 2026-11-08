@@ -19,7 +19,26 @@ class MockActivationController extends Controller
     public function correct(Request $r)
     {
         abort_unless(MockCivilSystems::enabled() && $r->user()->identity_path === 'no_identity' && $r->user()->activation_source === 'linked_local_mock', 403);
-        $data = $r->validate(['name' => 'required|string|max:100', 'birth_date' => 'required|date|before_or_equal:today', 'birth_place' => 'required|string|max:150', 'father_name' => 'required|string|max:100', 'mother_name' => 'required|string|max:100', 'father_national_id' => 'nullable|regex:/^[0-9]{5,20}$/D', 'mother_national_id' => 'nullable|regex:/^[0-9]{5,20}$/D', 'family_reference' => 'nullable|string|max:100', 'additional_information' => 'nullable|string|max:1000'], ['*.required' => 'هذا الحقل مطلوب.']);
+        $data = $r->validate([
+            'name' => ['required', 'string', 'max:100', 'regex:/^\s*[\p{Arabic}\p{L}]+(?:\s+[\p{Arabic}\p{L}]+){3,}\s*$/u'],
+            'birth_date' => 'required|date|before_or_equal:today',
+            'birth_place' => 'required|string|max:150',
+            'father_name' => ['required', 'string', 'max:100', 'regex:/^\s*[\p{Arabic}\p{L}]+(?:\s+[\p{Arabic}\p{L}]+){3,}\s*$/u'],
+            'mother_name' => ['required', 'string', 'max:100', 'regex:/^\s*[\p{Arabic}\p{L}]+(?:\s+[\p{Arabic}\p{L}]+){3,}\s*$/u'],
+            'father_national_id' => ['required', 'regex:/^[0-9]{5,20}$/D'],
+            'mother_national_id' => ['required', 'regex:/^[0-9]{5,20}$/D'],
+            'family_reference' => 'nullable|string|max:100',
+            'additional_information' => 'nullable|string|max:1000',
+        ], [
+            '*.required' => 'هذا الحقل مطلوب.',
+            'name.regex' => 'يجب إدخال الاسم الرباعي كاملًا (أربعة مقاطع على الأقل).',
+            'father_name.regex' => 'يجب إدخال الاسم الرباعي للأب كاملًا (أربعة مقاطع على الأقل).',
+            'mother_name.regex' => 'يجب إدخال الاسم الرباعي للأم كاملًا (أربعة مقاطع على الأقل).',
+            'father_national_id.required' => 'الرقم الوطني للأب مطلوب.',
+            'mother_national_id.required' => 'الرقم الوطني للأم مطلوب.',
+            'father_national_id.regex' => 'أدخل الرقم الوطني للأب من 5 إلى 20 رقمًا.',
+            'mother_national_id.regex' => 'أدخل الرقم الوطني للأم من 5 إلى 20 رقمًا.',
+        ]);
         try {
             app(CitizenIdentifiers::class)->serialized(fn () => DB::transaction(function () use ($r, $data) {
                 $user = User::whereKey($r->user()->id)->lockForUpdate()->firstOrFail();

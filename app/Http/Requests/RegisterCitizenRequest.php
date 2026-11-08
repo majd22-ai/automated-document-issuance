@@ -26,7 +26,7 @@ class RegisterCitizenRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:100', 'regex:/^\s*[\p{Arabic}\p{L}]+(?:\s+[\p{Arabic}\p{L}]+){3,}\s*$/u'],
             'identity_path' => ['required', Rule::in(['has_identity', 'no_identity', 'existing_record'])],
             'national_id' => ['nullable', 'required_unless:identity_path,no_identity', 'prohibited_if:identity_path,no_identity', 'regex:/^[0-9]{5,20}$/', 'unique:users,national_id', function ($attribute, $value, $fail) {
                 if (User::where('username', $value)->exists()) {
@@ -54,6 +54,7 @@ class RegisterCitizenRequest extends FormRequest
     {
         return [
             '*.required' => 'هذا الحقل مطلوب.', '*.unique' => 'القيمة مستخدمة بالفعل.',
+            'name.regex' => 'يجب إدخال الاسم الرباعي كاملًا (أربعة مقاطع على الأقل).',
             'national_id.required_unless' => 'أدخل رقم الهوية المرتبط بسجلك المدني.',
             'birth_certificate_number.required_if' => 'أدخل رقم شهادة الميلاد الخاص بك.',
             'birth_certificate_number.regex' => 'أدخل رقم شهادة الميلاد باستخدام الأرقام فقط، بحد أقصى 50 رقمًا.',

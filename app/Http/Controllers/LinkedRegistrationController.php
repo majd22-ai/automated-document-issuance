@@ -41,17 +41,35 @@ class LinkedRegistrationController extends Controller
             $r->merge(['birth_date' => sprintf('%04d-%02d-%02d', $parts['birth_year'], $parts['birth_month'], $parts['birth_day'])]);
         }
         $data = $r->validate([
-            'identity_path' => 'required|in:has_identity,no_identity', 'name' => 'required|string|max:100',
+            'identity_path' => 'required|in:has_identity,no_identity',
+            'name' => ['required', 'string', 'max:100', 'regex:/^\s*[\p{Arabic}\p{L}]+(?:\s+[\p{Arabic}\p{L}]+){3,}\s*$/u'],
             'national_id' => 'nullable|required_if:identity_path,has_identity|prohibited_if:identity_path,no_identity|regex:/^[0-9]{5,20}$/D|unique:users,national_id',
             'email' => 'required|email|max:255|unique:users,email', 'phone' => ['required', 'regex:/^7[0-9]{8}$/D'],
             'birth_date' => 'nullable|required_if:identity_path,no_identity|date|before_or_equal:today',
             'birth_place' => 'nullable|required_if:identity_path,no_identity|string|max:150',
-            'father_name' => 'nullable|required_if:identity_path,no_identity|string|max:100', 'mother_name' => 'nullable|required_if:identity_path,no_identity|string|max:100',
-            'father_national_id' => 'nullable|regex:/^[0-9]{5,20}$/D', 'mother_national_id' => 'nullable|regex:/^[0-9]{5,20}$/D',
+            'father_name' => ['nullable', 'required_if:identity_path,no_identity', 'string', 'max:100', 'regex:/^\s*[\p{Arabic}\p{L}]+(?:\s+[\p{Arabic}\p{L}]+){3,}\s*$/u'],
+            'mother_name' => ['nullable', 'required_if:identity_path,no_identity', 'string', 'max:100', 'regex:/^\s*[\p{Arabic}\p{L}]+(?:\s+[\p{Arabic}\p{L}]+){3,}\s*$/u'],
+            'father_national_id' => 'nullable|required_if:identity_path,no_identity|regex:/^[0-9]{5,20}$/D',
+            'mother_national_id' => 'nullable|required_if:identity_path,no_identity|regex:/^[0-9]{5,20}$/D',
             'family_reference' => 'nullable|string|max:100', 'additional_information' => 'nullable|string|max:1000',
             'birth_certificate' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', 'terms' => 'accepted',
             'role' => 'missing', 'is_active' => 'missing', 'registration_status' => 'missing', 'mock_person_id' => 'missing', 'digital_account_id' => 'missing',
-        ], ['*.required' => 'هذا الحقل مطلوب.', '*.required_if' => 'هذا الحقل مطلوب لمسار التسجيل المختار.', '*.unique' => 'القيمة مرتبطة بحساب قائم.', '*.email' => 'أدخل بريدًا إلكترونيًا صحيحًا.', '*.regex' => 'تنسيق البيانات غير صحيح.', '*.missing' => 'لا يمكن تعيين الصلاحيات أو نتائج التحقق من النموذج.', 'terms.accepted' => 'وافق على الشروط لإكمال التسجيل.']);
+        ], [
+            '*.required' => 'هذا الحقل مطلوب.',
+            '*.required_if' => 'هذا الحقل مطلوب لمسار التسجيل المختار.',
+            '*.unique' => 'القيمة مرتبطة بحساب قائم.',
+            '*.email' => 'أدخل بريدًا إلكترونيًا صحيحًا.',
+            '*.regex' => 'تنسيق البيانات غير صحيح.',
+            'name.regex' => 'يجب إدخال الاسم الرباعي كاملًا (أربعة مقاطع على الأقل).',
+            'father_name.regex' => 'يجب إدخال الاسم الرباعي للأب كاملًا (أربعة مقاطع على الأقل).',
+            'mother_name.regex' => 'يجب إدخال الاسم الرباعي للأم كاملًا (أربعة مقاطع على الأقل).',
+            'father_national_id.required_if' => 'الرقم الوطني للأب مطلوب لمسار التسجيل بدون بطاقة.',
+            'mother_national_id.required_if' => 'الرقم الوطني للأم مطلوب لمسار التسجيل بدون بطاقة.',
+            'father_national_id.regex' => 'أدخل الرقم الوطني للأب من 5 إلى 20 رقمًا.',
+            'mother_national_id.regex' => 'أدخل الرقم الوطني للأم من 5 إلى 20 رقمًا.',
+            '*.missing' => 'لا يمكن تعيين الصلاحيات أو نتائج التحقق من النموذج.',
+            'terms.accepted' => 'وافق على الشروط لإكمال التسجيل.',
+        ]);
         $path = null;
         try {
             if ($r->hasFile('birth_certificate')) {
