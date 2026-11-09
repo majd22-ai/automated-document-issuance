@@ -2,11 +2,27 @@
 @section('title','التقارير والرقابة')
 @section('content')
 @if($dashboard)
+<x-workspace-dashboard dashboard-role="admin">
 <x-workspace-heading title="لوحة الإدارة والرقابة" role-label="مساحة المدير" description="تابع مؤشرات المنصة وأدر الحسابات والخدمات والصلاحيات." />
+<x-workspace-quick-links title="إدارة المنصة" :items="[
+    ['label' => 'المستخدمون', 'description' => 'إدارة الحسابات والأدوار وحالاتها.', 'route' => 'admin.users.index'],
+    ['label' => 'الموظفون والأقسام', 'description' => 'إدارة فريق العمل والأقسام.', 'route' => 'admin.employees.index'],
+    ['label' => 'الخدمات والمتطلبات', 'description' => 'تهيئة كتالوج الخدمات وقواعدها.', 'route' => 'admin.services.index'],
+    ['label' => 'صلاحيات الخدمات', 'description' => 'تفويض مهام الموظفين لكل خدمة.', 'route' => 'admin.review-permissions.index'],
+    ['label' => 'التقارير', 'description' => 'عرض المؤشرات التشغيلية وتصديرها.', 'route' => 'admin.reports.index'],
+    ['label' => 'سجل التدقيق', 'description' => 'مراجعة أحداث وعمليات المنصة.', 'route' => 'admin.audit-logs.index'],
+]" />
 @else
 <section class="ops-page-head"><div class="container"><h1>التقارير والإحصائيات</h1><p>مؤشرات من سجلات المنصة الفعلية</p></div></section>
 @endif
+@if($dashboard)
+<div class="workspace-dashboard-report">
+@else
 <section class="ops-section"><div class="container">@include('admin.oversight-feedback')
+@endif
+@if($dashboard)
+@include('admin.oversight-feedback')
+@endif
 <form method="GET" class="card ops-card ops-form-grid" aria-label="تصفية النتائج"><label>الفترة<select class="form-control" name="period">@foreach(['today'=>'اليوم','7days'=>'آخر سبعة أيام','30days'=>'آخر ثلاثين يومًا','month'=>'الشهر الحالي','custom'=>'فترة مخصصة'] as $value=>$label)<option value="{{ $value }}" @selected(request('period','30days')===$value)>{{ $label }}</option>@endforeach</select></label><label>من<input class="form-control" type="date" name="from" value="{{ request('from') }}"></label><label>إلى<input class="form-control" type="date" name="to" value="{{ request('to') }}"></label>
 <label>القسم<select class="form-control" name="department_id"><option value="">{{ auth()->user()->role==='admin'?'الكل':'قسمك فقط' }}</option>@foreach($departments as $d)<option value="{{ $d->id }}" @selected(request('department_id')==$d->id)>{{ $d->name }}</option>@endforeach</select></label><label>معرف الموظف<input class="form-control" type="number" name="employee_id" value="{{ request('employee_id') }}" min="1"></label>
 <label>الخدمة<select class="form-control" name="service_id"><option value="">الكل</option>@foreach($services as $s)<option value="{{ $s->id }}" @selected(request('service_id')==$s->id)>{{ $s->name }}</option>@endforeach</select></label><label>حالة الطلب<select name="status" class="form-control"><option value="">الكل</option>@foreach(\App\Enums\ServiceRequestStatus::cases() as $status)<option value="{{ $status->value }}" @selected(request('status')===$status->value)>{{ $status->label() }}</option>@endforeach</select></label><div class="ops-toolbar"><button class="btn btn-primary">تطبيق الفلاتر</button><a class="btn btn-outline" href="{{ url()->current() }}">مسح الفلاتر</a></div></form>
@@ -18,5 +34,9 @@
 @include('admin.recent-audit')
 <details class="card ops-card"><summary>تعريف المؤشرات وطريقة احتسابها</summary><ul><li>معدل إكمال مجموعة الإنشاء: {{ $report['completion_rate']===null?'غير متاح':$report['completion_rate'].'%' }}. المكتملة حاليًا من الطلبات المنشأة في الفترة / إجمالي المجموعة.</li><li>معدل رفض مجموعة الإنشاء: {{ $report['rejection_rate']===null?'غير متاح':$report['rejection_rate'].'%' }}، وبالمقام نفسه.</li><li>متوسط معالجة الطلبات المكتملة في الفترة: {{ $report['average_processing_seconds']===null?'غير متاح':$report['average_processing_seconds'].' ثانية' }}، من إنشاء الطلب إلى completed_at، للتواريخ الصحيحة فقط.</li><li>نجاح التحقق المهيأ: {{ $report['verification_rate']===null?'غير متاح':$report['verification_rate'].'%' }}؛ حالات verified من configured_provider / جميع المحاولات، بما فيها غير المتاحة والمحاكاة. الحالة هنا تاريخية، وليست حكمًا بصلاحية الاعتماد الحالية.</li><li>التأخير: غير متاح لعدم وجود مدة مستهدفة معتمدة.</li><li>تصفية القسم تستخدم ارتباط الموظف الحالي: طلبات حسب المسؤول الحالي، ووثائق حسب المُصدر، وإيصالات حسب المسجل، وقرارات ومحاولات حسب المنفذ. لا تعيد بناء توزيع تاريخي غير مسجل. يمكن اختيار القسم لعرض مؤشراته منفردة.</li><li>عدد القرارات لا يقيس جودة أداء الموظف. قد يظهر الطلب نفسه في نشاط عدة موظفين؛ لا تجمع أعداد طلباتهم للحصول على إجمالي المنصة.</li></ul></details>
 @if(auth()->user()->role==='admin'||auth()->user()->can_export_reports)<h2>تصدير CSV</h2>@foreach(['requests'=>'الطلبات','employees'=>'النشاط','documents'=>'الوثائق','payments'=>'المدفوعات','integrations'=>'التحقق','departments'=>'القسم'] as $key=>$label)<a class="btn btn-outline" href="{{ route(auth()->user()->role==='admin'?'admin.reports.export':'employee.reports.export',array_merge(request()->except('page'),['report'=>$key])) }}">{{ $label }}</a> @endforeach @endif
+@if($dashboard)
+</div></x-workspace-dashboard>
+@else
 </div></section>
+@endif
 @endsection

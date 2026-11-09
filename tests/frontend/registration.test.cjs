@@ -20,6 +20,7 @@ function screen(captchaValid = false) {
     if (!nodes.has(id)) nodes.set(id, { value: '', textContent: '', disabled: false, required: false, events: {}, validity: '',
       addEventListener(event, fn) { this.events[event] = fn; }, setCustomValidity(message) { this.validity = message; },
       dataset: { captchaCheck: '/register/captcha/check' }, querySelector() { return { value: 'test-csrf' }; },
+      closest() { return null; },
       showModal() { this.open = true; }, close() { this.open = false; }, focus() {}, reportValidity() { return this.validity === ''; }, checkValidity() { return this.validity === ''; }, requestSubmit() { this.requested = true; },
     });
     return nodes.get(id);
@@ -48,7 +49,7 @@ test('changing main phone uses single field and mismatched password shows Arabic
   const node = screen();
   node('phone').value = '777123456'; node('confirmed_phone').value = '771123456';
   node('password').value = 'Strong123!'; node('password_confirmation').value = 'Different123!';
-  node('registration-form').events.input();
+  node('registration-form').events.input({ target: node('phone') });
   assert.equal(node('password-match').textContent, 'كلمتا المرور غير متطابقتين');
 });
 test('next is clickable and automatically checks captcha before submitting', async () => {

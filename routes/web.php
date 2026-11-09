@@ -229,9 +229,7 @@ Route::middleware(['auth', 'role:citizen'])
         Route::post('/identity-card/{form}/submit', [IdentityCardFormController::class, 'submit'])->middleware('throttle:10,1,identity-card-submit:')->name('identity-card.submit');
         Route::post('/identity-card/{form}/attestation', [IdentityAttestationController::class, 'store'])->middleware('throttle:10,1,identity-card-attestation:')->name('identity-card.attestation.store');
 
-        Route::get('/dashboard', function () {
-            return view('citizen.dashboard');
-        })->name('dashboard');
+        Route::get('/dashboard', [\App\Http\Controllers\WorkspaceController::class, 'citizen'])->name('dashboard');
 
         Route::get('/data', [CitizenDataController::class, 'show'])->name('data');
         Route::get('/account/status', [CitizenAccountController::class, 'status'])->name('account.status');

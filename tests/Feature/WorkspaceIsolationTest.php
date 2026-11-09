@@ -70,7 +70,7 @@ return $u;
         $this->get('/employee/dashboard')->assertOk()->assertDontSee('href="'.route('employee.attachments.index').'"', false);
     }
 
-    public function test_workspace_has_one_section_link_and_user_management_filters_work(): void
+    public function test_workspace_shows_each_module_once_in_navigation_and_shortcuts_and_filters_users(): void
     {
         $this->actingAs($this->employee(['can_review', 'can_verify']));
         $html = $this->get('/employee/dashboard')->assertOk()->getContent();
@@ -78,7 +78,9 @@ return $u;
         @$dom->loadHTML('<?xml encoding="UTF-8">'.$html);
         $xpath = new \DOMXPath($dom);
         foreach (['employee.applications.index', 'employee.attachments.index', 'employee.verifications.index'] as $destination) {
-            $this->assertSame(1, $xpath->query('//a[@href="'.route($destination).'"]')->length);
+            $href = route($destination);
+            $this->assertSame(1, $xpath->query('//nav[@id="ops-navigation"]//a[@href="'.$href.'"]')->length);
+            $this->assertSame(1, $xpath->query('//section[contains(@class,"workspace-quick-links")]//a[@href="'.$href.'"]')->length);
         }
         $admin = User::factory()->create(['role' => 'admin']);
         $employee = $this->employee();

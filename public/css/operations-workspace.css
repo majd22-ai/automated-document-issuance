@@ -28,6 +28,20 @@
 .ops-content .ops-card { padding:clamp(16px,2vw,26px) !important; }
 .ops-content .ops-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); gap:18px; margin-block:18px; }
 .ops-content .ops-grid > * { min-width:0; }
+.workspace-dashboard { direction:rtl; }
+.workspace-dashboard-report { display:grid; gap:18px; }
+.workspace-dashboard .card,.workspace-dashboard .ops-card { border:1px solid var(--border-light); border-radius:var(--radius-card); background:var(--background-main); box-shadow:var(--shadow-small); margin-block:0 18px; }
+.workspace-dashboard .ops-card { padding:clamp(16px,2vw,26px); }
+.workspace-dashboard .ops-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); gap:18px; margin-block:18px; }
+.workspace-dashboard .ops-metric { display:grid; align-content:start; gap:8px; padding:20px; border:1px solid var(--border-light); border-top:3px solid var(--primary-gold); border-radius:var(--radius-card); background:var(--background-main); }
+.workspace-dashboard .ops-metric strong { font-size:26px; color:var(--primary-cyan-hover); }
+.workspace-quick-links { margin-block:18px; }
+.workspace-quick-links__grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr)); gap:12px; }
+.workspace-quick-link { display:grid; align-content:start; gap:6px; min-height:96px; padding:16px; border:1px solid var(--border-light); border-inline-start:3px solid var(--primary-cyan); border-radius:var(--radius-input); color:var(--text-main); text-decoration:none; transition:background-color .15s ease,border-color .15s ease,transform .15s ease; }
+.workspace-quick-link strong { color:var(--primary-cyan-hover); font-size:14px; }
+.workspace-quick-link span { color:var(--text-muted); font-size:12px; line-height:1.8; }
+.workspace-quick-link:hover { background:var(--background-table-header); border-inline-start-color:var(--primary-gold); transform:translateY(-1px); }
+.workspace-quick-link:focus-visible { outline:3px solid var(--primary-gold); outline-offset:3px; }
 .ops-content .ops-metric { display:grid; align-content:start; gap:8px; padding:20px; border:1px solid var(--border-light); border-top:3px solid var(--primary-gold); border-radius:var(--radius-card); background:var(--background-main); }
 .ops-content .ops-metric strong { font-size:26px; color:var(--primary-cyan-hover); }
 .ops-content .ops-toolbar { display:flex; flex-wrap:wrap; align-items:end; gap:14px; margin-block:12px 18px; }
@@ -67,7 +81,7 @@
 .ops-content .ops-inbox-reference { font-family:var(--font-english); direction:ltr; display:inline-block; }
 @media(max-width:1100px) { .ops-shell { grid-template-columns:200px minmax(0,1fr); gap:18px; padding-inline:16px; } }
 @media(max-width:850px) { .ops-shell { grid-template-columns:1fr; padding:18px 14px 32px; } .ops-sidebar { position:static; } .ops-sidebar-identity { padding:14px 18px; } .ops-sidebar nav { display:flex; flex-wrap:wrap; gap:6px; max-height:180px; overflow:auto; } .ops-sidebar nav a { flex:0 0 auto; padding:8px 10px; font-size:12px; } .ops-sidebar-identity small { display:none; } .ops-content .ops-page-head { padding-top:8px; } }
-@media(max-width:520px) { .ops-content .ops-toolbar { display:grid; grid-template-columns:1fr; } .ops-content .ops-toolbar > * { width:100%; } .ops-content .ops-grid { grid-template-columns:1fr; } .ops-content dl { grid-template-columns:1fr; gap:6px; } .ops-content dd { margin-bottom:10px; } .ops-content th,.ops-content td { padding:10px; } .ops-content table { min-width:520px; } }
+@media(max-width:520px) { .ops-content .ops-toolbar { display:grid; grid-template-columns:1fr; } .ops-content .ops-toolbar > * { width:100%; } .ops-content .ops-grid,.workspace-dashboard .ops-grid { grid-template-columns:1fr; } .ops-content dl { grid-template-columns:1fr; gap:6px; } .ops-content dd { margin-bottom:10px; } .ops-content th,.ops-content td { padding:10px; } .ops-content table { min-width:520px; } }
 /* Clear task-oriented workspace, shared by existing employee screens. */
 .workspace-notice { border-inline-start:4px solid var(--primary-gold)!important; }
 .workspace-steps { padding-inline-start:24px; display:grid;gap:12px;line-height:1.9; }

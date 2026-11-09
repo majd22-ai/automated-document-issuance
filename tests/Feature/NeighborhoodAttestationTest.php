@@ -82,6 +82,37 @@ class NeighborhoodAttestationTest extends TestCase
         $this->get(route('employee.neighborhood-attestations.show', $row))->assertSee('class="attestation-stamp"', false);
     }
 
+    public function test_pre_submission_attestation_gates_review_until_official_approval(): void
+    {
+        $fixture = $this->fixture();
+        [$citizen, $form, $official, $data] = $fixture;
+        $district = $official->district;
+        $form->forceFill([
+            'citizen_service_request_id' => null, 'submitted_at' => null, 'status' => 'awaiting_data',
+            'current_step' => 6, 'version' => 1,
+            'data' => ['applicant_name' => 'Test citizen', 'neighborhood' => 'Test neighborhood',
+                'residence_governorate' => $district->governorate->name, 'residence_district' => $district->name],
+        ])->save();
+
+        $this->actingAs($citizen)->get(route('citizen.identity-card.show', ['form' => $form, 'step' => 7]))
+            ->assertOk()->assertSee('مصادقة العاقل')->assertDontSee('أقر بصحة البيانات المدخلة');
+        $row = $this->requestApproval($fixture);
+        $this->assertSame('pending', $row->fresh()->status);
+        $this->get(route('citizen.identity-card.show', ['form' => $form, 'step' => 7]))
+            ->assertOk()->assertSee('مصادقة العاقل')->assertDontSee('أقر بصحة البيانات المدخلة');
+
+        $url = route('employee.neighborhood-attestations.decide', $row);
+        $this->actingAs($official->user)->post(route('employee.neighborhood-attestations.confirm', $row), [
+            'method' => 'simulated_fingerprint', 'simulation_acknowledged' => 1,
+        ])->assertSessionHas('confirmation_token');
+        $this->post($url, ['decision' => 'approved', 'confirmation_token' => session('confirmation_token')])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(7, $form->fresh()->current_step);
+        $this->assertNull($form->fresh()->submitted_at);
+        $this->actingAs($citizen)->get(route('citizen.identity-card.show', ['form' => $form, 'step' => 7]))
+            ->assertOk()->assertSee('المراجعة والإقرار')->assertSee('أقر بصحة البيانات المدخلة');
+    }
+
     public function test_invalid_scope_legacy_paths_and_wrong_neighborhood_are_rejected(): void
     {
         [$citizen, $form, $official, $data] = $this->fixture();

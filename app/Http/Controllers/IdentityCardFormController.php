@@ -37,10 +37,14 @@ class IdentityCardFormController extends Controller
         $this->owner($request, $form);
         $request->validate(['step' => ['nullable', 'integer', 'between:1,7']]);
         $step = $form->submitted_at && ! $form->correctionIsOpen() ? 7 : min((int) $request->input('step', $form->current_step), $form->current_step);
+        if ($step === 7 && (! $form->submitted_at || $form->correctionIsOpen())
+            && ! \App\Services\IdentityAttestations::approvedForSubmission($form->attestation)) {
+            $step = 6;
+        }
         $form->load(['witnesses', 'photo', 'application']);
         $fields = config('identity_card.fields');
         $reviewToken = null;
-        if ($step === 6) {
+        if ($step === 7 && (! $form->submitted_at || $form->correctionIsOpen())) {
             $reviewToken = (string) Str::uuid();
             $reviews = array_filter($request->session()->get('identity_card_reviews', []), fn ($review) => $review['expires_at'] >= now()->timestamp);
             $reviews = array_slice($reviews, -9, null, true);
@@ -54,7 +58,7 @@ class IdentityCardFormController extends Controller
     public function save(SaveIdentityCardForm $request, IdentityCardForm $form, IdentityCardForms $forms)
     {
         $form = $forms->save($request->user(), $form, $request->validated(), $request->file('photo'));
-        $step = $request->input('action') === 'next' ? min(6, (int) $request->input('step') + 1) : (int) $request->input('step');
+        $step = $request->input('action') === 'next' ? min(7, (int) $request->input('step') + 1) : (int) $request->input('step');
 
         return redirect()->route('citizen.identity-card.show', ['form' => $form, 'step' => $step])->with('status', 'تم حفظ المسودة؛ يمكنك استكمالها لاحقًا.');
     }

@@ -15,3 +15,17 @@
 .identity-wizard .attestation-field.identity-field select{display:block;width:100%;min-height:52px;padding:.7rem 1rem;box-sizing:border-box;font:inherit;color:#152c3c;background-color:#fff;border:1px solid #aabcc8;border-radius:.45rem;direction:rtl}
 .identity-wizard .attestation-field.identity-field select:disabled{background-color:#f2f5f7;color:#64748b;cursor:not-allowed}
 .identity-wizard .attestation-field.identity-field .identity-field-error{color:#a51d22;font-size:.9rem;line-height:1.7;margin-block:.4rem 0}
+.witness-date-selects{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;align-items:center}
+.witness-date-selects label{grid-row:1;font-size:.85rem}
+.witness-date-selects select{grid-row:2;min-width:0}
+.witness-selfie-input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.witness-selfie-input:focus-visible+.witness-upload-button{outline:3px solid #a7d5ed;outline-offset:2px}
+.witness-upload-button{display:inline-flex;align-items:center;gap:.6rem;padding:.8rem 1.1rem;border:0;border-radius:.6rem;background:#17668b;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+.witness-upload-button:hover{background:#104e6d}
+.witness-picker-dialog{width:min(28rem,calc(100% - 2rem));padding:1.5rem;border:1px solid #d9e2e8;border-radius:.85rem;box-shadow:0 1rem 3rem #142b3c33;color:#152c3c}
+.witness-picker-dialog::backdrop{background:#142b3c88}
+.witness-picker-dialog h3{margin-top:0}
+.witness-picker-actions{display:grid;gap:.75rem}
+.witness-picker-actions button,.witness-picker-cancel{min-height:48px;padding:.7rem 1rem;border:1px solid #17668b;border-radius:.5rem;background:#17668b;color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.witness-picker-cancel{margin-top:1rem;background:#fff;color:#17668b}
+@media(max-width:480px){.witness-date-selects{gap:.35rem}.witness-date-selects select{padding-inline:.35rem}}

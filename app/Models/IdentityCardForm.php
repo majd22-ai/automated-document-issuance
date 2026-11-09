@@ -77,7 +77,7 @@ class IdentityCardForm extends Model
 
     public function correctionIsOpen(): bool
     {
-        return $this->correction_opened_at && $this->submitted_at && $this->status === 'awaiting_data' && $this->current_step <= 6;
+        return $this->correction_opened_at && $this->submitted_at && $this->status === 'awaiting_data' && $this->current_step <= 7;
     }
 
     public function fingerprintStatusLabel(): string

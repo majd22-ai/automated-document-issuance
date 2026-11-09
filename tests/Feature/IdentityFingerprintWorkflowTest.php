@@ -78,10 +78,19 @@ class IdentityFingerprintWorkflowTest extends TestCase
         $this->save($form, 4, $photo ? ['photo' => UploadedFile::fake()->image('portrait.png', 600, 600)] : []);
         $witnesses = [];
         foreach ([1, 2] as $position) {
-            $witnesses[] = ['name' => 'شاهد '.$position, 'document_type' => 'بطاقة', 'document_number' => '123456'.$position, 'issued_place' => 'صنعاء', 'issued_at' => '2020-01-01', 'phone' => '777123456', 'address' => 'عنوان الاختبار', 'selfie' => UploadedFile::fake()->image('witness-'.$position.'.jpg', 600, 600)];
+            $witnesses[] = ['name' => 'شاهد '.$position, 'document_type' => 'بطاقة شخصية', 'document_number' => '123456'.$position, 'issued_place' => 'صنعاء', 'issued_at' => '2020-01-01', 'phone' => '777123456', 'address' => 'عنوان الاختبار', 'selfie' => UploadedFile::fake()->image('witness-'.$position.'.jpg', 600, 600)];
         }
         $this->save($form, 5, ['witnesses' => $witnesses]);
-        $this->actingAs($this->citizen)->get('/citizen/identity-card/'.$form->id.'?step=6')->assertOk();
+        $fresh = $form->fresh();
+        (new IdentityCardAttestation)->forceFill([
+            'identity_card_form_id' => $fresh->id, 'form_revision' => $fresh->revision,
+            'citizen_name' => $fresh->data['applicant_name'], 'reference' => 'SIM-ATT-'.Str::ulid(),
+            'authority_type' => 'neighborhood', 'recipient_name' => 'عاقل تجريبي',
+            'status' => 'approved', 'created_by' => $fresh->user_id, 'decided_by' => $this->admin->id,
+            'decided_at' => now(), 'verified_at' => now(), 'verification_source' => 'local_employee_confirmation',
+        ])->save();
+        $fresh->forceFill(['current_step' => 7, 'version' => $fresh->version + 1])->save();
+        $this->actingAs($this->citizen)->get('/citizen/identity-card/'.$form->id.'?step=7')->assertOk();
         $reviews = session('identity_card_reviews');
         $this->post('/citizen/identity-card/'.$form->id.'/submit', ['version' => $form->fresh()->version, 'declaration' => '1', 'review_token' => array_key_last($reviews)])->assertSessionHasNoErrors()->assertRedirect();
     }
@@ -101,11 +110,14 @@ class IdentityFingerprintWorkflowTest extends TestCase
     {
         $form = $form->fresh();
         // Continue exercising historical requests without exposing legacy choices to new applicants.
-        (new IdentityCardAttestation)->forceFill([
+        $row = IdentityCardAttestation::where('identity_card_form_id', $form->id)->where('form_revision', $form->revision)->first()
+            ?? new IdentityCardAttestation;
+        $row->forceFill([
             'identity_card_form_id' => $form->id, 'form_revision' => $form->revision, 'reference' => 'SIM-ATT-'.Str::ulid(),
             'authority_type' => $type, 'recipient_name' => 'جهة اختبار', 'created_by' => $this->citizen->id,
             'status' => 'pending', 'security_required' => $type === 'neighborhood', 'security_status' => $type === 'neighborhood' ? 'pending' : 'not_required',
-            'notification_created_at' => now(),
+            'notification_created_at' => now(), 'decided_by' => null, 'decided_at' => null,
+            'verified_at' => null, 'verification_source' => null, 'rejection_reason' => null, 'cancelled_at' => null,
         ])->save();
         $row = $form->fresh()->attestation;
         $this->actingAs($this->employee)->post('/simulation/identity-attestations/'.$row->id.'/decision', ['decision' => 'approved'])->assertSessionHasNoErrors()->assertRedirect();

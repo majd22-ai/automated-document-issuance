@@ -4,7 +4,7 @@
 <section class="ops-section"><h1>مراجعة شهادة سكن المواطن</h1>
 <p class="alert" role="note">محاكاة محلية واضحة: التأكيد أدناه لا يقرأ بصمة الهاتف أو رمز قفله، ولا يمثل ختمًا حكوميًا.</p>
 @include('operations.messages')
-<article class="card ops-card"><h2>{{ $attestation->citizen_name }}</h2><p>رقم الطلب الداخلي: {{ $attestation->form->application->reference }}</p>
+<article class="card ops-card"><h2>{{ $attestation->citizen_name }}</h2><p>رقم الطلب الداخلي: {{ $attestation->form->application?->reference ?? $attestation->form->reference }}</p>
 <dl>@foreach(['governorate'=>'المحافظة','district'=>'المديرية','neighborhood'=>'الحي'] as $field=>$label)<dt>{{ $label }}</dt><dd>{{ data_get($attestation->recipient_scope,$field) }}</dd>@endforeach</dl>
 <p>عنوان السكن: {{ data_get($attestation->form->data,'street') }} — {{ data_get($attestation->form->data,'house') }}</p>
 <p>الحالة: {{ $attestation->statusLabel() }}</p>@if($attestation->rejection_reason)<p>{{ $attestation->rejection_reason }}</p>@endif</article>

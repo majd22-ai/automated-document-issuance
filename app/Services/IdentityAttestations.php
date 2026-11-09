@@ -74,13 +74,17 @@ class IdentityAttestations
 
     private function lock(IdentityCardForm $form): IdentityCardForm
     {
-        // Same owner -> service -> request order as the existing review/submission services.
+        // Keep the owner and service locks before a linked request, as in submission workflows.
         User::whereKey($form->user_id)->lockForUpdate()->firstOrFail();
         GovernmentService::whereKey($form->government_service_id)->lockForUpdate()->firstOrFail();
-        $application = CitizenServiceRequest::whereKey($form->citizen_service_request_id)->lockForUpdate()->firstOrFail();
-        abort_unless(in_array($application->status, ['submitted', 'under_review', 'requires_correction', 'accepted', 'approved'], true), 409, 'حالة الطلب الحالية لا تسمح بإجراء مصادقة.');
         $form = IdentityCardForm::whereKey($form->id)->lockForUpdate()->firstOrFail();
-        abort_unless($form->submitted_at && $form->government_service_id === $application->government_service_id && $form->user_id === $application->user_id, 409);
+        if ($form->submitted_at) {
+            $application = CitizenServiceRequest::whereKey($form->citizen_service_request_id)->lockForUpdate()->firstOrFail();
+            abort_unless(in_array($application->status, ['submitted', 'under_review', 'requires_correction', 'accepted', 'approved'], true), 409, 'حالة الطلب الحالية لا تسمح بإجراء مصادقة.');
+            abort_unless($form->government_service_id === $application->government_service_id && $form->user_id === $application->user_id, 409);
+        } else {
+            abort_unless(! $form->citizen_service_request_id && $form->current_step === 6 && $form->status === 'awaiting_data', 409, 'أكمل بيانات الشاهدين أولًا لطلب مصادقة العاقل.');
+        }
 
         return $form;
     }
@@ -91,11 +95,14 @@ class IdentityAttestations
             $form = $this->lock($form);
             $actor = $actor->fresh();
             Gate::forUser($actor)->authorize('chooseAttestation', $form);
-            $existing = $form->attestation()->lockForUpdate()->first();
-            if ($existing) {
+            $existing = IdentityCardAttestation::where('identity_card_form_id', $form->id)->lockForUpdate()->first();
+            if ($existing && $existing->form_revision === $form->revision && in_array($existing->status, ['pending', 'approved'], true)) {
                 abort_unless($existing->authority_type === $data['authority_type'] && $existing->neighborhood_official_id === (int) ($data['official_id'] ?? 0), 409, 'تم اختيار مسار المصادقة لهذا الطلب بالفعل.');
 
                 return $existing;
+            }
+            if ($existing && $existing->form_revision === $form->revision) {
+                abort_unless(in_array($existing->status, ['rejected', 'cancelled'], true), 409, 'لا يمكن إعادة طلب المصادقة في حالتها الحالية.');
             }
             $type = $data['authority_type'];
             abort_unless($type === 'neighborhood', 422, 'المصادقة الجديدة عن طريق عاقل الحارة فقط.');
@@ -104,19 +111,23 @@ class IdentityAttestations
                 throw ValidationException::withMessages(['official_id' => 'لم يُربط العاقل بحساب موظف مخوّل لاعتماد شهادة السكن بعد.']);
             }
             $security = (bool) config('identity_card.attestation_security.'.$type, false);
-            $attestation = new IdentityCardAttestation;
+            $attestation = $existing ?? new IdentityCardAttestation;
             $attestation->forceFill(['identity_card_form_id' => $form->id, 'form_revision' => $form->revision, 'citizen_name' => $form->data['applicant_name'] ?? null, 'reference' => 'SIM-ATT-'.Str::ulid(),
                 'authority_type' => $type, 'recipient_name' => $official->full_name,
                 'neighborhood_official_id' => $official->id,
                 'recipient_scope' => ['employee_id' => $official->user_id, 'governorate_id' => $official->district->governorate_id, 'district_id' => $official->district_id, 'governorate' => $official->district->governorate->name, 'district' => $official->district->name, 'neighborhood' => $official->neighborhood],
-                'status' => 'pending', 'created_by' => $actor->id, 'notification_created_at' => $type === 'witnesses' ? null : now(),
+                'status' => 'pending', 'created_by' => $actor->id, 'notification_created_at' => now(), 'notification_read_at' => null, 'notification_read_by' => null,
+                'decided_by' => null, 'decided_at' => null, 'rejection_reason' => null, 'cancelled_at' => null,
+                'verification_attempts' => 0, 'verification_source' => null, 'verified_at' => null,
                 'security_required' => $security, 'security_status' => $security ? 'pending' : 'not_required',
             ])->save();
-            $form->forceFill(['status' => match ($type) {
-                'workplace' => 'pending_workplace_attestation', 'neighborhood' => 'pending_neighborhood_attestation', 'witnesses' => 'pending_witness_review',
-            }, 'version' => $form->version + 1])->save();
+            $formChanges = ['version' => $form->version + 1];
+            if ($form->submitted_at && ! $form->correctionIsOpen()) {
+                $formChanges['status'] = 'pending_neighborhood_attestation';
+            }
+            $form->forceFill($formChanges)->save();
             app(AuditTrail::class)->record('identity_attestation_requested', IdentityCardAttestation::class, $attestation->id, $actor, changes: ['status' => 'pending', 'action' => $type]);
-            $official->user->notifyNow(new CitizenActivity('neighborhood-request:'.$attestation->id, [
+            $official->user->notifyNow(new CitizenActivity('neighborhood-request:'.$attestation->id.':'.Str::ulid(), [
                 'kind' => 'neighborhood_attestation', 'title' => 'طلب اعتماد شهادة سكن جديد',
                 'body' => 'لديك طلب شهادة سكن ضمن نطاق حيك. افتح صفحة شهادات السكن لمراجعته. إشعار محلي؛ لم تُرسل رسالة SMS.',
                 'attestation_id' => $attestation->id,
@@ -196,12 +207,22 @@ class IdentityAttestations
             }
             $approved = $data['decision'] === 'approved';
             $row->forceFill(['status' => $data['decision'], 'decided_by' => $actor->id, 'decided_at' => now(), 'rejection_reason' => $approved ? null : $data['reason']])->save();
-            $form->forceFill(['status' => ! $approved ? 'rejected' : ($row->security_required ? 'pending_security_review' : 'pending_fingerprint_attendance'), 'version' => $form->version + 1])->save();
+            $gateBeforeSubmission = ! $form->submitted_at || $form->correctionIsOpen();
+            $formChanges = ['version' => $form->version + 1];
+            if ($gateBeforeSubmission) {
+                $formChanges['status'] = 'awaiting_data';
+                if ($approved) {
+                    $formChanges['current_step'] = 7;
+                }
+            } else {
+                $formChanges['status'] = ! $approved ? 'rejected' : ($row->security_required ? 'pending_security_review' : 'pending_fingerprint_attendance');
+            }
+            $form->forceFill($formChanges)->save();
             app(AuditTrail::class)->record('identity_attestation_decided', IdentityCardAttestation::class, $row->id, $actor, changes: ['status' => $row->status, 'action' => $row->authority_type]);
             $form->citizen->notifyNow(new CitizenActivity('identity-attestation:'.$row->id.':decided', [
                 'kind' => 'request_activity', 'title' => 'تحديث المصادقة التجريبية',
                 'body' => $approved ? 'تم اعتماد شهادة السكن وختم العاقل التجريبي في ملفك. راجع الطلب للخطوة التالية؛ ليس ختمًا حكوميًا.' : 'تم رفض اعتماد ختم العاقل التجريبي. راجع استمارة الطلب للاطلاع على السبب.',
-                'request_reference' => $form->application->reference, 'occurred_at' => now()->toIso8601String(),
+                'request_reference' => $form->application?->reference ?? $form->reference, 'occurred_at' => now()->toIso8601String(),
             ], $form->citizen_service_request_id));
 
             return $row;
@@ -245,5 +266,12 @@ class IdentityAttestations
             && (int) data_get($attestation->recipient_scope, 'employee_id') === $actor->id
             && $attestation->official?->user_id === $actor->id && $attestation->official?->can_attest
             && $attestation->official?->is_active;
+    }
+
+    public static function approvedForSubmission(?IdentityCardAttestation $attestation): bool
+    {
+        return self::enabled() && $attestation?->authority_type === 'neighborhood'
+            && $attestation->status === 'approved' && $attestation->verified_at !== null
+            && in_array($attestation->verification_source, ['local_code', 'local_fingerprint', 'local_employee_confirmation'], true);
     }
 }

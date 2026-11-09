@@ -38,17 +38,32 @@ class GovernmentServicesTest extends TestCase
             ->assertSee('خدمات مصلحة الأحوال المدنية')
             ->assertSee('خدمات مصلحة الهجرة والجوازات والجنسية')
             ->assertSee('خدمات الإدارة العامة للمرور')
+            ->assertSee('المواعيد والاستعلام والمتابعة')
+            ->assertSee('قيد المطابقة والاعتماد')
+            ->assertSee('https://www.cra.gov.ye/home')
+            ->assertSee('https://trye.gov.ye/services/servicesGuide')
             ->assertDontSee('3 خدمات')->assertDontSee('خدمتان');
         $dom = new \DOMDocument;
         @$dom->loadHTML('<?xml encoding="utf-8" ?>'.$response->getContent());
         $xpath = new \DOMXPath($dom);
-        $this->assertCount(3, $xpath->query('//section[@id="service-requirements"]//details'));
+        $this->assertCount(4, $xpath->query('//section[@id="service-requirements"]//details'));
         $links = $xpath->query('//section[@id="service-requirements"]//details/nav/a');
-        $this->assertCount(7, $links);
+        $this->assertCount(13, $links);
         foreach ($links as $link) {
-            $this->assertSame('requirements', parse_url($link->getAttribute('href'), PHP_URL_FRAGMENT));
-            $this->get(parse_url($link->getAttribute('href'), PHP_URL_PATH))->assertOk()->assertSee('id="requirements"', false);
+            $href = $link->getAttribute('href');
+            $fragment = parse_url($href, PHP_URL_FRAGMENT);
+            if ($fragment === 'requirements') {
+                $this->get(parse_url($href, PHP_URL_PATH))->assertOk()->assertSee('id="requirements"', false);
+            } elseif ($fragment === 'civil-registry-requirements') {
+                $this->get(parse_url($href, PHP_URL_PATH))->assertOk()->assertSee('id="civil-registry-requirements"', false);
+            }
         }
+        $this->assertSame(route('appointments.book'), $xpath->query('//section[@id="service-requirements"]//a[contains(@href,"appointments/book")]')->item(0)->getAttribute('href'));
+        $this->assertSame(route('inquiry.reference'), $xpath->query('//section[@id="service-requirements"]//a[contains(@href,"inquiry/request")]')->item(0)->getAttribute('href'));
+        $this->get(route('services.civil-registry.guide', 'identity'))
+            ->assertOk()->assertSee('لم يتوفر رقم إصدارها أو تاريخها')
+            ->assertSee('لن نعرض الرسوم أو مدة الإنجاز')
+            ->assertDontSee('٢٥٠٠ ريال');
         foreach (['identity', 'passport', 'car'] as $icon) {
             $this->assertStringContainsString('outline.svg#'.$icon, $response->getContent());
         }

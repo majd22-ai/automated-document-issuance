@@ -35,7 +35,7 @@ class IdentityAttestationController extends Controller
         $notifications = $query->with('form.application')->latest('id')->limit(30)->get()->map(fn ($row) => [
             'id' => $row->id, 'recipient_name' => $row->recipient_name,
             'citizen_name' => $row->citizen_name ?? $row->form->data['applicant_name'] ?? 'مواطن مجهول',
-            'request_reference' => $row->form->application->reference,
+            'request_reference' => $row->form->application?->reference ?? $row->form->reference,
             'authority_label' => $row->authorityLabel(), 'created_at' => $row->notification_created_at->toIso8601String(),
             'read' => $row->notification_read_at !== null, 'open_url' => route('simulation.identity-attestations.open', $row, false),
         ])->values();

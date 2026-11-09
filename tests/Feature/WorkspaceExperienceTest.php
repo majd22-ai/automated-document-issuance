@@ -54,6 +54,8 @@ class WorkspaceExperienceTest extends TestCase
         $other->serviceRequests()->create(['reference' => 'PRIVATE-OTHER-REQUEST', 'service_code' => 'identity-first-issue', 'status' => 'submitted']);
         $this->actingAs($citizen)->get(route('citizen.dashboard'))
             ->assertOk()->assertSee('data-workspace-heading', false)
+            ->assertSee('data-workspace-dashboard="citizen"', false)
+            ->assertSee(route('citizen.applications.index'))
             ->assertSee('OWN-DASHBOARD-REQUEST')->assertDontSee('PRIVATE-OTHER-REQUEST')
             ->assertSee('يحتاج إلى استكمال')->assertSee(route('citizen.appointments.index'))
             ->assertSee('operations-workspace.css');
@@ -64,6 +66,26 @@ class WorkspaceExperienceTest extends TestCase
                 ->get(route($role.'.dashboard'))->assertOk()->assertSee('data-workspace-heading', false)
                 ->assertDontSee('PRIVATE-OTHER-REQUEST');
         }
+    }
+
+    public function test_admin_and_employee_dashboards_share_shell_and_respect_available_work(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('data-workspace-dashboard="admin"', false)
+            ->assertSee(route('admin.users.index'))
+            ->assertSee(route('admin.services.index'))
+            ->assertSee('طلبات أُنشئت في الفترة');
+
+        $employee = User::factory()->create(['role' => 'employee']);
+        $html = $this->actingAs($employee)->get(route('employee.dashboard'))
+            ->assertOk()
+            ->assertSee('data-workspace-dashboard="employee"', false)
+            ->assertSee('لا توجد مهام مفوضة حاليًا')
+            ->assertDontSee('workspace-quick-links', false)
+            ->getContent();
+        $this->assertStringNotContainsString(route('employee.applications.index'), $html);
     }
 
     public function test_inbox_open_checks_current_request_permission_and_owns_read_actions(): void

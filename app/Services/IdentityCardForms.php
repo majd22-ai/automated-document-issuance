@@ -7,6 +7,7 @@ use App\Models\CitizenAttachment;
 use App\Models\CitizenServiceRequest;
 use App\Models\GovernmentService;
 use App\Models\IdentityAdministrativeDecision;
+use App\Models\IdentityCardAttestation;
 use App\Models\IdentityCardForm;
 use App\Models\IdentityCardWitness;
 use App\Models\User;
@@ -61,6 +62,19 @@ class IdentityCardForms
                 abort_unless($form->version === (int) $input['version'], 409, 'تغيرت المسودة في نافذة أخرى. حدّث الصفحة.');
                 $step = (int) $input['step'];
                 abort_if($step > $form->current_step, 409, 'أكمل المرحلة السابقة أولًا.');
+                if ($step <= 5 && (! $form->submitted_at || $correction)) {
+                    $attestation = IdentityCardAttestation::where('identity_card_form_id', $form->id)
+                        ->where('form_revision', $form->revision)->lockForUpdate()->first();
+                    if ($attestation && $attestation->status !== 'cancelled') {
+                        $attestation->forceFill(['status' => 'cancelled', 'cancelled_at' => now()])->save();
+                        app(AuditTrail::class)->record('identity_attestation_cancelled_after_form_edit', IdentityCardAttestation::class, $attestation->id, $actor,
+                            changes: ['status' => 'cancelled', 'action' => 'form_edited']);
+                        $form->current_step = min($form->current_step, 6);
+                    }
+                }
+                if ($step === 6 && $input['action'] === 'next' && ! IdentityAttestations::approvedForSubmission($form->attestation)) {
+                    throw ValidationException::withMessages(['attestation' => 'يجب اعتماد مصادقة عاقل الحارة في الخطوة السادسة قبل المتابعة.']);
+                }
                 if ($step <= 3) {
                     $form->data = array_replace($form->data ?? [], $input['data'] ?? []);
                 }
@@ -73,6 +87,7 @@ class IdentityCardForms
                 if ($step === 5) {
                     foreach ($input['witnesses'] ?? [] as $index => $data) {
                         $witness = $form->witnesses()->where('position', $index + 1)->first() ?? new IdentityCardWitness;
+                        unset($data['issued_at_day'], $data['issued_at_month'], $data['issued_at_year']);
                         $selfie = $data['selfie'] ?? null;
                         unset($data['selfie']);
                         if ($selfie instanceof UploadedFile) {
@@ -107,7 +122,7 @@ class IdentityCardForms
                         $witness->forceFill($data + ['identity_card_form_id' => $form->id, 'position' => $index + 1])->save();
                     }
                 }
-                $form->current_step = max($form->current_step, $input['action'] === 'next' ? min(6, $step + 1) : $step);
+                $form->current_step = max($form->current_step, $input['action'] === 'next' ? min(7, $step + 1) : $step);
                 $form->status = 'awaiting_data';
                 $form->version++;
                 $form->save();
@@ -196,6 +211,7 @@ class IdentityCardForms
             'owner' => $actor->id, 'form' => $form->id, 'version' => $form->version,
             'photo' => $form->photo?->only(['id', 'version_token', 'sha256', 'review_status', 'rules_version']),
             'witnesses' => $form->witnesses()->orderBy('position')->get()->map(fn ($witness) => $witness->only(['id', 'name', 'document_type', 'document_number', 'issued_place', 'issued_at', 'employer', 'work_address', 'phone', 'address', 'nearby_landmark', 'selfie_sha256']))->all(),
+            'attestation' => $form->attestation?->only(['id', 'form_revision', 'status', 'verified_at', 'verification_source']),
             'service' => $form->service->submissionFingerprint(),
             'citizen' => ServiceRequestSubmission::citizenFingerprint($actor),
         ], JSON_THROW_ON_ERROR));
@@ -214,7 +230,10 @@ class IdentityCardForms
             if (! $review || ($review['expires_at'] ?? 0) < now()->timestamp || ! hash_equals($review['fingerprint'], $this->reviewFingerprint($actor->fresh(), $form))) {
                 throw ValidationException::withMessages(['review_token' => 'تغيرت الصورة أو البيانات أو إعدادات الخدمة، أو انتهت صلاحية الملخص. افتح مرحلة المراجعة مجددًا قبل الإرسال.']);
             }
-            abort_unless($form->current_step === 6, 409, 'أكمل مراحل الطلب أولًا.');
+            abort_unless($form->current_step === 7, 409, 'أكمل مراحل الطلب أولًا.');
+            if (! IdentityAttestations::approvedForSubmission($form->attestation)) {
+                throw ValidationException::withMessages(['attestation' => 'يلزم اعتماد مصادقة عاقل الحارة في الخطوة السادسة قبل تقديم الطلب.']);
+            }
             Gate::forUser($actor)->authorize('create', CitizenServiceRequest::class);
             $witnesses = $form->witnesses->map(fn ($witness) => $witness->only(['name', 'document_type', 'document_number', 'issued_place', 'issued_at', 'employer', 'work_address', 'phone', 'address']))->all();
             foreach ($witnesses as &$witness) {

@@ -87,14 +87,16 @@
     <div class="gov-container">
       <div class="section-header">
         <h2 id="service-requirements-heading">متطلبات الخدمات</h2>
-        <p>اضغط على اسم الجهة، ثم اختر الخدمة لعرض متطلباتها.</p>
+        <p>اختر الخدمة لمعرفة المعلومات المتاحة وحالة اعتماد متطلباتها.</p>
       </div>
+      <p class="gov-demo-note" role="note">متطلبات ورسوم الخدمات قيد المطابقة والاعتماد من الجهات المختصة. لا تعتمد أي قائمة أو مبلغ غير موثق بمرجع رسمي حديث، ولا تعني المعلومات المعروضة أن الخدمة مفعّلة.</p>
 
       <div class="gov-services-grid gov-requirements-groups">
         @foreach([
-          ['title'=>'متطلبات خدمات مصلحة الأحوال المدنية','icon'=>'identity','route'=>'services.identity.show','items'=>['first-issue'=>'متطلبات إصدار بطاقة شخصية لأول مرة','renewal'=>'متطلبات تجديد بطاقة شخصية','lost-replacement'=>'متطلبات إصدار بطاقة شخصية بدل فاقد'],'extra_links'=>[['href'=>route('services.civil-registry.guide','birth').'#requirements','label'=>'متطلبات شهادة الميلاد'],['href'=>route('services.civil-registry.guide','corrections').'#requirements','label'=>'متطلبات تصحيح القيود']]],
+          ['title'=>'متطلبات خدمات مصلحة الأحوال المدنية','icon'=>'identity','route'=>'services.identity.show','items'=>['first-issue'=>'متطلبات إصدار بطاقة شخصية لأول مرة','renewal'=>'متطلبات تجديد بطاقة شخصية','lost-replacement'=>'متطلبات إصدار بطاقة شخصية بدل فاقد'],'extra_links'=>[['href'=>route('services.civil-registry.guide','birth').'#civil-registry-requirements','label'=>'متطلبات شهادة الميلاد'],['href'=>'https://www.cra.gov.ye/home','label'=>'المصدر الرسمي المتاح — موقع مصلحة الأحوال المدنية']]],
           ['title'=>'متطلبات خدمات مصلحة الهجرة والجوازات والجنسية','icon'=>'passport','route'=>'services.passports.show','items'=>['first-issue'=>'متطلبات إصدار جواز سفر لأول مرة','renewal'=>'متطلبات تجديد جواز سفر']],
-          ['title'=>'متطلبات خدمات الإدارة العامة للمرور','icon'=>'car','route'=>'services.driving-licenses.show','items'=>['first-issue'=>'متطلبات إصدار رخصة قيادة لأول مرة','renewal'=>'متطلبات تجديد رخصة قيادة']],
+          ['title'=>'متطلبات خدمات الإدارة العامة للمرور','icon'=>'car','route'=>'services.driving-licenses.show','items'=>['first-issue'=>'متطلبات إصدار رخصة قيادة لأول مرة','renewal'=>'متطلبات تجديد رخصة قيادة'],'extra_links'=>[['href'=>'https://trye.gov.ye/services/servicesGuide','label'=>'دليل الخدمات المرورية الرسمي']]],
+          ['title'=>'المواعيد والاستعلام والمتابعة','icon'=>'calendar','items'=>[],'extra_links'=>[['href'=>route('appointments.book'),'label'=>'حجز موعد'],['href'=>route('inquiry.reference'),'label'=>'الاستعلام عن طلب ومتابعته'],['href'=>'https://www.cra.gov.ye/home','label'=>'موقع المصلحة: معلومات عامة عن المواعيد والاستعلام']]],
         ] as $group)
         <details class="gov-requirements-group">
           <summary><span class="gov-service-icon" aria-hidden="true"><x-icon :name="$group['icon']" /></span><span>{{ $group['title'] }}</span><x-icon name="chevron-down" /></summary>
@@ -103,9 +105,13 @@
               <a href="{{ route($group['route'], $type).'#requirements' }}">{{ $label }} <x-icon name="arrow-left" /></a>
             @endforeach
             @foreach($group['extra_links'] ?? [] as $extra)
-              <a href="{{ $extra['href'] }}">{{ $extra['label'] }} <x-icon name="arrow-left" /></a>
+              <a href="{{ $extra['href'] }}" @if(str_starts_with($extra['href'], 'https://')) target="_blank" rel="noopener noreferrer" @endif>{{ $extra['label'] }} <x-icon name="arrow-left" /></a>
             @endforeach
           </nav>
+          @if($loop->first)<p>موقع المصلحة يذكر الخدمات الإلكترونية وحجز المواعيد والاستعلام عن المعاملات، لكنه لا يورد في الصفحة المرجعية المتاحة قائمة تفصيلية معتمدة للشروط أو الرسوم.</p>@endif
+          @if($loop->index === 1)<p id="passport-reference-pending">لم يتوفر ضمن المراجع المرسلة رابط رسمي يحدد متطلبات ورسوم خدمات الجوازات.</p>@endif
+          @if($loop->index === 2)<p>الدليل الرسمي يتيح استعراض الخدمات المرورية، لكن تفاصيل الخدمة ورسومها تحتاج مراجعة واعتمادًا لكل معاملة.</p>@endif
+          @if($loop->last)<p>المواعيد والاستعلام وظائف مساندة؛ لا تُعرض هنا شروط أو رسوم إضافية غير موثقة.</p>@endif
         </details>
         @endforeach
       </div>
