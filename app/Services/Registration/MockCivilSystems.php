@@ -44,4 +44,29 @@ class MockCivilSystems
 
         return ['person_id' => $person->id, 'registry_result' => $valid && $person->complete ? 'MATCH' : 'REVIEW'];
     }
+
+    public function witnessDocument(string $documentType, string $documentNumber, ?int $excludePersonId = null): ?array
+    {
+        abort_unless(self::enabled(), 404);
+        $document = DB::table('mock_civil_documents')
+            ->join('mock_civil_persons', 'mock_civil_persons.id', '=', 'mock_civil_documents.person_id')
+            ->where('mock_civil_documents.document_type', $documentType)
+            ->where('mock_civil_documents.document_number', trim($documentNumber))
+            ->where('mock_civil_documents.status', 'active')
+            ->where('mock_civil_persons.complete', true)
+            ->when($excludePersonId, fn ($query) => $query->where('mock_civil_persons.id', '!=', $excludePersonId))
+            ->first([
+                'mock_civil_persons.name',
+                'mock_civil_persons.phone',
+                'mock_civil_documents.issued_place',
+                'mock_civil_documents.issued_at',
+            ]);
+
+        return $document ? [
+            'name' => $document->name,
+            'phone' => $document->phone,
+            'issued_place' => $document->issued_place,
+            'issued_at' => $document->issued_at,
+        ] : null;
+    }
 }

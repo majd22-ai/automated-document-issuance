@@ -29,7 +29,7 @@
     @foreach([1, 2] as $position)
         @php($witness = $identityForm->witnesses->firstWhere('position', $position))
         <section class="identity-panel"><h3>الشاهد {{ $position === 1 ? 'الأول' : 'الثاني' }}</h3>
-            <dl class="identity-details">@foreach($witnessLabels as $key => $label)<div><dt>{{ $label }}</dt><dd>{{ data_get($witness, $key) ?: 'غير مسجل' }}</dd></div>@endforeach</dl>
+            <dl class="identity-details">@foreach($witnessLabels as $key => $label)<div><dt>{{ $label }}</dt><dd>{{ data_get($witness, $key) ?: 'غير مسجل' }}@error('witnesses.'.($position-1).'.'.$key)<p class="identity-field-error">{{ $message }}</p>@enderror</dd></div>@endforeach</dl>
             @if($witness?->selfie_path)<p>صورة الشاهد وهو يحمل بطاقته الشخصية — للمراجعة</p><a href="{{ route('citizen.identity-card.witness-selfie',['form'=>$identityForm,'position'=>$position]) }}" target="_blank" rel="noopener"><img class="identity-photo" src="{{ route('citizen.identity-card.witness-selfie',['form'=>$identityForm,'position'=>$position]) }}" alt="صورة سلفي الشاهد {{ $position }} مع بطاقته"></a>@else<p>صورة السلفي مع البطاقة غير مرفقة.</p>@endif
             @error('witnesses.'.($position-1).'.selfie')<p class="identity-field-error">{{ $message }}</p>@enderror
             <p>الحضور: {{ ['present'=>'حاضر','absent'=>'غائب','not_recorded'=>'غير مسجل'][$witness?->attendance_status ?? 'not_recorded'] ?? 'غير مسجل' }} · التحقق: {{ ['approved'=>'تم التحقق في المراجعة التجريبية','rejected'=>'لم يُقبل التحقق','not_verified'=>'لم يتم التحقق'][$witness?->verification_status ?? 'not_verified'] ?? 'لم يتم التحقق' }}</p>

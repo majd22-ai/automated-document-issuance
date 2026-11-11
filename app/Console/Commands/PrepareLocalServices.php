@@ -19,6 +19,23 @@ class PrepareLocalServices extends Command
 
     private const REFERENCE = 'تجربة داخلية غير رسمية — لا يوجد اعتماد حكومي';
 
+    private const IDENTITY_FIRST_ISSUE_CONDITIONS = [
+        'استكمال بيانات الاستمارة وحفظها للمراجعة.',
+        'إرفاق المستندات التجريبية المطلوبة ومراجعتها من الموظف.',
+        'إكمال مصادقة العاقل في المسار التجريبي.',
+        'تقييم أهلية المواطن يدويًا باستخدام مرجع تجريبي موثق.',
+    ];
+
+    private const IDENTITY_FIRST_ISSUE_DOCUMENTS = [
+        'إثبات بيانات الميلاد (تجريبي)',
+        'مستند إثبات الهوية والبيانات الشخصية (تجريبي)',
+        'تعريف عاقل الحارة أو جهة العمل (تجريبي)',
+        'إثبات الجنسية (تجريبي)',
+        'صورة شخصية حديثة بخلفية بيضاء (تجريبي)',
+        'شهادة بيان فصيلة الدم (تجريبية)',
+        'بطاقات هوية الشاهدين (تجريبية)',
+    ];
+
     private const SERVICES = [
         'identity-first-issue' => ['identity', 'issue'],
         'identity-renewal' => ['identity', 'renewal'],
@@ -60,6 +77,14 @@ class PrepareLocalServices extends Command
                     $patch = ['is_active' => true, 'rules_approved' => true];
                     if (! filled($service->source_reference)) {
                         $patch['source_reference'] = self::REFERENCE;
+                    }
+                    if ($service->code === 'identity-first-issue') {
+                        $documents = $service->required_documents ?: self::IDENTITY_FIRST_ISSUE_DOCUMENTS;
+                        $patch['description'] = $service->description ?: 'إعداد افتراضي لأغراض مشروع التخرج والاختبار المحلي فقط، وليس متطلبًا أو اعتمادًا حكوميًا.';
+                        $patch['conditions'] = $service->conditions ?: self::IDENTITY_FIRST_ISSUE_CONDITIONS;
+                        $patch['required_documents'] = $documents;
+                        $patch['required_fields'] = $service->required_fields ?: ['name', 'email', 'phone'];
+                        $patch['verification_rules'] = $this->identityFirstIssueVerificationRules($service->verification_rules ?? [], $documents);
                     }
                     // Only the engine's active document state; no invented legal expiry/window.
                     if ($service->operation === 'renewal' && ! $service->renewal_statuses) {
@@ -113,5 +138,77 @@ class PrepareLocalServices extends Command
         $this->warn(self::REFERENCE.' — رسوم غير محددة لا تعني خدمة مجانية.');
 
         return self::SUCCESS;
+    }
+
+    private function identityFirstIssueVerificationRules(array $rules, array $requiredDocuments): array
+    {
+        $documentRules = is_array($rules['documents'] ?? null) ? array_values($rules['documents']) : [];
+        $configuredNames = array_column($documentRules, 'name');
+        $configuredCodes = array_column($documentRules, 'code');
+
+        foreach (array_values($requiredDocuments) as $index => $name) {
+            if (in_array($name, $configuredNames, true)) {
+                continue;
+            }
+
+            $code = 'demo_document_'.($index + 1);
+            $suffix = 1;
+            while (in_array($code, $configuredCodes, true)) {
+                $code = 'demo_document_'.($index + 1).'_'.(++$suffix);
+            }
+            $isPhoto = is_string($name) && str_starts_with($name, 'صورة') && ! str_starts_with($name, 'صورتان');
+            $documentRules[] = [
+                'code' => $code,
+                'name' => $name,
+                'kind' => $isPhoto ? 'photo' : 'document',
+                'allowed_mime_types' => $isPhoto ? ['image/jpeg', 'image/png'] : ['image/jpeg', 'image/png', 'application/pdf'],
+                'requires_review' => true,
+            ];
+            $configuredNames[] = $name;
+            $configuredCodes[] = $code;
+        }
+
+        foreach ($documentRules as &$documentRule) {
+            $name = $documentRule['name'] ?? null;
+            if (! is_string($name) || ! in_array($name, $requiredDocuments, true)) {
+                if (($documentRule['code'] ?? null) === 'identity_photo') {
+                    $documentRule = [
+                        ...$documentRule,
+                        'name' => 'الصورة الشخصية لاستمارة البطاقة',
+                        'kind' => 'photo',
+                        'allowed_mime_types' => ['image/jpeg', 'image/png'],
+                        'requires_review' => true,
+                        'optional' => true,
+                    ];
+                }
+
+                continue;
+            }
+            $isPhoto = str_starts_with($name, 'صورة') && ! str_starts_with($name, 'صورتان');
+            $documentRule['kind'] = $isPhoto ? 'photo' : 'document';
+            $documentRule['allowed_mime_types'] = $isPhoto ? ['image/jpeg', 'image/png'] : ['image/jpeg', 'image/png', 'application/pdf'];
+        }
+        unset($documentRule);
+
+        if (! collect($documentRules)->contains('kind', 'photo')) {
+            $code = 'identity_photo';
+            $suffix = 1;
+            while (in_array($code, $configuredCodes, true)) {
+                $code = 'identity_photo_'.(++$suffix);
+            }
+            $documentRules[] = [
+                'code' => $code,
+                'name' => 'الصورة الشخصية لاستمارة البطاقة',
+                'kind' => 'photo',
+                'allowed_mime_types' => ['image/jpeg', 'image/png'],
+                'requires_review' => true,
+                'optional' => true,
+            ];
+        }
+
+        $rules['documents'] = $documentRules;
+        $rules['restriction_source'] = $rules['restriction_source'] ?? 'manual';
+
+        return $rules;
     }
 }

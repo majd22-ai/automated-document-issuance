@@ -216,7 +216,20 @@ html { scroll-padding-top:120px; }
 .service-item:hover { color:var(--text-main); }
 .service-item .content { flex:1; min-width:0; }
 .service-item h4 { margin-bottom:10px; font-size:18px; }
+.service-item h2 { margin-bottom:16px; font-size:18px; }
 .service-item p { margin-bottom:18px; font-size:14px; color:#62686c; }
+.service-actions { display:flex; flex-direction:column; align-items:stretch; gap:8px; }
+.service-start-button { display:flex; align-items:center; justify-content:center; width:100%; min-height:38px; padding:7px 14px; border:1px solid var(--primary-cyan); border-radius:4px; background:var(--primary-cyan); color:#fff; font-size:14px; font-weight:700; text-align:center; text-decoration:none; transition:background-color .2s ease,border-color .2s ease,transform .2s ease; }
+.service-start-button:hover { border-color:var(--primary-cyan-dark,var(--primary-cyan)); background:var(--primary-cyan-dark,var(--primary-cyan)); color:#fff; transform:translateY(-1px); }
+.service-details-link { display:inline-flex; align-items:center; justify-content:center; gap:6px; align-self:center; min-height:32px; padding:5px 10px; border:1px solid var(--primary-gold); border-radius:4px; color:var(--primary-gold-dark,var(--primary-gold)); font-size:13px; font-weight:700; text-decoration:none; transition:background-color .2s ease,color .2s ease; }
+.service-details-link:hover { color:var(--primary-gold); background:rgba(217,184,63,.12); }
+.service-details-link svg { width:14px; height:14px; }
+#requirements > .container > .grid.grid-2 { grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),280px)); justify-content:center; align-items:stretch; }
+#requirements .service-item { box-sizing:border-box; aspect-ratio:1; flex-direction:column; justify-content:space-between; gap:14px; padding:22px; }
+#requirements .service-item .content { display:flex; flex:1; flex-direction:column; justify-content:space-between; width:100%; }
+#requirements .service-item h2 { font-size:17px; }
+#requirements .service-actions { margin-top:auto; }
+#requirements .service-start-button { border-radius:0; }
 .icon-box { display:grid; place-items:center; flex-shrink:0; width:54px; height:54px; background:var(--primary-cyan-light); color:var(--primary-cyan); border-radius:9px; }
 .icon-box svg { width:30px; height:30px; stroke:currentColor; }
 .service-details-grid { display:grid; grid-template-columns:2fr 1fr; gap:28px; align-items:start; }
@@ -271,6 +284,8 @@ html { scroll-padding-top:120px; }
   .gov-services-grid,.info-grid { grid-template-columns:1fr; }
   .gov-service-card { padding:24px; }
   .service-item { padding:20px; gap:14px; }
+  #requirements > .container > .grid.grid-2 { grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),280px)); }
+  #requirements .service-item { padding:18px; }
   .service-item h4 { font-size:16px; }
   .icon-box { width:42px; height:42px; }
   .auth-page-wrapper { padding:30px 0; }

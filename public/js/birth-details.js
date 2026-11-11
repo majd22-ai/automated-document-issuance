@@ -22,20 +22,32 @@
     const controls = new Map();
     const enhance = input => {
         const list = root.querySelector('#' + input.getAttribute('list'));
+        const allowsCustom = input.id !== 'field-birth_place';
+        const required = input.required;
         const select = document.createElement('select');
         select.id = input.id + '-choices';
         select.setAttribute('aria-label', input.labels[0]?.textContent || 'اختر');
         const refresh = () => {
             const current = input.value;
-            select.replaceChildren(new Option('اختر من القائمة', ''), ...Array.from(list.options, option => new Option(option.value, option.value)), new Option('غير موجود في القائمة — أدخل الاسم', '__custom'));
-            select.value = current && Array.from(list.options).some(option => option.value === current) ? current : current ? '__custom' : '';
-            input.hidden = select.value !== '__custom';
+            const isListed = current && Array.from(list.options).some(option => option.value === current);
+            select.replaceChildren(
+                new Option('اختر من القائمة', ''),
+                ...Array.from(list.options, option => new Option(option.value, option.value)),
+                ...(allowsCustom ? [new Option('غير موجود في القائمة — أدخل الاسم', '__custom')] : []),
+            );
+            select.value = isListed ? current : current && allowsCustom ? '__custom' : '';
+            input.hidden = ! (select.value === '__custom' || (current && ! allowsCustom && ! isListed));
+            input.required = required && ! input.hidden;
+            select.required = required && input.hidden;
         };
         input.insertAdjacentElement('beforebegin', select);
         // Keep the named input as the canonical value, including user-entered locations.
         select.addEventListener('change', () => {
-            input.hidden = select.value !== '__custom';
-            input.value = select.value === '__custom' ? '' : select.value;
+            const isCustom = allowsCustom && select.value === '__custom';
+            input.hidden = ! isCustom;
+            input.value = isCustom ? '' : select.value;
+            input.required = required && isCustom;
+            select.required = required && ! isCustom;
             if (!input.hidden) input.focus();
             input.dispatchEvent(new Event('input', {bubbles: true}));
         });

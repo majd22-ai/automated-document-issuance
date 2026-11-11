@@ -222,9 +222,11 @@ Route::middleware(['auth', 'role:citizen'])
     ->group(function () {
 
         Route::get('/identity-card', [IdentityCardFormController::class, 'index'])->name('identity-card.index');
+        Route::get('/identity-card/start', [IdentityCardFormController::class, 'start'])->name('identity-card.start');
         Route::post('/birth-certificates/drafts', [BirthCertificateController::class, 'saveDraft'])->middleware('throttle:20,1')->name('birth-certificates.drafts.store');
         Route::post('/identity-card', [IdentityCardFormController::class, 'store'])->middleware('throttle:10,1,identity-card-create:')->name('identity-card.store');
         Route::get('/identity-card/{form}', [IdentityCardFormController::class, 'show'])->name('identity-card.show');
+        Route::post('/identity-card/{form}/witness-lookup', [IdentityCardFormController::class, 'lookupWitness'])->middleware('throttle:10,1,identity-card-witness-lookup:')->name('identity-card.witness.lookup');
         Route::post('/identity-card/{form}', [IdentityCardFormController::class, 'save'])->middleware('throttle:30,1,identity-card-save:')->name('identity-card.save');
         Route::post('/identity-card/{form}/submit', [IdentityCardFormController::class, 'submit'])->middleware('throttle:10,1,identity-card-submit:')->name('identity-card.submit');
         Route::post('/identity-card/{form}/attestation', [IdentityAttestationController::class, 'store'])->middleware('throttle:10,1,identity-card-attestation:')->name('identity-card.attestation.store');

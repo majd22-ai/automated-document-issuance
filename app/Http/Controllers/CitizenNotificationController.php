@@ -33,6 +33,16 @@ class CitizenNotificationController extends Controller
     public function open(Request $request, string $id)
     {
         $notification = $request->user()->notifications()->findOrFail($id);
+        if (($notification->data['kind'] ?? '') === 'request_activity' && isset($notification->data['identity_form_id'])) {
+            $form = $request->user()->identityCardForms()->findOrFail($notification->data['identity_form_id']);
+            abort_if($notification->request_id && $form->citizen_service_request_id !== $notification->request_id, 404);
+            $notification->markAsRead();
+
+            return redirect()->route('citizen.identity-card.show', [
+                'form' => $form,
+                'step' => $form->attestation?->status === 'approved' ? 7 : 6,
+            ]);
+        }
         if (in_array($notification->data['kind'] ?? '', ['employee_account', 'employee_permission'], true) && ! $notification->request_id && ! $notification->document_id) {
             abort_unless((int) ($notification->data['target_user_id'] ?? $request->user()->id) === (int) $request->user()->id, 403);
             $notification->markAsRead();

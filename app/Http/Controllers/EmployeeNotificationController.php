@@ -29,7 +29,12 @@ class EmployeeNotificationController extends Controller
         $kind = $notification->data['kind'] ?? null;
         if ($kind === 'neighborhood_attestation') {
             $attestation = IdentityCardAttestation::findOrFail($notification->data['attestation_id'] ?? 0);
-            abort_unless(app(IdentityAttestations::class)->canAttest($request->user()->fresh(), $attestation), 403);
+            if (! app(IdentityAttestations::class)->canAttest($request->user()->fresh(), $attestation)) {
+                $notification->markAsRead();
+
+                return redirect()->route('employee.notifications.index')
+                    ->with('status', 'تعذر فتح هذا الإشعار لأن التكليف أو صلاحيات حسابك تغيّرت. تم تعليم الإشعار كمقروء، وما زالت بيانات الطلب محمية.');
+            }
             $notification->markAsRead();
 
             return redirect()->route('employee.neighborhood-attestations.show', $attestation);

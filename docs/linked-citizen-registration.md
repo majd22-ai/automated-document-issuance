@@ -44,6 +44,8 @@ php artisan db:seed --class=LinkedCivilMockSeeder
 php artisan serve --host=127.0.0.1 --port=8000
 ```
 
+تضيف Migration `2026_11_10_000001` سجلات وثائق شهود اصطناعية لأنظمة المحاكاة المحلية. أعد تشغيل `LinkedCivilMockSeeder` بعد الترقية لتوليد أرقام البطاقات والهواتف وتواريخ وأماكن الإصدار التجريبية. يظهر البحث عنها في خطوة الشاهدين فقط داخل local/testing؛ النتائج ليست بيانات رسمية.
+
 افتح `http://127.0.0.1:8000/register`. لا توجد كلمات مرور ثابتة أو حسابات مزروعة؛ اختر بريدًا تجريبيًا غير مستخدم، ورقمًا بتنسيق 7xxxxxxxx، وأنشئ كلمة مرور بنفسك بعد نسخ الرمز من النافذة المحلية. جميع البيانات التالية خيالية:
 
 | الاسم المطلوب مطابقًا | الرقم التجريبي | السيناريو |
@@ -61,7 +63,7 @@ php artisan serve --host=127.0.0.1 --port=8000
 
 ## الملفات
 
-الجديدة: config/citizen_mock.php، ترحيلا 2026_11_09_000001 و000002، LinkedCivilMockSeeder، خدمات MockCivilSystems وLinkedRegistration وMockIdentityVerification، Controllers LinkedRegistrationController وMockActivationController، واجهات auth/linked-register وcitizen/mock-activation وemployee/accounts/mock-review وadmin/mock-systems، public/js/linked-registration.js، LinkedRegistrationTest وlinked-registration.test.mjs، ووثيقة الخطة والتقرير الحالي.
+الجديدة: config/citizen_mock.php، ترحيلات 2026_11_09_000001 و000002 و2026_11_10_000001، LinkedCivilMockSeeder، خدمات MockCivilSystems وLinkedRegistration وMockIdentityVerification، Controllers LinkedRegistrationController وMockActivationController، واجهات auth/linked-register وcitizen/mock-activation وemployee/accounts/mock-review وadmin/mock-systems، public/js/linked-registration.js، LinkedRegistrationTest وlinked-registration.test.mjs، ووثيقة الخطة والتقرير الحالي.
 
 المعدلة لهذه المهمة: RegistrationController وAuthController وCitizenAccountController، RemoteActivation، User وAuditEvent وAuditTrail، EnsureUserHasRole وEnsureAccountIsActive، routes/web.php، auth/login وemployee/accounts/index وemployee/accounts/show وcomponents/operations-sidebar. التعديلات السابقة على تفعيل الحساب ولوحات العمل محفوظة.
 

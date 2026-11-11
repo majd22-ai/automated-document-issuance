@@ -77,9 +77,37 @@ class NeighborhoodAttestationTest extends TestCase
         $this->assertSame('approved', $row->fresh()->status);
         $this->assertSame('local_employee_confirmation', $row->fresh()->verification_source);
         $this->assertSame('pending_security_review', $form->fresh()->status);
+        $notice = $citizen->notifications()->where('data->identity_form_id', $form->id)->firstOrFail();
+        $this->assertSame('تمت المصادقة على شهادة السكن', $notice->data['title']);
+        $this->assertSame(1, $citizen->notifications()->where('data->identity_form_id', $form->id)->count());
         $this->post($url, ['decision' => 'approved', 'confirmation_token' => $token])->assertStatus(409);
         $this->assertSame(1, $citizen->notifications()->where('data->kind', 'request_activity')->count());
-        $this->get(route('employee.neighborhood-attestations.show', $row))->assertSee('class="attestation-stamp"', false);
+        $this->actingAs($citizen)->get(route('citizen.notifications.index'))->assertSee('تمت المصادقة على شهادة السكن')->assertSee('فتح التفاصيل');
+        $this->post(route('citizen.notifications.open', $notice->id))
+            ->assertRedirect(route('citizen.identity-card.show', ['form' => $form, 'step' => 7]));
+        $this->assertNotNull($notice->fresh()->read_at);
+        $this->actingAs($official->user)->get(route('employee.neighborhood-attestations.show', $row))->assertSee('class="attestation-stamp"', false);
+    }
+
+    public function test_old_attestation_notification_redirects_when_official_assignment_changes(): void
+    {
+        $fixture = $this->fixture();
+        [, , $official] = $fixture;
+        $attestation = $this->requestApproval($fixture);
+        $formerOfficial = $official->user;
+        $newOfficial = User::factory()->create(['role' => 'employee']);
+        $notification = $formerOfficial->notifications()
+            ->where('data->kind', 'neighborhood_attestation')
+            ->firstOrFail();
+
+        $official->forceFill(['user_id' => $newOfficial->id])->save();
+
+        $this->actingAs($formerOfficial)
+            ->post(route('employee.notifications.open', $notification->id))
+            ->assertRedirect(route('employee.notifications.index'))
+            ->assertSessionHas('status', 'تعذر فتح هذا الإشعار لأن التكليف أو صلاحيات حسابك تغيّرت. تم تعليم الإشعار كمقروء، وما زالت بيانات الطلب محمية.');
+
+        $this->assertNotNull($notification->fresh()->read_at);
     }
 
     public function test_pre_submission_attestation_gates_review_until_official_approval(): void
@@ -111,6 +139,7 @@ class NeighborhoodAttestationTest extends TestCase
         $this->assertNull($form->fresh()->submitted_at);
         $this->actingAs($citizen)->get(route('citizen.identity-card.show', ['form' => $form, 'step' => 7]))
             ->assertOk()->assertSee('المراجعة والإقرار')->assertSee('أقر بصحة البيانات المدخلة');
+        $this->assertSame(1, $citizen->notifications()->where('data->identity_form_id', $form->id)->count());
     }
 
     public function test_invalid_scope_legacy_paths_and_wrong_neighborhood_are_rejected(): void

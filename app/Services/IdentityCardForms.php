@@ -226,13 +226,24 @@ class IdentityCardForms
                 return $form;
             }
             $correction = $this->authorizedCorrection($form);
-            abort_unless($form->version === $version, 409, 'تغيرت المسودة. راجع ملخص الطلب مجددًا.');
-            if (! $review || ($review['expires_at'] ?? 0) < now()->timestamp || ! hash_equals($review['fingerprint'], $this->reviewFingerprint($actor->fresh(), $form))) {
+            if ($form->version !== $version) {
+                throw ValidationException::withMessages(['version' => 'تغيّرت الاستمارة منذ فتح المراجعة. حدّث الملخص ثم أعد التقديم.']);
+            }
+            if (! $review || ($review['expires_at'] ?? 0) < now()->timestamp
+                || ! isset($review['fingerprint'])
+                || ! hash_equals($review['fingerprint'], $this->reviewFingerprint($actor->fresh(), $form))) {
                 throw ValidationException::withMessages(['review_token' => 'تغيرت الصورة أو البيانات أو إعدادات الخدمة، أو انتهت صلاحية الملخص. افتح مرحلة المراجعة مجددًا قبل الإرسال.']);
             }
-            abort_unless($form->current_step === 7, 409, 'أكمل مراحل الطلب أولًا.');
+            if ($form->current_step !== 7) {
+                throw ValidationException::withMessages(['submission' => 'لا يمكن تقديم الطلب قبل إكمال الخطوات السابقة ومصادقة العاقل. افتح الخطوة المتاحة وأكملها أولًا.']);
+            }
             if (! IdentityAttestations::approvedForSubmission($form->attestation)) {
                 throw ValidationException::withMessages(['attestation' => 'يلزم اعتماد مصادقة عاقل الحارة في الخطوة السادسة قبل تقديم الطلب.']);
+            }
+            if ($actor->needsCitizenActivation()) {
+                throw ValidationException::withMessages([
+                    'service' => 'لا يمكن تقديم الطلب قبل اكتمال تفعيل الحساب وتأكيد الهوية. حالة الحساب الحالية: '.$actor->accountStatusLabel().'.',
+                ]);
             }
             Gate::forUser($actor)->authorize('create', CitizenServiceRequest::class);
             $witnesses = $form->witnesses->map(fn ($witness) => $witness->only(['name', 'document_type', 'document_number', 'issued_place', 'issued_at', 'employer', 'work_address', 'phone', 'address']))->all();
@@ -275,7 +286,18 @@ class IdentityCardForms
                 return $form;
             }
             $submission = app(ServiceRequestSubmission::class);
-            $preview = $submission->preview($actor, $form->service, ['data' => $form->data]);
+            try {
+                $preview = $submission->preview($actor, $form->service, ['data' => $form->data]);
+            } catch (ValidationException $exception) {
+                if (! array_key_exists('service', $exception->errors())) {
+                    throw $exception;
+                }
+
+                throw ValidationException::withMessages([
+                    ...$exception->errors(),
+                    'submission' => 'اكتملت الاستمارة وحُفظت كمسودة، لكن لم يُنشأ طلب بعد. أسباب أهلية الخدمة أدناه تحتاج مراجعة وتوثيقًا من الجهة المختصة؛ لا تحتاج إلى إعادة إدخال بيانات الاستمارة.',
+                ]);
+            }
             $application = $submission->submit($actor, $form->service, 'identity-form-'.$form->id, $preview);
             $form->forceFill(['citizen_service_request_id' => $application->id, 'status' => 'pending_photo_review', 'declared_at' => now(), 'submitted_at' => now(), 'current_step' => 7, 'version' => $form->version + 1])->save();
 

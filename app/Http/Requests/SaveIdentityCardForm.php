@@ -114,7 +114,7 @@ class SaveIdentityCardForm extends FormRequest
         }
         $rules['witnesses.*.document_type'] = [$complete ? 'required' : 'nullable', 'string'];
         if ($restrictDocumentType) {
-            $rules['witnesses.*.document_type'][] = Rule::in(['بطاقة شخصية', 'بطاقة عائلية', 'جواز سفر', 'بطاقة وظيفية']);
+            $rules['witnesses.*.document_type'][] = Rule::in(['بطاقة شخصية', 'بطاقة عائلية', 'جواز سفر']);
         }
         $rules['witnesses.*.issued_at'] = [$complete ? 'required' : 'nullable', 'date_format:Y-m-d', 'before_or_equal:today'];
         foreach (['day' => [1, 31], 'month' => [1, 12], 'year' => [1900, (int) now()->format('Y')]] as $part => [$minimum, $maximum]) {

@@ -49,9 +49,23 @@ class LinkedCivilMockSeeder extends Seeder
             ] as [$key, $name, $national, $scenario, $live, $complete]) {
                 DB::table('mock_civil_persons')->updateOrInsert(['fixture_key' => $key], ['name' => $name, 'national_id' => $national, 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'family_id' => $family, 'family_role' => in_array($key, ['father', 'mother']) ? $key : 'child', 'father_name' => 'أب محاكاة أسرة تجريبية', 'mother_name' => 'أم محاكاة أسرة تجريبية', 'reference_photo' => $key === 'no-photo' ? null : $photo, 'face_scenario' => $scenario, 'liveness_pass' => $live, 'complete' => $complete, 'created_at' => now(), 'updated_at' => now()]);
                 $id = DB::table('mock_civil_persons')->where('fixture_key', $key)->value('id');
+                DB::table('mock_civil_persons')->where('id', $id)->update(['phone' => '777000'.str_pad((string) $id, 3, '0', STR_PAD_LEFT)]);
                 DB::table('mock_birth_records')->updateOrInsert(['person_id' => $id], ['number' => 'MOCK-BIRTH-'.$id, 'created_at' => now(), 'updated_at' => now()]);
                 if ($national) {
                     DB::table('mock_identity_cards')->updateOrInsert(['person_id' => $id], ['number' => $national, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+                }
+                foreach ([
+                    ['type' => 'بطاقة شخصية', 'number' => $national],
+                    ['type' => 'بطاقة عائلية', 'number' => 'MOCK-FAMILY-CARD-'.$id],
+                    ['type' => 'جواز سفر', 'number' => 'MOCK-PASSPORT-'.$id],
+                ] as $document) {
+                    if ($document['number']) {
+                        DB::table('mock_civil_documents')->updateOrInsert(
+                            ['document_type' => $document['type'], 'document_number' => $document['number']],
+                            ['person_id' => $id, 'status' => 'active', 'issued_place' => 'مركز إصدار تجريبي',
+                                'issued_at' => '2020-03-15', 'created_at' => now(), 'updated_at' => now()],
+                        );
+                    }
                 }
             }
         });

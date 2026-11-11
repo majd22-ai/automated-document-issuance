@@ -220,8 +220,10 @@ class IdentityAttestations
             $form->forceFill($formChanges)->save();
             app(AuditTrail::class)->record('identity_attestation_decided', IdentityCardAttestation::class, $row->id, $actor, changes: ['status' => $row->status, 'action' => $row->authority_type]);
             $form->citizen->notifyNow(new CitizenActivity('identity-attestation:'.$row->id.':decided', [
-                'kind' => 'request_activity', 'title' => 'تحديث المصادقة التجريبية',
+                'kind' => 'request_activity',
+                'title' => $approved ? 'تمت المصادقة على شهادة السكن' : 'رُفضت المصادقة على شهادة السكن',
                 'body' => $approved ? 'تم اعتماد شهادة السكن وختم العاقل التجريبي في ملفك. راجع الطلب للخطوة التالية؛ ليس ختمًا حكوميًا.' : 'تم رفض اعتماد ختم العاقل التجريبي. راجع استمارة الطلب للاطلاع على السبب.',
+                'identity_form_id' => $form->id,
                 'request_reference' => $form->application?->reference ?? $form->reference, 'occurred_at' => now()->toIso8601String(),
             ], $form->citizen_service_request_id));
 

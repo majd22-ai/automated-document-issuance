@@ -100,6 +100,21 @@ class GovernmentServicesTest extends TestCase
         $this->get('/services/catalog/not-found')->assertNotFound();
     }
 
+    public function test_each_service_catalog_entry_uses_its_service_specific_icon(): void
+    {
+        GovernmentService::query()->update(['is_active' => true]);
+        $response = $this->get('/services')->assertOk();
+
+        foreach ([
+            'identity-first-issue', 'identity-renewal', 'identity-lost',
+            'passport-first-issue', 'passport-renewal',
+            'license-first-issue', 'license-renewal',
+            'birth-certificate-first-issue',
+        ] as $icon) {
+            $response->assertSee('service.svg#'.$icon, false);
+        }
+    }
+
     public function test_birth_certificate_is_listed_with_civil_registry_services_only_when_active(): void
     {
         $birthCertificate = GovernmentService::where('code', 'birth-certificate-first-issue')->firstOrFail();
@@ -117,6 +132,42 @@ class GovernmentServicesTest extends TestCase
             ->assertSee($birthCertificate->name)
             ->assertSee($birthCertificate->publicUrl());
         $this->get('/services/passports')->assertOk()->assertDontSee($birthCertificate->name);
+    }
+
+    public function test_service_catalog_separates_starting_a_service_from_viewing_its_details(): void
+    {
+        $service = $this->service();
+        $index = $this->actingAs($this->user())->get('/services/identity')->assertOk()
+            ->assertSee('بدء الخدمة أو متابعة المسودة')
+            ->assertSee('الشروط والتفاصيل')
+            ->assertSee(route('citizen.identity-card.start'), false)
+            ->assertSee($service->publicUrl(), false)
+            ->assertDontSee('Database service description');
+
+        $this->assertStringNotContainsString('href="'.$service->publicUrl().'" class="service-item', $index->getContent());
+        $this->get($service->publicUrl())->assertOk()
+            ->assertSee('Database service description')
+            ->assertSee('الشروط والمتطلبات')
+            ->assertSee('معلومات الخدمة');
+
+        $service->update(['rules_approved' => false]);
+        $this->actingAs($this->user())->get('/services/identity')->assertOk()
+            ->assertSee('بدء الطلب بانتظار اعتماد متطلباتها.')
+            ->assertDontSee('بدء الخدمة أو متابعة المسودة');
+    }
+
+    public function test_identity_service_start_resumes_an_existing_draft_or_creates_one(): void
+    {
+        $service = $this->service();
+        $this->get(route('citizen.identity-card.start'))->assertRedirect('/login');
+        $citizen = $this->user();
+        $this->actingAs($citizen)->get(route('citizen.identity-card.start'))->assertRedirect();
+        $form = \App\Models\IdentityCardForm::sole();
+        $this->assertSame($citizen->id, $form->user_id);
+        $this->assertSame($service->id, $form->government_service_id);
+        $this->actingAs($citizen)->get(route('citizen.identity-card.start'))
+            ->assertRedirect(route('citizen.identity-card.show', ['form' => $form, 'step' => 1]));
+        $this->assertSame(1, \App\Models\IdentityCardForm::count());
     }
 
     public function test_start_requires_login_citizen_role_and_complete_data(): void

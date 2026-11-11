@@ -3,20 +3,46 @@
 @push('styles')<link rel="stylesheet" href="{{ asset('css/identity-card-wizard.css') }}?v={{ filemtime(public_path('css/identity-card-wizard.css')) }}">@endpush
 @push('scripts')<script src="{{ asset('js/identity-card-wizard.js') }}" defer></script>@endpush
 @push('scripts')<script src="{{ asset('js/witness-selfies.js') }}?v={{ filemtime(public_path('js/witness-selfies.js')) }}" defer></script>@endpush
+@push('scripts')<script src="{{ asset('js/witness-registry-lookup.js') }}?v={{ filemtime(public_path('js/witness-registry-lookup.js')) }}" defer></script>@endpush
 @section('content')
 @php
     $steps = [1=>'البيانات الشخصية',2=>'بيانات الميلاد',3=>'العنوان والحالة الاجتماعية',4=>'الصورة الشخصية',5=>'الشاهدان',6=>'مصادقة العاقل',7=>$form->submitted_at && ! $form->correctionIsOpen() ? 'تأكيد التقديم' : 'المراجعة والإقرار'];
-    $witnessFields = ['name'=>'الاسم الكامل','employer'=>'جهة العمل','work_address'=>'مقر جهة العمل','phone'=>'رقم التلفون','document_type'=>'نوع البطاقة','document_number'=>'رقم البطاقة','issued_place'=>'محل صدور البطاقة','issued_at'=>'تاريخ صدورها','address'=>'عنوان السكن','nearby_landmark'=>'جوار / أقرب معلم'];
-    $completion = (int) round(min(7, max(1, (int) $form->current_step)) / 7 * 100);
+    $witnessFields = ['document_type'=>'نوع البطاقة','document_number'=>'رقم البطاقة','name'=>'الاسم الكامل','phone'=>'رقم التلفون','issued_place'=>'محل صدور البطاقة','issued_at'=>'تاريخ صدورها','employer'=>'جهة العمل','work_address'=>'مقر جهة العمل','address'=>'عنوان السكن','nearby_landmark'=>'جوار / أقرب معلم'];
+    $completion = (int) round(min(7, max(1, $step)) / count($steps) * 100);
 @endphp
 <section class="section identity-wizard"><div class="container">
     <a href="{{ route('citizen.identity-card.index') }}">جميع الاستمارات</a>
     <div class="identity-heading"><div><h1>استمارة طلب البطاقة الشخصية</h1><p>مرجع الاستمارة الداخلي: <b dir="ltr">{{ $form->reference }}</b> · {{ $form->statusLabel() }}</p></div><p>الخطوة {{ $step }} من 7</p></div>
     <nav aria-label="مراحل الاستمارة"><ol class="identity-progress">@foreach($steps as $number => $title)<li class="{{ $number === $step ? 'is-current' : '' }}" @if($number === $step) aria-current="step" @endif><span>{{ $number }}</span>{{ $title }}</li>@endforeach</ol></nav>
-    <label for="identity-completion">نسبة تقدم الاستمارة المحفوظة: {{ $completion }}٪</label>
+    <label for="identity-completion">نسبة تقدم الاستمارة: {{ $completion }}٪</label>
     <progress id="identity-completion" max="100" value="{{ $completion }}">{{ $completion }}٪</progress>
     @if(session('status') || session('success'))<p class="identity-notice" role="status">{{ session('status') ?? session('success') }}</p>@endif
-    @if($errors->any())<div class="identity-error" role="alert"><p>تعذر حفظ الاستمارة. راجع الحقول التالية:</p><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+    @if($errors->any())
+        @php
+            $reviewSubmission = $step === 7 && (! $form->submitted_at || $form->correctionIsOpen());
+        @endphp
+        <div class="identity-error" role="alert">
+            <h3>{{ $reviewSubmission ? 'لم يتم تقديم الطلب' : 'تعذر حفظ الاستمارة' }}</h3>
+            <p>
+                @if($reviewSubmission && $errors->has('service'))
+                    هذه أسباب تخص أهلية الخدمة واعتماد متطلباتها، وليست أخطاء في بيانات الحقول. لن يُنشأ رقم طلب حتى تستكمل الجهة المختصة المراجعة المطلوبة.
+                @elseif($reviewSubmission)
+                    راجع أسباب التعذر أدناه وأصلح ما أُشير إليه قبل إعادة التقديم.
+                @else
+                    راجع الحقول التالية ثم حاول مرة أخرى.
+                @endif
+            </p>
+            <ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+            @if($reviewSubmission && $errors->has('service'))
+                <p>بياناتك الحالية محفوظة كمسودة. لا تعِد إدخالها؛ بعد استكمال المراجعة، افتح خطوة المراجعة والإقرار وحاول التقديم مجددًا.</p>
+                <div class="identity-actions">
+                    <a class="btn btn-outline" href="{{ route('citizen.applications.index') }}">التحقق من طلباتي</a>
+                    <a class="btn btn-outline" href="{{ $form->service->publicUrl() }}">تفاصيل الخدمة ومتطلباتها</a>
+                    <a class="btn btn-outline" href="{{ route('citizen.services.attachments.index', $form->service) }}">رفع المستندات المطلوبة ومتابعة مراجعتها</a>
+                </div>
+            @endif
+        </div>
+    @endif
     <h2>{{ $steps[$step] }}</h2>
     @if($form->correctionIsOpen())<p class="identity-notice">مطلوب تصحيح النسخة {{ $form->revision }}: {{ $form->correction_reason }}</p>@endif
     @if($step === 7 && $form->submitted_at && ! $form->correctionIsOpen())
@@ -92,7 +118,7 @@
                         $issuedAtValue = old('witnesses.'.$index.'.issued_at', $storedIssuedAt);
                         $issuedAtParts = preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', (string) $issuedAtValue, $dateMatches) ? ['year' => $dateMatches[1], 'month' => $dateMatches[2], 'day' => $dateMatches[3]] : [];
                     @endphp
-                    <fieldset class="identity-panel"><legend>الشاهد {{ $index === 0 ? 'الأول' : 'الثاني' }}</legend><div class="identity-field-grid">
+                    <fieldset class="identity-panel" data-witness-registry-lookup data-lookup-url="{{ route('citizen.identity-card.witness.lookup', $form) }}"><legend>الشاهد {{ $index === 0 ? 'الأول' : 'الثاني' }}</legend><div class="identity-field-grid">
                     @foreach($witnessFields as $key => $label)
                         @php
                             $errorKey = 'witnesses.'.$index.'.'.$key;
@@ -101,13 +127,13 @@
                         @if($key === 'document_type')
                             <select id="witness-{{ $index }}-{{ $key }}" name="witnesses[{{ $index }}][{{ $key }}]" required @error($errorKey) aria-invalid="true" aria-describedby="witness-error-{{ $index }}-{{ $key }}" @enderror>
                                 <option value="">اختر نوع البطاقة</option>
-                                @foreach(['بطاقة شخصية', 'بطاقة عائلية', 'جواز سفر', 'بطاقة وظيفية'] as $documentType)
+                                @foreach(['بطاقة شخصية', 'بطاقة عائلية', 'جواز سفر'] as $documentType)
                                     <option value="{{ $documentType }}" @selected(old($errorKey, data_get($witness, $key)) === $documentType)>{{ $documentType }}</option>
                                 @endforeach
                             </select>
                         @endif
                         @if($key === 'issued_at')
-                            <div class="witness-date-selects">
+                            <div class="witness-date-selects" data-witness-issued-date>
                                 <label for="witness-{{ $index }}-issued_at_day">اليوم</label>
                                 <select id="witness-{{ $index }}-issued_at_day" name="witnesses[{{ $index }}][issued_at_day]" required @error($errorKey) aria-invalid="true" @enderror>
                                     <option value="">اليوم</option>
@@ -126,7 +152,11 @@
                             </div>
                         @endif
                         @if(!in_array($key, ['document_type', 'issued_at'], true))
-                            <input id="witness-{{ $index }}-{{ $key }}" name="witnesses[{{ $index }}][{{ $key }}]" @required(!in_array($key, ['employer','work_address','nearby_landmark'], true)) type="{{ $key === 'phone' ? 'tel' : 'text' }}" value="{{ old($errorKey, data_get($witness, $key)) }}" @error($errorKey) aria-invalid="true" aria-describedby="witness-error-{{ $index }}-{{ $key }}" @enderror>
+                            <input id="witness-{{ $index }}-{{ $key }}" name="witnesses[{{ $index }}][{{ $key }}]" @required(!in_array($key, ['employer','work_address','nearby_landmark'], true)) type="{{ $key === 'phone' ? 'tel' : 'text' }}" value="{{ old($errorKey, data_get($witness, $key)) }}" @if(in_array($key, ['name','phone','issued_place'], true)) data-witness-autofill="{{ $key }}" @endif @if($key === 'document_number') data-witness-document-number @endif @error($errorKey) aria-invalid="true" aria-describedby="witness-error-{{ $index }}-{{ $key }}" @enderror>
+                        @endif
+                        @if($key === 'document_number' && \App\Services\Registration\MockCivilSystems::enabled())
+                            <button class="btn btn-outline" type="button" data-witness-lookup-button>بحث وتعبئة من سجلات المحاكاة</button>
+                            <p class="identity-notice" data-witness-lookup-status role="status" aria-live="polite">هذه بيانات تجريبية وليست سجلًا حكوميًا.</p>
                         @endif
                         @error($errorKey)<p class="identity-field-error" id="witness-error-{{ $index }}-{{ $key }}">{{ $message }}</p>@enderror</div>
                     <?php endforeach; ?>
@@ -153,7 +183,9 @@
             @elseif($step === 7)
                 <input type="hidden" name="review_token" value="{{ $reviewToken }}">
                 <nav class="identity-actions" aria-label="تعديل بيانات الملخص">@foreach([1=>'البيانات الشخصية',2=>'الميلاد والجنسية',3=>'العنوان والحالة',4=>'الصورة',5=>'الشاهدان'] as $editStep=>$editLabel)<a href="{{ route('citizen.identity-card.show', ['form'=>$form,'step'=>$editStep]) }}">تعديل {{ $editLabel }}</a>@endforeach</nav>
-                <p>راجع جميع البيانات والصورة وبيانات الشاهدين قبل تقديم الاستمارة. يمكنك العودة لتعديل أي خطوة.</p>
+                <p>راجع جميع البيانات والصورة وبيانات الشاهدين قبل تقديم الاستمارة. إذا ظهر خطأ، ستجد سببه هنا ويمكنك العودة إلى المرحلة ذات الصلة لتصحيحه.</p>
+                <p class="identity-notice">ارفع المستندات التجريبية المطلوبة وتأكد من اعتماد مراجعتها قبل التقديم.</p>
+                <p><a class="btn btn-outline" href="{{ route('citizen.services.attachments.index', $form->service) }}">رفع المستندات المطلوبة ومتابعة مراجعتها</a></p>
                 @include('components.identity-card-summary', ['identityForm'=>$form])
                 <div class="identity-panel"><label class="identity-declaration"><input type="checkbox" name="declaration" value="1" required @checked(old('declaration')) aria-describedby="declaration-error">أقر بصحة البيانات المدخلة وأتحمل مسؤوليتها، وأفهم أن تقديم الاستمارة لا يعني إصدار وثيقة رسمية.</label>@error('declaration')<p id="declaration-error" class="identity-field-error">{{ $message }}</p>@enderror</div>
             @endif
