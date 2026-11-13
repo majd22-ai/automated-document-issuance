@@ -32,6 +32,7 @@ class CitizenServiceRequest extends Model
 
     public function statusLabel(): string
     {
+        if ($this->status === 'accepted' && \App\Services\Identity\IdentityJourney::applies($this)) { return 'مقبول مبدئيًا'; }
         return ServiceRequestStatus::tryFrom($this->status ?? '')?->label() ?? ($this->status ?: 'غير متوفرة');
     }
 
@@ -52,7 +53,11 @@ class CitizenServiceRequest extends Model
             }
             $actions->assertCurrent($locked, $context);
             $current = ServiceRequestStatus::tryFrom($locked->status ?? '');
-            if (! $current?->canTransitionTo($next)) {
+            $administrativeReturn = \App\Services\Identity\IdentityJourney::applies($locked) && in_array($current, [ServiceRequestStatus::Accepted, ServiceRequestStatus::Approved], true)
+                && in_array($next, [ServiceRequestStatus::RequiresCorrection, ServiceRequestStatus::Rejected], true)
+                && $locked->identityCardForm->administrativeDecisions()->where('decision_token', $context['decision_token'] ?? '')
+                    ->where('action', $next === ServiceRequestStatus::Rejected ? 'rejected' : 'correction_required')->exists();
+            if (! $current?->canTransitionTo($next) && ! $administrativeReturn) {
                 throw ValidationException::withMessages(['status' => 'الانتقال غير مسموح أو يحتاج تكامل إصدار الوثائق قبل الاكتمال.']);
             }
             if (in_array($next, [ServiceRequestStatus::Processing, ServiceRequestStatus::Completed], true)) {
@@ -71,8 +76,18 @@ class CitizenServiceRequest extends Model
                 throw ValidationException::withMessages(['review' => 'لا يوجد قرار قبول موثق يسبق الاعتماد.']);
             }
             if ($next === ServiceRequestStatus::Submitted) {
+                if (\App\Services\Identity\IdentityJourney::applies($locked) && $locked->identityCardForm->correctionIsOpen()) {
+                    throw ValidationException::withMessages(['identity_form' => 'أكمل تصحيح استمارة الهوية ومصادقتها وأعد تقديمها من مسار الاستمارة.']);
+                }
                 $locked->original_request_data ??= $locked->request_data ?? [];
                 $locked->request_data = app(ReviewDeficiencies::class)->correctionData($locked, $context);
+                if (\App\Services\Identity\IdentityJourney::applies($locked)) {
+                    $schema = new GovernmentService;
+                    $schema->code = $locked->service_snapshot['code'] ?? $locked->service_code;
+                    $schema->application_fields = $locked->service_snapshot['application_fields'] ?? [];
+                    $validated = \Illuminate\Support\Facades\Validator::make(['data' => $locked->identityCardForm->data, 'notes' => $locked->notes], \App\Http\Requests\PreviewServiceRequest::payloadRules($schema))->validate();
+                    $locked->request_data = $validated['data'];
+                }
                 $locked->correcting = true;
             }
             $report = null;
@@ -106,9 +121,19 @@ class CitizenServiceRequest extends Model
                     $locked->completed_by = $actor->id;
                 }
                 $locked->save();
+                if ($next === ServiceRequestStatus::Accepted && \App\Services\Identity\IdentityJourney::applies($locked)) {
+                    $charge = app(\App\Services\Operations\RequestCharges::class)->ensure($locked);
+                    if (! $charge) { throw ValidationException::withMessages(['charge' => 'الرسم المعتمد غير معروف؛ لا يمكن إنشاء الفاتورة.']); }
+                    $locked->identityCardForm->forceFill(['status' => 'pending_fingerprint_attendance', 'version' => $locked->identityCardForm->version + 1])->save();
+                    app(\App\Services\Identity\IdentityJourney::class)->notify($citizen, $locked, 'invoice:'.$charge->id, 'قبول مبدئي وفاتورة رسوم الهوية',
+                        'قُبل طلبك مبدئيًا. الفاتورة '.$charge->invoice_number.' بقيمة '.$charge->amount.' '.$charge->currency.'. سدد نقدًا في مكتب بريد تجريبي، ثم سيحدد الموظف موعد الحضور. القبول المبدئي ليس اعتمادًا نهائيًا.');
+                }
                 $decision = $actions->save($locked, $actor, $action, $current->value, $visibleReason, $context, $report?->toArray());
                 if ($next === ServiceRequestStatus::RequiresCorrection) {
                     app(ReviewDeficiencies::class)->create($locked, $decision, $context['deficiencies']);
+                    if (\App\Services\Identity\IdentityJourney::applies($locked)) {
+                        app(\App\Services\Identity\IdentityJourney::class)->openCorrection($locked, $actor, $visibleReason);
+                    }
                 }
             } finally {
                 $locked->transitioning = false;

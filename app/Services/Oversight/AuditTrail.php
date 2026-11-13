@@ -14,9 +14,9 @@ class AuditTrail
         return $this->write($event, $type, $id, $actor, $result, $changes);
     }
 
-    public function recordPrivate(string $event, string $type, int|string|null $id, User $actor, array $changes, string $privateReason): ?AuditEvent
+    public function recordPrivate(string $event, string $type, int|string|null $id, User $actor, array $changes, string $privateReason, string $result = 'success'): ?AuditEvent
     {
-        return $this->write($event, $type, $id, $actor, 'success', $changes, $privateReason);
+        return $this->write($event, $type, $id, $actor, $result, $changes, $privateReason);
     }
 
     private function write(string $event, string $type, int|string|null $id, ?User $actor = null, string $result = 'success', array $changes = [], ?string $privateReason = null): ?AuditEvent

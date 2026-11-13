@@ -97,6 +97,9 @@ class FingerprintService
             $reasons[] = 'يلزم تسجيل حضور المواطن وفحص هويته ووثائقه مع مرجع الإجراء أولًا.';
         }
 
+        if (\App\Services\Identity\IdentityJourney::applies($form->application)) {
+            $reasons = array_merge($reasons, app(\App\Services\Identity\IdentityJourney::class)->arrivalReasons($form));
+        }
         return array_values(array_unique($reasons));
     }
 
@@ -110,6 +113,7 @@ class FingerprintService
             'attestation' => $form->attestation?->only(['id', 'form_revision', 'status', 'decided_at', 'security_status', 'security_reference', 'security_recorded_by', 'security_recorded_at']),
             'witnesses' => $form->witnesses->map(fn ($row) => $row->only(['position', 'name', 'document_number', 'document_type', 'issued_place', 'issued_at', 'phone', 'address', 'attendance_status', 'verification_status', 'reviewed_by', 'reviewed_at']))->all(),
             'arrival' => $form->only(['arrived_at', 'received_by', 'identity_documents_checked_at', 'arrival_reference']),
+            ...($form->journey_version === 1 ? ['visit_evidence' => $form->visitEvidence()->where('form_revision', $form->revision)->get()->map(fn ($row) => $row->only(['id', 'kind', 'status', 'citizen_attachment_id', 'reviewed_by', 'reviewed_at']))->all()] : []),
             'service' => $form->service->submissionFingerprint(),
         ], JSON_THROW_ON_ERROR));
     }
@@ -168,6 +172,9 @@ class FingerprintService
                 return $existing;
             }
             $form = $this->lock($actor, $form, 'recordFingerprint', (int) $data['version']);
+            if ($form->journey_version === 1 && ($reasons = app(\App\Services\Identity\IdentityJourney::class)->evidenceReasons($form))) {
+                throw ValidationException::withMessages(['requirements' => $reasons]);
+            }
             abort_unless(in_array($form->status, ['pending_fingerprint_attendance', 'fingerprint_failed'], true), 409, 'لا يمكن تكرار نجاح المرحلة؛ يلزم إجراء تصحيح مخول لفتح نسخة جديدة.');
             $this->assertReady($form);
             abort_if($form->operations()->where('form_revision', $form->revision)->where('result', 'success')->exists(), 409);
@@ -201,6 +208,9 @@ class FingerprintService
     public function administrationReasons(IdentityCardForm $form): array
     {
         $reasons = $this->prerequisiteReasons($form, true);
+        if (\App\Services\Identity\IdentityJourney::applies($form->application)) {
+            $reasons = array_merge($reasons, app(\App\Services\Identity\IdentityJourney::class)->evidenceReasons($form));
+        }
         if (! $this->successfulOperation($form)) {
             $reasons[] = 'يلزم نجاح خطوة البصمة للنسخة الحالية دون تغير بياناتها أو صورتها أو مصادقتها.';
         }
@@ -212,10 +222,18 @@ class FingerprintService
     {
         return DB::transaction(function () use ($actor, $form, $data) {
             $form = $this->lock($actor, $form, 'administer', (int) $data['version']);
+            $journey = \App\Services\Identity\IdentityJourney::applies($form->application);
+            if ($journey) {
+                abort_unless(in_array($form->application->status, ['accepted', 'approved'], true) && ! $form->application->issuedDocument()->exists(), 409);
+                if ($data['action'] === 'approved') {
+                    Gate::forUser($actor->fresh())->authorize('transition', [$form->application, ServiceRequestStatus::Approved]);
+                }
+            }
             $earlyCorrection = $data['action'] === 'correction_required'
                 && in_array($form->status, ['pending_photo_review', 'pending_attestation', 'pending_neighborhood_attestation', 'rejected'], true)
                 && (! $form->attestation || in_array($form->attestation->status, ['pending', 'rejected'], true));
-            abort_unless($earlyCorrection || $form->status === 'pending_administrative_review' || ($form->status === 'returned_to_staff' && in_array($data['action'], ['correction_required', 'rejected'], true)), 409, 'الطلب ليس في مرحلة المراجعة الإدارية، أو يحتاج نسخة تصحيح جديدة.');
+            $approvedCorrection = $journey && $form->status === 'demo_completed' && in_array($data['action'], ['correction_required', 'rejected'], true);
+            abort_unless($earlyCorrection || $approvedCorrection || $form->status === 'pending_administrative_review' || ($form->status === 'returned_to_staff' && in_array($data['action'], ['correction_required', 'rejected'], true)), 409, 'الطلب ليس في مرحلة المراجعة الإدارية، أو يحتاج نسخة تصحيح جديدة.');
             if ($data['action'] === 'approved' && ($reasons = $this->administrationReasons($form))) {
                 throw ValidationException::withMessages(['requirements' => $reasons]);
             }
@@ -237,6 +255,16 @@ class FingerprintService
                     'arrival_reference' => null, 'identity_documents_checked_at' => null, 'fingerprint_status' => null];
             }
             $form->forceFill($changes)->save();
+            if ($journey && $data['action'] === 'approved') {
+                $form->application->transitionTo(ServiceRequestStatus::Approved, $actor, null, ['decision_token' => $data['decision_token']]);
+                $form->application->appointments()->whereIn('status', ['booked', 'confirmed'])->update(['status' => 'completed', 'active_request_key' => null]);
+            } elseif ($journey && in_array($data['action'], ['correction_required', 'rejected'], true)) {
+                $next = $data['action'] === 'rejected' ? ServiceRequestStatus::Rejected : ServiceRequestStatus::RequiresCorrection;
+                $form->application->transitionTo($next, $actor, $data['citizen_reason'], [
+                    'decision_token' => $data['decision_token'],
+                    'deficiencies' => [['target_type' => 'other', 'target_key' => 'identity_form', 'description' => $data['citizen_reason']]],
+                ]);
+            }
             app(AuditTrail::class)->record('identity_trial_administration', IdentityAdministrativeDecision::class, $decision->id, $actor, changes: ['action' => $data['action'], 'status' => $form->status]);
             $this->notify($form, 'administration:'.$decision->id, match ($data['action']) {
                 'approved' => 'اكتملت الإجراءات التجريبية للطلب. يمكنك معاينة نموذج الطلب وطباعته؛ لم تُصدر بطاقة حكومية فعلية.',
@@ -270,6 +298,16 @@ class FingerprintService
             return [];
         }
         $stage = $target?->value ?? $application->status;
+        if (\App\Services\Identity\IdentityJourney::applies($application)) {
+            $mandatory = in_array($stage, ['approved', 'processing', 'completed'], true);
+            $photo = $form->photo;
+            $preliminary = $photo && $photo->review_status === 'approved' && $photo->reviewed_by && $photo->reviewed_at?->lte(now()) && $photo->intact();
+            $checks = [new RequirementResult('identity_initial_photo', 'مراجعة صورة تقديم الطلب', $preliminary ? RequirementState::Met : RequirementState::NeedsReview, 'يلزم اعتماد صورة الطلب قبل القبول المبدئي.', mandatory: in_array($stage, ['accepted', 'approved', 'processing', 'completed'], true))];
+            $checks[] = new RequirementResult('identity_fingerprint_stage', 'البصمة التجريبية', self::enabled() && $this->successfulOperation($form) ? RequirementState::Met : RequirementState::NeedsReview, 'يلزم نجاح محاكاة البصمة للنسخة الحالية.', mandatory: $mandatory);
+            $approved = $form->status === 'demo_completed' && $form->administrativeDecisions()->where('form_revision', $form->revision)->where('action', 'approved')->exists();
+            $checks[] = new RequirementResult('identity_trial_administration', 'الاعتماد الإداري النهائي', $approved ? RequirementState::Met : RequirementState::NeedsReview, 'يلزم اعتماد إداري موثق قبل الإصدار.', mandatory: $mandatory);
+            return $checks;
+        }
         $success = self::enabled() && $this->successfulOperation($form);
 
         return [new RequirementResult('identity_fingerprint_stage', 'خطوة البصمة ومصدرها', $success ? RequirementState::Met : RequirementState::NeedsReview, $success ? 'نجحت خطوة ذات مصدر مصرح للنسخة الحالية؛ المحاكاة لا تثبت التقاط بصمة حيوية.' : 'يلزم استكمال خطوة البصمة المحلية للنسخة الحالية.', mandatory: in_array($stage, ['accepted', 'approved', 'processing', 'completed'], true)),

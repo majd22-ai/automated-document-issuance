@@ -62,6 +62,7 @@ class ReviewDeficiencies
         }
         $merged = array_replace($request->request_data ?? [], $data);
         $schema = new GovernmentService;
+        $schema->code = $request->service_code === 'identity-first-issue' ? 'identity-first-issue' : null;
         $schema->application_fields = $request->service_snapshot['application_fields'] ?? [];
         Validator::make(['data' => $merged, 'notes' => $request->notes], PreviewServiceRequest::payloadRules($schema))->validate();
 
@@ -79,6 +80,7 @@ class ReviewDeficiencies
     {
         if ($row->target_type === 'field') {
             $schema = new GovernmentService;
+            $schema->code = $request->service_code === 'identity-first-issue' ? 'identity-first-issue' : null;
             $schema->application_fields = $request->service_snapshot['application_fields'] ?? [];
             Validator::make(['data' => $request->request_data ?? [], 'notes' => $request->notes], PreviewServiceRequest::payloadRules($schema))->validate();
         } elseif (in_array($row->target_type, ['attachment', 'requirement'], true)) {

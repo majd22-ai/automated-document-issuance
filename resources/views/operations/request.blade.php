@@ -2,23 +2,27 @@
 @section('title', 'المواعيد والفحوصات والرسوم')
 @section('content')
 @php($prefix = auth()->user()->role === 'employee' ? 'employee' : 'citizen')
+@php($identityJourney = \App\Services\Identity\IdentityJourney::applies($application))
+@php($identityScheduling = !$identityJourney || ($application->status==='accepted' && app(\App\Services\Identity\IdentityJourney::class)->paid($application) && !$application->identityCardForm->arrived_at))
 <section class="section"><div class="container"><div class="ops-page-head"><h1>المواعيد والفحوصات والرسوم</h1><p class="ops-help">تابع الموعد والفحص والالتزام المالي لهذا الطلب. تظهر إجراءات التعديل وفق صلاحية الحساب وحالة الطلب.</p></div><h2>{{ $service->name }}</h2><p>الطلب: {{ $application->reference }} — {{ $application->statusLabel() }}</p>
 @include('operations.messages')
+@include('components.identity-journey-summary')
 @include('components.requirements-result', ['requirementsResult'=>$report->toArray()])
 <section class="card ops-card mb-3" style="padding:1.5rem"><h2>المواعيد المتاحة</h2><p>الأوقات بتوقيت {{ config('operations.timezone') }}. التوفر يعاد التحقق منه عند تأكيد الحجز.</p>
 @can('operate', $application)
+@if($identityScheduling)
 <form method="POST" action="{{ route($prefix.'.applications.appointments.store',$application->id) }}">@csrf
 <label for="request-slot" style="display:block;margin-block:1rem .4rem">اختر الفترة ومركز الخدمة</label><select class="form-control" id="request-slot" name="slot_id" required><option value="">اختر موعدًا</option>@foreach($slots as $slot)<option value="{{ $slot->id }}">{{ $slot->center }} — {{ $slot->starts_at->setTimezone(config('operations.timezone'))->format('Y-m-d H:i') }} — المتبقي {{ $slot->capacity-$slot->bookings_count }}</option>@endforeach</select><div style="margin-block-start:1rem"><button class="btn btn-primary" type="submit">حجز الموعد</button></div></form>
-@endcan
+@endif @endcan
 @if($slots->isEmpty())<p>لا توجد فترات متاحة حاليًا. راجع مركز الخدمة.</p>@endif {{ $slots->links() }}
 <h3>سجل مواعيد الطلب</h3>
 @forelse($appointments as $appointment)
 <article class="card ops-card mb-3" style="padding:1rem"><p>{{ $appointment->slot->center }} — {{ $appointment->slot->starts_at->setTimezone(config('operations.timezone'))->format('Y-m-d H:i') }} — {{ $appointment->statusLabel() }}</p>
 @can('operate',$application)
-@if(in_array($appointment->status,['booked','confirmed']))
+@if(in_array($appointment->status,['booked','confirmed']) && $identityScheduling)
 <form method="POST" action="{{ route($prefix.'.appointments.update',$appointment) }}">@csrf @method('PATCH')<input type="hidden" name="action" value="cancel"><div style="margin-block-start:1rem"><button class="btn btn-outline">إلغاء الموعد</button></div></form>
 <form method="POST" action="{{ route($prefix.'.appointments.update',$appointment) }}">@csrf @method('PATCH')<input type="hidden" name="action" value="reschedule"><label for="reschedule-{{ $appointment->id }}" style="display:block;margin-block:1rem .4rem">إعادة الجدولة</label><select class="form-control" name="slot_id" id="reschedule-{{ $appointment->id }}" required><option value="">اختر فترة بديلة</option>@foreach($slots as $slot)<option value="{{ $slot->id }}">{{ $slot->center }} — {{ $slot->starts_at->setTimezone(config('operations.timezone'))->format('Y-m-d H:i') }}</option>@endforeach</select><div style="margin-block-start:1rem"><button class="btn btn-outline">تأكيد إعادة الجدولة</button></div></form>
-@if($prefix==='employee')<form method="POST" action="{{ route('employee.appointments.update',$appointment) }}">@csrf @method('PATCH')<label for="state-{{ $appointment->id }}" style="display:block;margin-block:1rem .4rem">تحديث حالة الحضور</label><select class="form-control" name="action" id="state-{{ $appointment->id }}"><option value="confirmed">مؤكد</option><option value="completed">مكتمل</option><option value="no_show">لم يحضر</option></select><div style="margin-block-start:1rem"><button class="btn btn-outline">حفظ حالة الموعد</button></div></form>@endif
+@if($prefix==='employee')<form method="POST" action="{{ route('employee.appointments.update',$appointment) }}">@csrf @method('PATCH')<label for="state-{{ $appointment->id }}" style="display:block;margin-block:1rem .4rem">تحديث حالة الحضور</label><select class="form-control" name="action" id="state-{{ $appointment->id }}"><option value="confirmed">مؤكد</option>@if(!$identityJourney)<option value="completed">مكتمل</option>@endif<option value="no_show">لم يحضر</option></select><div style="margin-block-start:1rem"><button class="btn btn-outline">حفظ حالة الموعد</button></div></form>@endif
 @endif @endcan</article>
 @empty<p>لم يُحجز موعد لهذا الطلب.</p>@endforelse
 </section>
@@ -46,7 +50,7 @@
 @can('recordOperations',$application)<form method="POST" action="{{ route('employee.applications.charges.store',$application->id) }}">@csrf<div style="margin-block-start:1rem"><button class="btn btn-outline">إنشاء الرسم من بيانات الطلب المحفوظة</button></div></form>@endcan
 @endif
 @can('recordOperations',$application)
-@if(!$charge || $charge->status==='due')
+@if((!$charge || $charge->status==='due') && !$identityJourney)
 <form method="POST" action="{{ route('employee.applications.payments.store',$application->id) }}">@csrf
 <p>يجب التحقق من الإيصال الأصلي قبل التسجيل. لا تعتمد العملية على تصريح المواطن بأنه دفع.</p>
 <h3>بيانات الإيصال والسداد</h3><label for="payment-amount" style="display:block;margin-block:1rem .4rem">المبلغ الكامل</label><input class="form-control" name="amount" id="payment-amount" value="{{ $charge?->amount ?? $application->service_fee }}" inputmode="decimal" required>

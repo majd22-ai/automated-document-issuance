@@ -17,7 +17,17 @@ class ElectronicCopies
         }
         $path = 'copies/'.Str::uuid().'.html';
         try {
-            $html = view('documents.copies.'.$document->document_type_code, ['document' => $document])->render();
+            $identityPhoto = null;
+            $snapshot = $document->holder_snapshot['identity_card_photo'] ?? null;
+            if ($snapshot) {
+                $photo = \App\Models\CitizenAttachment::find($snapshot['attachment_id']);
+                if (! $photo || $photo->user_id !== $document->user_id || $photo->citizen_service_request_id !== $document->citizen_service_request_id
+                    || ! in_array($photo->mime_type, ['image/png', 'image/jpeg'], true) || ! hash_equals($snapshot['sha256'], $photo->sha256) || ! $photo->intact()) {
+                    throw new \RuntimeException('Issued identity photo integrity failure');
+                }
+                $identityPhoto = 'data:'.$photo->mime_type.';base64,'.base64_encode(Storage::disk('attachments')->get($photo->storage_path));
+            }
+            $html = view('documents.copies.'.$document->document_type_code, compact('document', 'identityPhoto'))->render();
             if (! Storage::disk('documents')->put($path, $html)) {
                 throw new \RuntimeException('Document storage unavailable');
             }

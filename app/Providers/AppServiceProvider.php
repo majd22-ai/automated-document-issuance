@@ -61,6 +61,9 @@ class AppServiceProvider extends ServiceProvider
             $model::observe(OperationalNotificationObserver::class);
         }
         Event::listen(Login::class, function ($event) {
+            if ($event->guard !== 'web' || ! $event->user instanceof User) {
+                return;
+            }
             if (Schema::hasColumn('users', 'last_login_at')) {
                 $event->user->forceFill(['last_login_at' => now()])->saveQuietly();
                 if (request()->hasSession()) {
@@ -69,7 +72,15 @@ class AppServiceProvider extends ServiceProvider
             }
             app(AuditTrail::class)->record('auth.login', 'user', $event->user->id, $event->user);
         });
-        Event::listen(Logout::class, fn ($event) => app(AuditTrail::class)->record('auth.logout', 'user', $event->user?->id, $event->user));
-        Event::listen(Failed::class, fn ($event) => app(AuditTrail::class)->record('auth.failed', 'authentication', null, null, 'failed'));
+        Event::listen(Logout::class, function ($event) {
+            if ($event->guard === 'web') {
+                app(AuditTrail::class)->record('auth.logout', 'user', $event->user?->id, $event->user);
+            }
+        });
+        Event::listen(Failed::class, function ($event) {
+            if ($event->guard === 'web') {
+                app(AuditTrail::class)->record('auth.failed', 'authentication', null, null, 'failed');
+            }
+        });
     }
 }

@@ -49,9 +49,9 @@ class CitizenAttachmentsTest extends TestCase
         return $user;
     }
 
-    private function service(User $citizen, bool $review = false): GovernmentService
+    private function service(User $citizen, bool $review = false, string $code = 'identity-first-issue'): GovernmentService
     {
-        $service = GovernmentService::where('code', 'identity-first-issue')->firstOrFail();
+        $service = GovernmentService::where('code', $code)->firstOrFail();
         $service->update(['is_active' => true, 'rules_approved' => true, 'source_reference' => 'TEST policy', 'required_documents' => ['صورة شخصية'], 'verification_rules' => ['documents' => [['code' => 'photo', 'name' => 'صورة شخصية', 'kind' => 'photo', 'allowed_mime_types' => ['image/png', 'image/jpeg'], 'requires_review' => $review]]]]);
         $service->assessments()->create(['user_id' => $citizen->id, 'rules_version' => $service->rules_version, 'identity_verified' => true, 'conditions_met' => true, 'verification_reference' => 'TEST only', 'reviewed_by' => $this->user('admin')->id, 'reviewed_at' => now()]);
 
@@ -140,7 +140,7 @@ class CitizenAttachmentsTest extends TestCase
     public function test_submission_binds_own_files_and_tampered_storage_blocks_final_confirmation(): void
     {
         $citizen = $this->user();
-        $service = $this->service($citizen);
+        $service = $this->service($citizen, false, 'passport-first-issue');
         $this->upload($citizen, $service);
         $file = CitizenAttachment::firstOrFail();
         $response = $this->post('/citizen/services/'.$service->id.'/preview');

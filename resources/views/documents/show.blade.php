@@ -1,8 +1,18 @@
 @extends('layouts.public')
 @section('title','تفاصيل الوثيقة والاستلام')
 @section('content')
-@php($prefix=auth()->user()->role==='citizen'?'citizen':'employee')
-@php($delivery=$document->delivery)
+@php
+  $prefix = auth()->user()->role==='citizen'?'citizen':'employee';
+  $delivery = $document->delivery;
+  $identityDelivery = $document->application && \App\Services\Identity\IdentityJourney::applies($document->application);
+  $identityDeliveryNext = match($delivery?->status) {
+    'ready' => ['preparing'],
+    'preparing' => ['failed', ...($delivery->method==='pickup'?['delivered']:['out_for_delivery'])],
+    'out_for_delivery' => ['delivered','failed','returned'],
+    'failed','returned' => ['ready'],
+    default => [],
+  };
+@endphp
 <section class="section"><div class="container"><div class="ops-page-head"><h1>تفاصيل الوثيقة والاستلام</h1><p class="ops-help">راجع حالة الوثيقة وتاريخها، ثم تابع النسخة الإلكترونية وطريقة الاستلام والإجراءات المتاحة.</p></div>@include('operations.messages')
 <div class="card ops-card" style="padding:1.5rem"><p>سجل داخلي للمنصة الأكاديمية؛ لا يمثل وثيقة حكومية معتمدة.</p><dl><dt>نوع الوثيقة</dt><dd>{{ $document->document_type }}</dd><dt>رقم الوثيقة الداخلي</dt><dd dir="ltr">{{ $document->document_number }}</dd><dt>حالة الوثيقة</dt><dd>{{ $document->validityLabel() }}</dd><dt>الإصدار</dt><dd>{{ $document->issued_at?->format('Y-m-d')??'غير مسجل' }}</dd><dt>الانتهاء</dt><dd>{{ $document->expires_at?->format('Y-m-d')??'لا يوجد تاريخ انتهاء مسجل' }}</dd><dt>الطلب</dt><dd>{{ $document->application?->reference??'سجل تاريخي' }} — {{ $document->application?->statusLabel() }}</dd></dl>
 @if($document->birthCertificate)<p>رقم نموذج شهادة الميلاد التجريبي: <span dir="ltr">{{ $document->birthCertificate->certificate_number }}</span></p>@endif
@@ -19,7 +29,7 @@
 @if(in_array('address',$document->issuance_rules['delivery']['methods']??[]))<label for="document-address" style="display:block;margin-block:1rem .4rem">العنوان (للتوصيل فقط، اتركه فارغًا للاستلام الشخصي)</label><textarea class="form-control" id="document-address" name="address" minlength="10" maxlength="1000"></textarea>@endif
 <div style="margin-block-start:1rem"><button class="btn btn-primary">حفظ طريقة الاستلام</button></div></form>@endif @endcan
 @can('updateDelivery',$document) @if($delivery->status!=='delivered' && $document->status==='active')
-<form method="POST" action="{{ route('employee.documents.delivery.status',$document->id) }}">@csrf @include('documents.command-fields')<h3>تسجيل إجراء التسليم</h3><label for="document-delivery-state" style="display:block;margin-block:1rem .4rem">الحالة التالية</label><select class="form-control" id="document-delivery-state" name="status">@foreach(\App\Models\DocumentDelivery::LABELS as $value=>$label) @if($value!=='awaiting_choice')<option value="{{ $value }}">{{ $label }}</option>@endif @endforeach</select><label for="delivery-reason" style="display:block;margin-block:1rem .4rem">سبب الفشل أو الإرجاع أو إعادة التجهيز</label><input class="form-control" id="delivery-reason" name="reason" minlength="3" maxlength="500"><label for="delivery-proof" style="display:block;margin-block:1rem .4rem">مرجع سجل تأكيد الاستلام الداخلي (مطلوب عند التسليم)</label><input class="form-control" id="delivery-proof" name="proof_reference" minlength="3" maxlength="150"><p>سجل مرجع الإثبات فقط دون أرقام هوية أو بيانات شخصية زائدة.</p><div style="margin-block-start:1rem"><button class="btn btn-primary">تسجيل الحالة</button></div></form>@endif @endcan
+<form method="POST" action="{{ route('employee.documents.delivery.status',$document->id) }}">@csrf @include('documents.command-fields')<h3>تسجيل إجراء التسليم</h3><label for="document-delivery-state" style="display:block;margin-block:1rem .4rem">الحالة التالية</label><select class="form-control" id="document-delivery-state" name="status">@foreach(\App\Models\DocumentDelivery::LABELS as $value=>$label) @if($value!=='awaiting_choice' && (!$identityDelivery || in_array($value, $identityDeliveryNext, true)))<option value="{{ $value }}">{{ $label }}</option>@endif @endforeach</select><label for="delivery-reason" style="display:block;margin-block:1rem .4rem">سبب الفشل أو الإرجاع أو إعادة التجهيز</label><input class="form-control" id="delivery-reason" name="reason" minlength="3" maxlength="500"><label for="delivery-proof" style="display:block;margin-block:1rem .4rem">مرجع سجل تأكيد الاستلام الداخلي (مطلوب عند التسليم)</label><input class="form-control" id="delivery-proof" name="proof_reference" minlength="3" maxlength="150"><p>سجل مرجع الإثبات فقط دون أرقام هوية أو بيانات شخصية زائدة.</p><div style="margin-block-start:1rem"><button class="btn btn-primary">تسجيل الحالة</button></div></form>@endif @endcan
 @endif
 @can('regenerate',$document) @if(($document->issuance_rules['electronic_copy']??'none')!=='none')<form method="POST" action="{{ route('employee.documents.regenerate',$document->id) }}">@csrf @include('documents.command-fields')<h3>إعادة إنشاء النسخة الإلكترونية</h3><label for="copy-reason" style="display:block;margin-block:1rem .4rem">السبب الداخلي</label><input class="form-control" id="copy-reason" name="reason" minlength="3" maxlength="500" required><div style="margin-block-start:1rem"><button class="btn btn-outline">إنشاء نسخة جديدة وحفظ التاريخ</button></div></form>@endif @endcan
 </div><section class="card ops-card" style="padding:1.5rem;margin-block:1rem"><h2>سجل الإصدار والتسليم</h2>@forelse($document->events as $event)<article><h3>{{ $event->label() }}</h3><p>{{ $event->occurred_at->format('Y-m-d H:i') }} @if($event->action==='delivery_status') — {{ \App\Models\DocumentDelivery::LABELS[$event->to_status]??'' }} @endif</p>@if(auth()->user()->role==='employee' && $event->reason)<p>{{ $event->reason }}</p>@endif</article>@empty<p>لا توجد عمليات إصدار مسجلة لهذا السجل التاريخي.</p>@endforelse</section>

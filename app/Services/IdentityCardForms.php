@@ -34,7 +34,7 @@ class IdentityCardForms
             $form = IdentityCardForm::where('user_id', $citizen->id)->whereNull('submitted_at')->first();
             if (! $form) {
                 $form = new IdentityCardForm;
-                $form->forceFill(['user_id' => $citizen->id, 'government_service_id' => $service->id, 'reference' => 'IDFORM-'.Str::ulid(), 'status' => 'draft', 'current_step' => 1, 'version' => 1, 'data' => ['applicant_name' => $citizen->name, 'phone' => $citizen->phone]])->save();
+                $form->forceFill(['user_id' => $citizen->id, 'government_service_id' => $service->id, 'reference' => 'IDFORM-'.Str::ulid(), 'status' => 'draft', 'journey_version' => 1, 'current_step' => 1, 'version' => 1, 'data' => ['applicant_name' => $citizen->name, 'phone' => $citizen->phone]])->save();
             }
 
             return $form;
@@ -276,6 +276,11 @@ class IdentityCardForms
                     && $photo->citizen_service_request_id === $application->id, 409);
                 $form->forceFill(['status' => 'pending_attestation', 'correction_opened_at' => null, 'declared_at' => now(),
                     'resubmitted_at' => now(), 'current_step' => 7, 'version' => $form->version + 1])->save();
+                if ($form->journey_version === 1) {
+                    abort_unless($application->status === 'requires_correction' && ! $application->issuedDocument()->exists(), 409);
+                    $responses = $application->deficiencies()->where('status', '!=', 'resolved')->get()->mapWithKeys(fn ($row) => [$row->id => 'تم استكمال استمارة الهوية وإعادة المصادقة عليها.'])->all();
+                    $application->transitionTo(\App\Enums\ServiceRequestStatus::Submitted, $actor, null, ['responses' => $responses]);
+                }
                 app(AuditTrail::class)->record('identity_correction_resubmitted', IdentityCardForm::class, $form->id, $actor,
                     changes: ['changed_fields' => ['data', 'witnesses', 'citizen_attachment_id', 'declared_at', 'resubmitted_at'], 'status' => $form->status]);
                 $actor->notifyNow(new CitizenActivity('identity-correction:'.$form->id.':'.$form->revision.':resubmitted', [
@@ -298,7 +303,7 @@ class IdentityCardForms
                     'submission' => 'اكتملت الاستمارة وحُفظت كمسودة، لكن لم يُنشأ طلب بعد. أسباب أهلية الخدمة أدناه تحتاج مراجعة وتوثيقًا من الجهة المختصة؛ لا تحتاج إلى إعادة إدخال بيانات الاستمارة.',
                 ]);
             }
-            $application = $submission->submit($actor, $form->service, 'identity-form-'.$form->id, $preview);
+            $application = $submission->submit($actor, $form->service, 'identity-form-'.$form->id, $preview, $form);
             $form->forceFill(['citizen_service_request_id' => $application->id, 'status' => 'pending_photo_review', 'declared_at' => now(), 'submitted_at' => now(), 'current_step' => 7, 'version' => $form->version + 1])->save();
 
             return $form;

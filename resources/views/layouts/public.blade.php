@@ -49,6 +49,7 @@
 <body class="{{ request()->routeIs('home') ? 'gov-home-page' : 'gov-inner-page' }}">
   @php
     $bannerRoute = request()->routeIs('register.*') ? 'register' : request()->route()?->getName();
+    $preservePageBanner = request()->routeIs('home', 'services.identity.*', 'services.passports.*', 'services.driving-licenses.*', 'services.civil-registry.*', 'services.catalog.show');
     $serviceBanner = match ($bannerRoute) {
       'services.identity' => [
         'title' => 'خدمات البطاقة الشخصية', 'subtitle' => 'إصدار الهوية الشخصية وتجديدها واستبدالها',
@@ -90,12 +91,17 @@
         'document' => 'assets/images/banner/unified-issuance-building.webp', 'documentAlt' => 'مبنى مجمع الإصدار الآلي الموحد',
         'documentWidth' => 1600, 'documentHeight' => 1200,
       ],
-      default => null,
+      default => $preservePageBanner ? null : [
+        'title' => trim(explode(' - ', strip_tags($__env->yieldContent('title', 'منصة الإصدار الآلي للوثائق الرسمية')))[0]),
+        'subtitle' => $operationsWorkspace
+          ? (auth()->user()->role === 'admin' ? 'مساحة الإدارة والرقابة — إدارة خدمات المنصة ومتابعة المعاملات' : 'مساحة الموظف المختص — معالجة الطلبات ومتابعة إجراءات الخدمات')
+          : 'خدمات منصة الإصدار الآلي للوثائق الرسمية ومتابعة الطلبات',
+        'agency' => 'assets/images/banner/moi-logo.webp', 'agencyAlt' => 'شعار وزارة الداخلية',
+        'document' => 'assets/images/banner/unified-issuance-building.webp', 'documentAlt' => 'مبنى مجمع الإصدار الآلي الموحد',
+      ],
     };
   @endphp
-  @if($operationsWorkspace)
-    <div class="workspace-brand" dir="rtl"><strong>منصة الإصدار الآلي للوثائق الرسمية</strong><span>{{ auth()->user()->role === 'admin' ? 'مساحة الإدارة والرقابة' : 'مساحة الموظف المختص' }}</span></div>
-  @elseif($serviceBanner)
+  @if($serviceBanner)
     @include('components.service-banner')
   @else
     @include('components.page-banner')

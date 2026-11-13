@@ -38,6 +38,10 @@ return [
     */
 
     'guards' => [
+        'postal' => [
+            'driver' => 'session',
+            'provider' => 'postal_collectors',
+        ],
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
@@ -62,6 +66,10 @@ return [
     */
 
     'providers' => [
+        'postal_collectors' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\PostalCollector::class,
+        ],
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),

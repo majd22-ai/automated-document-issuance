@@ -63,6 +63,12 @@ class User extends Authenticatable
             && $this->reviewPermissions()->where('government_service_id', $serviceId)->where($ability, true)->exists();
     }
 
+    public function canAccessDemoCivilRegistry(): bool
+    {
+        return $this->is_active && $this->role === 'employee'
+            && (bool) $this->can_access_demo_civil_registry;
+    }
+
     public function missingCitizenFields(): array
     {
         $missing = [];
@@ -188,6 +194,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'can_export_reports' => 'boolean',
+            'can_access_demo_civil_registry' => 'boolean',
             'last_login_at' => 'datetime',
             'auth_version' => 'integer',
             'phone_verified_at' => 'datetime',

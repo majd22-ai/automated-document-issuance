@@ -16,12 +16,14 @@ class CitizenAttachmentPolicy
 
     public function update(User $actor, CitizenAttachment $file): bool
     {
+        if (str_starts_with($file->document_code, 'identity_visit_')) { return false; }
         return $actor->is_active && $actor->role === 'citizen' && $actor->id === $file->user_id
             && (! $file->citizen_service_request_id || $file->application?->status === 'requires_correction');
     }
 
     public function review(User $actor, CitizenAttachment $file): bool
     {
+        if (str_starts_with($file->document_code, 'identity_visit_')) { return false; }
         return $actor->is_active && $actor->role === 'employee' && $this->view($actor, $file)
             && (! $file->citizen_service_request_id || in_array($file->application?->status, ['submitted', 'under_review', 'requires_correction'], true));
     }

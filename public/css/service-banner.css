@@ -1,4 +1,5 @@
 .service-banner { background:linear-gradient(115deg,#edf6f7 0%,#faf9f4 60%,#fff 100%); border-bottom:1px solid #e5e7e5; padding:32px 0; }
+.postal-page .service-banner .gov-container { width:min(100% - 40px,1200px); margin-inline:auto; }
 .service-banner-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); align-items:center; gap:clamp(24px,4vw,64px); }
 .service-banner-identity { min-width:0; padding-block:8px; }
 .service-banner-logos { display:flex; flex-direction:row; align-items:center; justify-content:flex-start; gap:clamp(12px,2vw,28px); margin-bottom:24px; }

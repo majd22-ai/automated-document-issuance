@@ -1,9 +1,7 @@
 @extends('layouts.public')
 @section('title','إعدادات التكامل الإلكتروني')
 @section('content')
-@if(\App\Services\Integrations\LocalCivilRegistryProvider::enabled())
-<div class="container" style="padding-block:1rem"><a class="btn btn-secondary" href="{{ route('integrations.civil-registry-demo') }}">محاكاة السجل المدني — تجربة محلية</a></div>
-@endif
+<div class="container" style="padding-block:1rem"><a class="btn btn-secondary" href="{{ route('admin.simulations.index') }}">مركز أنظمة المحاكاة</a><p>التجارب والأنظمة المحلية متاحة من مركز المحاكاة. هذه الصفحة لمراقبة التكامل والتحقق الإلكتروني.</p></div>
 <section class="ops-section"><div class="container"><div class="ops-page-head"><h1>التكامل والتحقق الإلكتروني</h1></div><p>تدار جهات الاتصال وأسرارها من إعدادات النشر بعد توفير وثائق API واعتماد المزود. لا تتيح هذه الصفحة إدخال عنوان خارجي أو تزوير نتيجة.</p>
 <h2>مزودو التحقق</h2><div class="ops-grid">@forelse($providers as $provider)<article class="card ops-card"><p>{{ $provider['label'] }} ({{ $provider['key'] }}) — {{ $provider['configured']?'المحول معتمد ومفعّل في الإعدادات؛ لا يعني ذلك نجاح الاتصال':'خدمة التحقق غير مهيأة' }}</p></article>@empty<p class="ops-empty">لا يوجد مزود خارجي معتمد مهيأ. لم ينفذ تحقق رسمي.</p>@endforelse</div>
 <p><a href="{{ route('admin.services.index') }}">تحديد متطلبات التحقق حسب الخدمة</a> — <a href="{{ route('admin.review-permissions.index') }}">منح صلاحية التحقق للموظف حسب الخدمة</a></p>

@@ -250,6 +250,8 @@ class IdentityCardWizardTest extends TestCase
         $this->assertNotNull($application);
         $this->assertMatchesRegularExpression('/^REQ-[0-9A-Z]{26}$/', $application->reference);
         $this->assertSame('submitted', $application->status);
+        $this->assertSame(1, $form->fresh()->journey_version);
+        $this->assertNull($application->charge);
         $this->assertSame('pending_photo_review', $form->status);
         $this->assertSame('بيان اختبار', $application->request_data['first_name']);
         $this->assertSame($application->id, $form->photo->citizen_service_request_id);

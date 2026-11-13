@@ -31,6 +31,8 @@ class RequestCharges
             User::whereKey($application->user_id)->lockForUpdate()->firstOrFail();
             GovernmentService::whereKey($application->government_service_id)->lockForUpdate()->firstOrFail();
             $application = CitizenServiceRequest::whereKey($application->id)->lockForUpdate()->firstOrFail();
+            $journey = \App\Services\Identity\IdentityJourney::applies($application);
+            if ($journey && ! in_array($application->status, ['accepted', 'approved', 'processing', 'completed'], true)) { return null; }
             $existing = $application->charge()->first();
             if ($existing) {
                 return $existing;
@@ -43,6 +45,7 @@ class RequestCharges
                 throw ValidationException::withMessages(['charge' => 'بيانات رسم الطلب التاريخية غير مكتملة؛ لا يمكن افتراض رسوم.']);
             }
             $charge = (new RequestCharge)->forceFill(['user_id' => $application->user_id, 'government_service_id' => $application->government_service_id, 'citizen_service_request_id' => $application->id, 'amount' => $amount, 'currency' => $application->service_currency, 'status' => $amount === '0.00' ? 'not_required' : 'due', 'source_reference' => $application->service_snapshot['source_reference'] ?? null]);
+            if ($journey) { $charge->forceFill(['invoice_number' => 'INV-'.\Illuminate\Support\Str::ulid()]); }
             $charge->save();
             app(CitizenUpdates::class)->charge($charge);
 
@@ -54,6 +57,7 @@ class RequestCharges
     {
         try {
             return $this->locks->run($actor, $application, 'recordOperations', function ($actor, $owner, $service, $request) use ($data) {
+                if (\App\Services\Identity\IdentityJourney::applies($request)) { throw ValidationException::withMessages(['charge' => 'سداد رحلة الهوية الجديدة من بوابة البريد فقط.']); }
                 $charge = $this->ensure($request);
                 if (! $charge || $charge->amount === '0.00') {
                     throw ValidationException::withMessages(['charge' => 'لا يوجد التزام مالي مستحق قابل لتسجيل دفعة.']);

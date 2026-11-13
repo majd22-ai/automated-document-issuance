@@ -122,18 +122,7 @@
         @endforeach
 
         @auth
-          @if(in_array(auth()->user()->role, ['citizen', 'employee'], true))
-            @include('components.account-navigation')
-          @elseif(auth()->user()->role === 'admin')
-            <a class="gov-nav-link" href="{{ route('admin.dashboard') }}">الإدارة والرقابة</a>
-          @endif
-          @if(!in_array(auth()->user()->role, ['citizen', 'employee'], true))
-          <a class="gov-nav-link" href="{{ route('profile.edit') }}"><x-icon name="user" /> الملف الشخصي</a>
-          <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button class="gov-nav-link gov-logout-button" type="submit"><x-icon name="log-out" /> تسجيل الخروج</button>
-          </form>
-          @endif
+          @include('components.account-navigation')
         @endauth
       </div>
     </div>

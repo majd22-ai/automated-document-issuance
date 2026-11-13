@@ -9,6 +9,7 @@
 @endpush
 
 @section('content')
+@include('components.identity-journey', ['application' => $form->application])
 <section class="section"><div class="container identity-workflow">
   <h1>جهاز بصمة الأصابع</h1>
   <p class="workflow-warning">

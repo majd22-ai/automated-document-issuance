@@ -45,7 +45,9 @@ class OperationalAuditObserver
     {
         $type = ['User' => 'user', 'Department' => 'department', 'CitizenServiceRequest' => 'request', 'ReviewDecision' => 'review', 'DocumentEvent' => 'document_event', 'CitizenDocument' => 'document', 'ManualPayment' => 'payment', 'RequestCharge' => 'charge', 'IntegrationAttempt' => 'integration', 'ServiceReviewPermission' => 'permission', 'GovernmentService' => 'service', 'MedicalExamination' => 'examination', 'CitizenAppointment' => 'appointment', 'CitizenAttachment' => 'attachment'][class_basename($model)];
         $actorId = $model->getAttribute('actor_id') ?? $model->getAttribute('recorded_by') ?? $model->getAttribute('issued_by');
-        $actor = $verb === 'updated' && Auth::check() ? Auth::user() : ($actorId ? User::find($actorId) : Auth::user());
+        // Postal sessions have their own identity namespace; never attribute their work to a coincident web user ID/session.
+        $authenticated = request()->routeIs('postal.*') ? null : Auth::guard('web')->user();
+        $actor = $verb === 'updated' && $authenticated ? $authenticated : ($actorId ? User::find($actorId) : $authenticated);
         $changes = [];
         foreach (['role', 'is_active', 'department_id', 'report_scope', 'can_export_reports', 'status', 'action', 'from_status', 'to_status', 'government_service_id', 'can_review', 'can_approve', 'can_assign', 'can_issue', 'can_deliver', 'can_verify', 'can_activate'] as $field) {
             if ($verb === 'created' ? array_key_exists($field, $model->getAttributes()) : $model->wasChanged($field)) {

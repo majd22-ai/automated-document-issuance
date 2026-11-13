@@ -22,7 +22,7 @@ class IdentityCardForm extends Model
 
     protected function casts(): array
     {
-        return ['data' => 'array', 'current_step' => 'integer', 'version' => 'integer', 'revision' => 'integer', 'declared_at' => 'datetime', 'submitted_at' => 'datetime', 'arrived_at' => 'datetime', 'identity_documents_checked_at' => 'datetime', 'correction_opened_at' => 'datetime', 'resubmitted_at' => 'datetime'];
+        return ['journey_version' => 'integer', 'witness_attendance_requested_at' => 'datetime', 'data' => 'array', 'current_step' => 'integer', 'version' => 'integer', 'revision' => 'integer', 'declared_at' => 'datetime', 'submitted_at' => 'datetime', 'arrived_at' => 'datetime', 'identity_documents_checked_at' => 'datetime', 'correction_opened_at' => 'datetime', 'resubmitted_at' => 'datetime'];
     }
 
     public function statusLabel(): string
@@ -58,6 +58,11 @@ class IdentityCardForm extends Model
     public function attestation()
     {
         return $this->hasOne(IdentityCardAttestation::class)->whereHas('form', fn ($query) => $query->whereColumn('identity_card_forms.revision', 'identity_card_attestations.form_revision'));
+    }
+
+    public function visitEvidence()
+    {
+        return $this->hasMany(IdentityVisitEvidence::class)->orderByDesc('id');
     }
 
     public function operations()

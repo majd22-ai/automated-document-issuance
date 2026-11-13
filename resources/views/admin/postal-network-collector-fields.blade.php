@@ -1,0 +1,8 @@
+<label>اسم المحصل<input class="form-control" name="name" value="{{ $collector?->name }}" maxlength="160" required></label>
+<label>اسم المستخدم المستقل<input class="form-control" name="username" dir="ltr" value="{{ $collector?->username }}" pattern="[a-z0-9_.\-]+" maxlength="80" autocomplete="off" required></label>
+<label>المكتب التجريبي<select class="form-control" name="postal_office_id" required>@foreach($offices->where('is_demo', true) as $item)<option value="{{ $item->id }}" @selected($collector?->postal_office_id === $item->id)>{{ $item->name }} — {{ $item->code }}{{ $item->status === 'inactive' ? ' (معطل)' : '' }}</option>@endforeach</select></label>
+<label>الحساب<select class="form-control" name="is_active"><option value="1" @selected(! $collector || $collector->is_active)>نشط</option><option value="0" @selected($collector && ! $collector->is_active)>معطل</option></select></label>
+<label>صلاحية بوابة التحصيل التجريبية<select class="form-control" name="can_collect"><option value="0" @selected(! $collector?->can_collect)>غير ممنوحة</option><option value="1" @selected($collector?->can_collect)>ممنوحة</option></select></label>
+<label>{{ $collector ? 'كلمة مرور جديدة (اتركها فارغة للإبقاء على الحالية)' : 'كلمة المرور' }}<input class="form-control" name="password" type="password" minlength="12" maxlength="72" autocomplete="new-password" @required(! $collector)></label>
+<label>تأكيد كلمة المرور<input class="form-control" name="password_confirmation" type="password" minlength="12" maxlength="72" autocomplete="new-password" @required(! $collector)></label>
+<p>12 محرفاً على الأقل، بحد أقصى 72 بايت، مع أحرف إنجليزية كبيرة وصغيرة وأرقام ورموز. تغيير صلاحيات الحساب أو مكتبه أو كلمة مروره يلغي جلساته السابقة.</p>

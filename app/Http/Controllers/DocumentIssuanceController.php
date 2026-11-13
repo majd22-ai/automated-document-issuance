@@ -86,7 +86,7 @@ class DocumentIssuanceController extends Controller
             return response('النسخة الإلكترونية مفقودة أو غير سليمة؛ اطلب إعادة إنشائها من الموظف المختص.', 409, ['Content-Type' => 'text/plain; charset=UTF-8', 'Cache-Control' => 'no-store, private', 'X-Content-Type-Options' => 'nosniff']);
         }
 
-        return response($bytes, 200, ['Content-Type' => 'text/html; charset=UTF-8', 'Content-Disposition' => 'attachment; filename="internal-document-'.$document->id.'.html"', 'Cache-Control' => 'no-store, private', 'X-Content-Type-Options' => 'nosniff', 'Content-Security-Policy' => "sandbox; default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'", 'Referrer-Policy' => 'no-referrer']);
+        return response($bytes, 200, ['Content-Type' => 'text/html; charset=UTF-8', 'Content-Disposition' => 'attachment; filename="internal-document-'.$document->id.'.html"', 'Cache-Control' => 'no-store, private', 'X-Content-Type-Options' => 'nosniff', 'Content-Security-Policy' => "sandbox; default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'", 'Referrer-Policy' => 'no-referrer']);
     }
 
     public function deliveries(Request $request)

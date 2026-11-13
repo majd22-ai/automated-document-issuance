@@ -9,6 +9,18 @@ use App\Services\Workspace\EmployeeWorkspace;
 
 class UserPolicy
 {
+    public function viewAnyDemoCivilRegistry(User $actor): bool
+    {
+        return app()->environment(['local', 'testing']) && config('demo_civil_registry.enabled') === true && $actor->is_active
+            && ($actor->role === 'admin' || $actor->canAccessDemoCivilRegistry());
+    }
+
+    public function manageDemoCivilRegistry(User $actor): bool
+    {
+        return app()->environment(['local', 'testing']) && config('demo_civil_registry.enabled') === true
+            && $actor->is_active && $actor->role === 'admin';
+    }
+
     public function manageCitizenActivation(User $actor): bool
     {
         $serviceId = GovernmentService::where('code', 'identity-first-issue')->value('id');

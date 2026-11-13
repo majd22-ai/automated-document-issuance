@@ -244,7 +244,7 @@ class ServiceRequirementsTest extends TestCase
     public function test_pending_file_cannot_be_bypassed_at_final_submission_with_browser_flags(): void
     {
         $citizen = $this->citizen();
-        $service = $this->service($citizen);
+        $service = $this->service($citizen, 'passport-first-issue');
         $this->files($citizen, $service);
         $file = $this->proof($citizen, $service, ['uploaded' => true, 'mime_type' => 'image/jpeg', 'review_status' => 'approved']);
         $this->source(['attachment:photo' => [$file]]);

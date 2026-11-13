@@ -19,7 +19,7 @@ class IssuanceLifecycle
         if ($rules['electronic_copy'] !== 'none' && $document->copies()->latest('id')->first()?->contents() === null) {
             throw ValidationException::withMessages(['copy' => 'النسخة الإلكترونية المطلوبة مفقودة أو غير سليمة. أعد إنشاءها قبل المتابعة.']);
         }
-        if ($next === ServiceRequestStatus::Completed && $rules['completion_stage'] === 'delivery' && ($document->delivery?->status !== 'delivered' || ! $document->delivery->delivered_by || ! $document->delivery->delivered_at || ! filled($document->delivery->proof_reference))) {
+        if ($next === ServiceRequestStatus::Completed && ($rules['completion_stage'] === 'delivery' || \App\Services\Identity\IdentityJourney::applies($request)) && ($document->delivery?->status !== 'delivered' || ! $document->delivery->delivered_by || ! $document->delivery->delivered_at || ! filled($document->delivery->proof_reference))) {
             throw ValidationException::withMessages(['delivery' => 'التسليم الموثق مطلوب قبل إكمال هذا الطلب.']);
         }
     }

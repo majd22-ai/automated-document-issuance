@@ -42,6 +42,13 @@ class IssueDocuments
                 app(ReviewActions::class)->assertCurrent($request, $data);
                 app(ApprovalReadiness::class)->check($request);
                 $rules = app(IssuanceRules::class)->get($service->issuance_rules);
+                $holder = ['name' => $owner->name];
+                if (\App\Services\Identity\IdentityJourney::applies($request)) {
+                    $rules['completion_stage'] = 'delivery';
+                    $rules['electronic_copy'] = 'internal_html';
+                    $photo = app(\App\Services\Identity\IdentityJourney::class)->evidence($request->identityCardForm, 'card_photo')->attachment;
+                    $holder['identity_card_photo'] = ['attachment_id' => $photo->id, 'sha256' => $photo->sha256];
+                }
                 $previous = null;
                 if ($service->operation === 'renewal') {
                     $previous = $owner->documents()->whereKey($data['previous_document_id'] ?? 0)->lockForUpdate()->first();
@@ -73,7 +80,7 @@ class IssueDocuments
                     'document_type' => GovernmentService::DOCUMENT_TYPES[$service->document_type], 'document_type_code' => $service->document_type,
                     'document_number' => app(DocumentNumbers::class)->next($rules), 'status' => 'active', 'issued_at' => today(),
                     'expires_at' => $rules['expiry']['required'] ? today()->addDays($rules['expiry']['validity_days']) : null,
-                    'issued_by' => $actor->id, 'issued_recorded_at' => now(), 'issuance_rules' => $rules, 'holder_snapshot' => ['name' => $owner->name], 'workflow_version' => 0,
+                    'issued_by' => $actor->id, 'issued_recorded_at' => now(), 'issuance_rules' => $rules, 'holder_snapshot' => $holder, 'workflow_version' => 0,
                 ]);
                 $document->save();
                 (new DocumentDelivery)->forceFill(['citizen_document_id' => $document->id, 'status' => 'awaiting_choice'])->save();
@@ -106,6 +113,10 @@ class IssueDocuments
             });
         } catch (\Throwable $error) {
             $this->copies->discard($newPath);
+            if ($error instanceof ValidationException && isset($error->errors()['copy']) && \App\Services\Identity\IdentityJourney::applies($request)
+                && $actor->fresh()?->can('issueDocument', $request)) {
+                app(\App\Services\Identity\IdentityJourney::class)->issuanceFailed($request, $actor, $data['operation_token'], implode(' ', $error->errors()['copy']));
+            }
             if ($birthPdfPath && preg_match('~^birth-certificates/[a-f0-9-]{36}\.pdf$~D', $birthPdfPath)) {
                 Storage::disk('documents')->delete($birthPdfPath);
             }

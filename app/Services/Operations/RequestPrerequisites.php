@@ -36,6 +36,9 @@ class RequestPrerequisites
 
     public function checks(GovernmentService $service, ?CitizenServiceRequest $request, ?ServiceRequestStatus $target): array
     {
+        if ($request && \App\Services\Identity\IdentityJourney::applies($request)) {
+            return app(\App\Services\Identity\IdentityJourney::class)->checks($request, $target);
+        }
         $rules = $this->rules($service, $request);
         $valid = ! array_diff(array_keys($rules), ['appointment', 'medical_stage', 'payment']);
         foreach (['appointment', 'payment'] as $kind) {

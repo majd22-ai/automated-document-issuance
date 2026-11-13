@@ -12,6 +12,7 @@ use App\Http\Controllers\CitizenAttachmentController;
 use App\Http\Controllers\CitizenDataController;
 use App\Http\Controllers\CitizenNotificationController;
 use App\Http\Controllers\CivilRegistrySimulationController;
+use App\Http\Controllers\DemoCivilRegistryController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DocumentIssuanceController;
 use App\Http\Controllers\ElectronicVerificationController;
@@ -37,12 +38,66 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Route;
 
+Route::middleware(\App\Http\Middleware\EnsurePostalNetworkEnabled::class)->group(function () {
+    Route::get('/postal/login', [\App\Http\Controllers\PostalAuthController::class, 'loginForm'])->name('postal.login');
+    Route::post('/postal/login', [\App\Http\Controllers\PostalAuthController::class, 'login'])->middleware('throttle:6,1')->name('postal.login.store');
+    Route::middleware(\App\Http\Middleware\AuthenticatePostalCollector::class)->group(function () {
+        Route::get('/postal', [\App\Http\Controllers\PostalAuthController::class, 'home'])->name('postal.home');
+        Route::get('/postal/collections', [\App\Http\Controllers\PostalCollectionController::class, 'show'])->middleware('throttle:30,1')->name('postal.collections.show');
+        Route::post('/postal/collections', [\App\Http\Controllers\PostalCollectionController::class, 'collect'])->middleware('throttle:20,1')->name('postal.collections.store');
+        Route::post('/postal/logout', [\App\Http\Controllers\PostalAuthController::class, 'logout'])->name('postal.logout');
+    });
+    Route::middleware(['auth:web', 'role:admin'])->prefix('admin/postal-network')->name('admin.postal-network.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\PostalNetworkController::class, 'index'])->name('index');
+        Route::post('/offices', [\App\Http\Controllers\PostalNetworkController::class, 'saveOffice'])->name('offices.store');
+        Route::patch('/offices/{officeId}', [\App\Http\Controllers\PostalNetworkController::class, 'saveOffice'])->whereNumber('officeId')->name('offices.update');
+        Route::post('/collectors', [\App\Http\Controllers\PostalNetworkController::class, 'saveCollector'])->name('collectors.store');
+        Route::patch('/collectors/{collectorId}', [\App\Http\Controllers\PostalNetworkController::class, 'saveCollector'])->whereNumber('collectorId')->name('collectors.update');
+    });
+});
+
 Route::post('/integrations/civil-registry-demo', [CivilRegistrySimulationController::class, 'preview'])
     ->middleware(['auth', 'role:admin,employee', 'throttle:30,1'])
     ->name('integrations.civil-registry-demo.run');
 Route::get('/integrations/civil-registry-demo', [CivilRegistrySimulationController::class, 'preview'])
     ->middleware(['auth', 'role:admin,employee'])
     ->name('integrations.civil-registry-demo');
+
+Route::middleware(['demo.registry.audit', 'role:employee'])
+    ->prefix('employee/demo-civil-registry')->name('employee.demo-civil-registry.')
+    ->group(function () {
+        Route::get('/search', [DemoCivilRegistryController::class, 'search'])->middleware('throttle:30,1')->name('search');
+        Route::get('/people/{person}', [DemoCivilRegistryController::class, 'show'])->name('people.show');
+        Route::get('/people/{person}/sections/{section}', [DemoCivilRegistryController::class, 'section'])->name('people.section');
+        Route::get('/people/{person}/photo', [DemoCivilRegistryController::class, 'photo'])->name('people.photo');
+        Route::get('/documents/{document}', [DemoCivilRegistryController::class, 'document'])->name('documents.show');
+    });
+
+Route::middleware(['demo.registry.audit', 'role:admin'])
+    ->prefix('admin/demo-civil-registry')->name('admin.demo-civil-registry.')
+    ->group(function () {
+        Route::get('/', [DemoCivilRegistryController::class, 'adminIndex'])->name('index');
+        Route::get('/search', [DemoCivilRegistryController::class, 'search'])->middleware('throttle:30,1')->name('search');
+        Route::get('/people/{person}', [DemoCivilRegistryController::class, 'show'])->name('people.show');
+        Route::get('/people/{person}/sections/{section}', [DemoCivilRegistryController::class, 'section'])->name('people.section');
+        Route::get('/people/{person}/photo', [DemoCivilRegistryController::class, 'photo'])->name('people.photo');
+        Route::get('/documents/{document}', [DemoCivilRegistryController::class, 'document'])->name('documents.show');
+        Route::post('/people', [DemoCivilRegistryController::class, 'storePerson'])->name('people.store');
+        Route::patch('/people/{person}', [DemoCivilRegistryController::class, 'updatePerson'])->name('people.update');
+        Route::delete('/people/{person}', [DemoCivilRegistryController::class, 'archivePerson'])->name('people.archive');
+        Route::post('/people/{person}/photo', [DemoCivilRegistryController::class, 'storePhoto'])->name('people.photo.store');
+        Route::post('/families', [DemoCivilRegistryController::class, 'storeFamily'])->name('families.store');
+        Route::patch('/families/{family}', [DemoCivilRegistryController::class, 'updateFamily'])->name('families.update');
+        Route::delete('/families/{family}', [DemoCivilRegistryController::class, 'archiveFamily'])->name('families.archive');
+        Route::post('/families/{family}/members', [DemoCivilRegistryController::class, 'storeFamilyMember'])->name('families.members.store');
+        Route::post('/records', [DemoCivilRegistryController::class, 'storeRecord'])->name('records.store');
+        Route::patch('/records/{record}', [DemoCivilRegistryController::class, 'updateRecord'])->name('records.update');
+        Route::delete('/records/{record}', [DemoCivilRegistryController::class, 'archiveRecord'])->name('records.archive');
+        Route::post('/documents', [DemoCivilRegistryController::class, 'storeDocument'])->name('documents.store');
+        Route::put('/documents/{document}', [DemoCivilRegistryController::class, 'replaceDocument'])->name('documents.replace');
+        Route::delete('/documents/{document}', [DemoCivilRegistryController::class, 'archiveDocument'])->name('documents.archive');
+        Route::get('/audits', [DemoCivilRegistryController::class, 'audits'])->name('audits.index');
+    });
 
 Route::get('/reset-password/{token}', [EmployeePasswordController::class, 'form'])->middleware('guest')->name('password.reset');
 Route::get('/account-activation/{citizen}/images/{field}', [\App\Http\Controllers\RemoteActivationController::class, 'image'])->middleware(['auth','throttle:60,1'])->name('account-activation.image');
@@ -194,6 +249,10 @@ Route::get('/identity-card/forms/{form}/photo', [IdentityCardFormController::cla
 Route::get('/identity-card/forms/{form}/witness-selfie/{position}', [IdentityCardFormController::class, 'witnessSelfie'])->middleware('auth')->whereIn('position', ['1', '2'])->name('citizen.identity-card.witness-selfie');
 Route::get('/employee/identity-card/{form}', [IdentityCardFormController::class, 'employee'])->middleware(['auth', 'role:employee'])->name('employee.identity-card.show');
 Route::middleware('auth')->prefix('identity-workflow')->name('identity-workflow.')->group(function () {
+    Route::post('/{form}/visit-evidence', [\App\Http\Controllers\IdentityJourneyController::class, 'store'])->middleware('throttle:20,1')->name('evidence.store');
+    Route::post('/visit-evidence/{evidence}/review', [\App\Http\Controllers\IdentityJourneyController::class, 'review'])->name('evidence.review');
+    Route::get('/visit-evidence/{evidence}/file', [\App\Http\Controllers\IdentityJourneyController::class, 'file'])->name('evidence.file');
+    Route::post('/{form}/witness-attendance', [\App\Http\Controllers\IdentityJourneyController::class, 'witnesses'])->name('witnesses');
     Route::get('/reception', [IdentityWorkflowController::class, 'reception'])->name('reception');
     Route::post('/{form}/arrival', [IdentityWorkflowController::class, 'arrival'])->name('arrival');
     Route::post('/{form}/security-paper', [IdentityWorkflowController::class, 'security'])->name('security');
@@ -362,6 +421,7 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::get('/neighborhood-officials', [NeighborhoodOfficialController::class, 'index'])->name('neighborhood-officials.index');
         Route::get('/mock-systems', [\App\Http\Controllers\MockActivationController::class, 'systems'])->name('mock-systems.index');
+        Route::get('/simulations', [\App\Http\Controllers\SimulationCenterController::class, 'index'])->name('simulations.index');
         Route::post('/neighborhood-officials', [NeighborhoodOfficialController::class, 'store'])->middleware('throttle:20,1')->name('neighborhood-officials.store');
         Route::patch('/neighborhood-officials/{official}', [NeighborhoodOfficialController::class, 'update'])->name('neighborhood-officials.update');
 
@@ -371,6 +431,7 @@ Route::middleware(['auth', 'role:admin'])
         Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
         Route::get('/review-permissions', [ReviewPermissionController::class, 'index'])->name('review-permissions.index');
         Route::post('/users/{user}/review-permissions', [ReviewPermissionController::class, 'save'])->name('review-permissions.save');
+        Route::post('/users/{user}/demo-civil-registry-access', [ReviewPermissionController::class, 'updateDemoRegistryAccess'])->name('review-permissions.demo-registry');
 
         Route::get('/employees', [EmployeeManagementController::class, 'index'])->name('employees.index');
         Route::get('/employees/create', [EmployeeManagementController::class, 'create'])->name('employees.create');

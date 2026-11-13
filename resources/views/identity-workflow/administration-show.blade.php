@@ -2,6 +2,7 @@
 @section('title', 'المراجعة الإدارية للاستمارة')
 @push('styles')<link rel="stylesheet" href="{{ asset('css/identity-workflow.css') }}"><link rel="stylesheet" href="{{ asset('css/identity-card-wizard.css') }}">@endpush
 @section('content')
+@include('components.identity-journey', ['application' => $form->application])
 <section class="section"><div class="container identity-workflow"><h1>المراجعة الإدارية للاستمارة</h1><p class="workflow-warning">مسار تجريبي داخل المنصة؛ لا يمثل إصدار بطاقة رسمية.</p><p>{{ $form->reference }} · {{ $form->statusLabel() }}</p>
 @if(session('status'))<p role="status">{{ session('status') }}</p>@endif
 @if($errors->any())<div class="workflow-error" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
@@ -10,12 +11,12 @@
 @if($form->attestation)<section class="workflow-panel"><h2>المصادقة الحالية</h2><p>{{ $form->attestation->authorityLabel() }} · {{ $form->attestation->statusLabel() }}</p><p>{{ $form->attestation->reference }}</p>@if($form->attestation->rejection_reason)<p>سبب الرفض: {{ $form->attestation->rejection_reason }}</p>@endif</section>@endif
 <section class="workflow-panel"><h2>سجل البصمة</h2><p>{{ $form->fingerprintStatusLabel() }}</p>@forelse($form->operations as $operation)<article class="workflow-history"><p>{{ $operation->reference }} · {{ $operation->sourceLabel() }} · {{ $operation->resultLabel() }}</p><p>{{ $operation->executed_at?->format('Y-m-d H:i') }} · {{ $operation->operator?->name }}</p><p>{{ $operation->error_detail ?: $operation->evidence_reference }}</p></article>@empty<p>لا توجد عمليات مسجلة.</p>@endforelse</section>
 @can('administer', $form)
-@if(in_array($form->status, ['pending_administrative_review','returned_to_staff'], true))
+@if(in_array($form->status, ['pending_administrative_review','returned_to_staff'], true) || ($form->journey_version===1 && $form->status==='demo_completed' && $form->application->status==='approved' && !$form->application->issuedDocument))
 <section class="workflow-panel"><h2>تسجيل قرار إداري</h2><form method="POST" action="{{ route('identity-workflow.administration.decide', $form) }}">@csrf<input type="hidden" name="version" value="{{ $form->version }}"><input type="hidden" name="decision_token" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
 <div class="workflow-field"><label for="internal-note">ملاحظة داخلية للموظفين (اختيارية)</label><textarea name="internal_note" id="internal-note">{{ old('internal_note') }}</textarea>@error('internal_note')<p class="workflow-error">{{ $message }}</p>@enderror</div>
 <div class="workflow-field"><label for="citizen-reason">سبب يظهر للمواطن (مطلوب للتصحيح أو الرفض)</label><textarea name="citizen_reason" id="citizen-reason">{{ old('citizen_reason') }}</textarea>@error('citizen_reason')<p class="workflow-error">{{ $message }}</p>@enderror</div>
 @error('action')<p class="workflow-error">{{ $message }}</p>@enderror
-<div class="workflow-actions"><button class="btn btn-primary" name="action" value="approved" @disabled(count($reasons) || $form->status !== 'pending_administrative_review')>موافقة إدارية تجريبية</button><button class="btn btn-outline" name="action" value="returned_to_staff">إعادة إلى الموظف</button><button class="btn btn-outline" name="action" value="correction_required">طلب تصحيح من المواطن</button><button class="btn btn-outline" name="action" value="rejected">رفض الطلب</button></div></form></section>
+<div class="workflow-actions"><button class="btn btn-primary" name="action" value="approved" @disabled(count($reasons) || $form->status !== 'pending_administrative_review' || ($form->journey_version===1 && !auth()->user()->can('transition',[$form->application,\App\Enums\ServiceRequestStatus::Approved])))>موافقة إدارية تجريبية</button>@if($form->status!=='demo_completed')<button class="btn btn-outline" name="action" value="returned_to_staff">إعادة إلى الموظف</button>@endif<button class="btn btn-outline" name="action" value="correction_required">طلب تصحيح من المواطن</button><button class="btn btn-outline" name="action" value="rejected">رفض الطلب</button></div></form></section>
 @endif
 @endcan
 @can('recordFingerprint', $form)

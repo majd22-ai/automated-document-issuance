@@ -74,6 +74,10 @@ class CitizenServiceRequestPolicy
         if (! $this->viewReview($user, $application)) {
             return false;
         }
+        if (in_array($application->status, ['accepted', 'approved'], true) && in_array($next, [ServiceRequestStatus::RequiresCorrection, ServiceRequestStatus::Rejected], true)
+            && \App\Services\Identity\IdentityJourney::applies($application)) {
+            return $user->canReviewService($application->government_service_id, 'can_approve');
+        }
         if ($next === ServiceRequestStatus::Approved) {
             $separate = ($application->service_snapshot['require_separate_approver'] ?? false) || $application->service?->require_separate_approver;
             $accept = $application->reviewDecisions()->where('action', 'accept')->latest('id')->first();
@@ -88,6 +92,7 @@ class CitizenServiceRequestPolicy
 
     public function operate(User $user, CitizenServiceRequest $application): bool
     {
+        if (\App\Services\Identity\IdentityJourney::applies($application) && ($user->role !== 'employee' || ! $user->canReviewService($application->government_service_id, 'can_review'))) { return false; }
         return $this->view($user, $application) && in_array($application->status, ['submitted', 'under_review', 'requires_correction', 'accepted', 'approved'], true);
     }
 

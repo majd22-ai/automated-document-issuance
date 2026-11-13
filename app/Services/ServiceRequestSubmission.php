@@ -70,11 +70,11 @@ class ServiceRequestSubmission
     }
 
     /** Only called after server-side declaration validation; no browser payload is stored here. */
-    public function submit(User $actor, GovernmentService $service, string $token, ?array $preview): CitizenServiceRequest
+    public function submit(User $actor, GovernmentService $service, string $token, ?array $preview, ?\App\Models\IdentityCardForm $identityForm = null): CitizenServiceRequest
     {
         Gate::forUser($actor)->authorize('create', CitizenServiceRequest::class);
         try {
-            return DB::transaction(function () use ($actor, $service, $token, $preview) {
+            return DB::transaction(function () use ($actor, $service, $token, $preview, $identityForm) {
                 // Fixed lock order serializes all submissions for one citizen, including legacy aliases.
                 $citizen = User::whereKey($actor->id)->lockForUpdate()->firstOrFail();
                 Gate::forUser($citizen)->authorize('create', CitizenServiceRequest::class);
@@ -96,6 +96,10 @@ class ServiceRequestSubmission
                     'requirements_result' => $report->toArray(), 'requirements_checked_at' => now(),
                 ])->save();
 
+                if ($identityForm) {
+                    abort_unless($identityForm->user_id === $citizen->id && $identityForm->government_service_id === $service->id && ! $identityForm->citizen_service_request_id, 409);
+                    $identityForm->forceFill(['citizen_service_request_id' => $request->id])->save();
+                }
                 $this->attachments->bind($citizen, $service, $request);
                 app(RequestCharges::class)->ensure($request);
                 app(CitizenUpdates::class)->submitted($request);

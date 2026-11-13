@@ -52,9 +52,57 @@ class ApplicationReviewController extends Controller
             $approvalReport = $eligibility->evaluate($application->citizen, $application->service, $application, ServiceRequestStatus::Processing);
             $fingerprint = app(ReviewSnapshot::class)->fingerprint($application);
             $reviewers = User::where('role', 'employee')->where('is_active', true)->whereHas('reviewPermissions', fn ($q) => $q->where('government_service_id', $application->government_service_id)->where('can_review', true))->get(['id', 'name']);
+            $registrySuggestedSection = $this->suggestedRegistrySection($application);
 
-            return response(view('employee.reviews.show', compact('application', 'report', 'approvalReport', 'fingerprint', 'reviewers'))->render())->header('Cache-Control', 'no-store, private');
+            return response(view('employee.reviews.show', compact('application', 'report', 'approvalReport', 'fingerprint', 'reviewers', 'registrySuggestedSection'))->render())->header('Cache-Control', 'no-store, private');
         });
+    }
+
+    private function suggestedRegistrySection(CitizenServiceRequest $application): ?string
+    {
+        $snapshot = $application->service_snapshot ?? [];
+        $code = $snapshot['code'] ?? $application->service_code;
+        $documentType = $snapshot['document_type'] ?? $application->service?->document_type;
+        $operation = $snapshot['operation'] ?? $application->request_type;
+        $documentTypes = [
+            'birth_certificate' => 'birth',
+            'identity' => 'identity_card',
+            'marriage' => 'marriage',
+            'divorce' => 'divorce',
+            'death' => 'death',
+            'family' => 'family',
+            'correction' => 'correction',
+            'civil_restriction' => 'restriction',
+        ];
+        $serviceCodes = [
+            'birth-certificate-first-issue' => 'birth',
+            'identity-first-issue' => 'identity_card',
+            'identity-renewal' => 'identity_card',
+            'identity-replacement' => 'identity_card',
+            'marriage-registration' => 'marriage',
+            'marriage-certificate' => 'marriage',
+            'divorce-registration' => 'divorce',
+            'divorce-certificate' => 'divorce',
+            'death-registration' => 'death',
+            'death-certificate' => 'death',
+            'family-registration' => 'family',
+            'family-card' => 'family',
+            'civil-data-correction' => 'correction',
+            'civil-restriction' => 'restriction',
+        ];
+        $byType = $documentTypes[$documentType] ?? $documentTypes[$application->request_type] ?? null;
+        if ($byType) {
+            return $byType;
+        }
+        $byCode = $serviceCodes[$code] ?? $serviceCodes[$application->service_code] ?? null;
+        if ($byCode) {
+            return $byCode;
+        }
+
+        return [
+            'birth-certificate-first-issue:issue' => 'birth',
+            'identity-first-issue:issue' => 'identity_card',
+        ][$code.':'.$operation] ?? null;
     }
 
     public function decide(ReviewDecisionRequest $request, string $id)
@@ -87,6 +135,9 @@ class ApplicationReviewController extends Controller
     public function correction(Request $request, string $id)
     {
         $initial = $request->user()->serviceRequests()->findOrFail($id);
+        if (\App\Services\Identity\IdentityJourney::applies($initial) && $initial->status === 'requires_correction') {
+            return redirect()->route('citizen.identity-card.show', $initial->identityCardForm);
+        }
 
         return app(LockedRequest::class)->run($request->user(), $initial, 'view', function ($actor, $owner, $service, $application) {
             abort_unless($actor->role === 'citizen' && $actor->id === $owner->id, 403);

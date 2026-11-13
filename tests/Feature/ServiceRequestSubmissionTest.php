@@ -36,7 +36,8 @@ class ServiceRequestSubmissionTest extends TestCase
         return $user;
     }
 
-    private function ready(User $citizen, string $code = 'identity-first-issue'): GovernmentService
+    // Generic-service behavior remains covered separately from the mandatory identity form journey.
+    private function ready(User $citizen, string $code = 'passport-first-issue'): GovernmentService
     {
         $service = GovernmentService::where('code', $code)->firstOrFail();
         $service->update(['is_active' => true, 'rules_approved' => true, 'source_reference' => 'TEST approval', 'application_fields' => [['key' => 'delivery_address', 'label' => 'عنوان المراجعة', 'type' => 'text', 'required' => true, 'max_length' => 100]]]);
@@ -100,7 +101,7 @@ class ServiceRequestSubmissionTest extends TestCase
         $owner = $this->user();
         $service = $this->ready($owner);
         $token = $this->preview($owner, $service);
-        $otherService = GovernmentService::where('code', 'passport-first-issue')->firstOrFail();
+        $otherService = GovernmentService::where('code', 'license-first-issue')->firstOrFail();
         $this->post('/citizen/services/'.$otherService->id.'/submit', ['preview_token' => $token, 'declaration' => true])->assertNotFound();
         $this->actingAs($this->user())->get('/citizen/applications/preview/'.$token)->assertNotFound();
         $this->actingAs($owner);

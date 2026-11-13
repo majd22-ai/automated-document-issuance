@@ -15,6 +15,9 @@ class AppointmentBookings
     public function book(User $actor, CitizenServiceRequest $request, int $slotId): CitizenAppointment
     {
         return $this->locks->run($actor, $request, 'operate', function ($actor, $owner, $service, $request) use ($slotId) {
+            if (\App\Services\Identity\IdentityJourney::applies($request)) {
+                app(\App\Services\Identity\IdentityJourney::class)->assertScheduling($actor, $request);
+            }
             if ($request->appointments()->whereNotNull('active_request_key')->exists()) {
                 $this->fail('يوجد موعد قائم لهذا الطلب. استخدم إعادة الجدولة.');
             }
@@ -31,6 +34,10 @@ class AppointmentBookings
         }
         $booking = (new CitizenAppointment)->forceFill(['user_id' => $owner->id, 'government_service_id' => $service->id, 'citizen_service_request_id' => $request->id, 'appointment_slot_id' => $slot->id, 'status' => 'booked', 'active_request_key' => $request->id, 'recorded_by' => $actor->id]);
         $booking->save();
+        if (\App\Services\Identity\IdentityJourney::applies($request)) {
+            app(\App\Services\Identity\IdentityJourney::class)->notify($owner, $request, 'appointment:'.$booking->id, 'موعد حضور لإصدار الهوية',
+                'موعدك '.$slot->starts_at->setTimezone(config('operations.timezone'))->format('Y-m-d H:i').' في '.$slot->center.'. أحضر أصول الوثائق ونتيجة فحص الدم الذي أجريته خارج مقر الإصدار. ستستكمل البصمة والتصوير في الزيارة نفسها عند استيفاء الشروط.');
+        }
         $this->locks->invalidate($request);
         $this->locks->audit('appointment_booked', $booking->id, $request, $actor);
 
@@ -40,6 +47,11 @@ class AppointmentBookings
     public function change(User $actor, CitizenAppointment $booking, string $action, ?int $slotId = null): void
     {
         $this->locks->run($actor, $booking->application, 'operate', function ($actor, $owner, $service, $request) use ($booking, $action, $slotId) {
+            if (\App\Services\Identity\IdentityJourney::applies($request)) {
+                app(\App\Services\Identity\IdentityJourney::class)->assertScheduling($actor, $request);
+                if ($request->identityCardForm->arrived_at) { throw ValidationException::withMessages(['appointment' => 'لا يمكن تغيير موعد بعد تسجيل الحضور.']); }
+                if ($action === 'completed') { throw ValidationException::withMessages(['appointment' => 'اكتمال موعد الهوية يسجل بعد استيفاء أدلة الزيارة والاعتماد، ولا يسجل يدويًا قبل ذلك.']); }
+            }
             // The service lock serializes all slots of this service; keep slot ordering stable too.
             $slots = AppointmentSlot::whereIn('id', array_filter([$booking->appointment_slot_id, $slotId]))->orderBy('id')->lockForUpdate()->get()->keyBy('id');
             $current = CitizenAppointment::whereKey($booking->id)->lockForUpdate()->firstOrFail();

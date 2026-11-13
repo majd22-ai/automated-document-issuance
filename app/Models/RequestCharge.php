@@ -28,6 +28,11 @@ class RequestCharge extends Model
         return $this->belongsTo(GovernmentService::class, 'government_service_id');
     }
 
+    public function postalCollection()
+    {
+        return $this->hasOne(PostalCollection::class);
+    }
+
     public function payment()
     {
         return $this->hasOne(ManualPayment::class);
@@ -35,13 +40,14 @@ class RequestCharge extends Model
 
     public function statusLabel(): string
     {
+        if ($this->invoice_number && $this->status === 'paid') { return 'مدفوعة — تحصيل بريدي تجريبي'; }
         return ['due' => 'مستحقة', 'paid' => 'مدفوعة — تسجيل يدوي موثق', 'not_required' => 'رسوم صفرية مسجلة'][$this->status] ?? 'غير معروف';
     }
 
     protected static function booted(): void
     {
         static::updating(function (self $charge) {
-            if ($charge->isDirty(['user_id', 'government_service_id', 'citizen_service_request_id', 'amount', 'currency', 'source_reference'])) {
+            if ($charge->isDirty(['user_id', 'government_service_id', 'citizen_service_request_id', 'amount', 'currency', 'source_reference', 'invoice_number'])) {
                 throw new \LogicException('Charge snapshot is immutable');
             }
         });

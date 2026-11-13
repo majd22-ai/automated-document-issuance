@@ -99,6 +99,8 @@ class IdentityFingerprintWorkflowTest extends TestCase
     {
         $this->actingAs($this->citizen)->post('/citizen/identity-card')->assertRedirect();
         $form = IdentityCardForm::sole();
+        // These tests preserve the pre-journey historical workflow. New requests are covered by IdentityJourneyTest.
+        $form->forceFill(['journey_version' => null])->save();
         $this->completeWizard($form);
         $photo = $form->fresh()->photo;
         $this->actingAs($this->employee)->patch('/employee/attachments/'.$photo->id.'/review', ['expected_version' => $photo->version_token, 'review_status' => 'approved'])->assertSessionHasNoErrors()->assertRedirect();

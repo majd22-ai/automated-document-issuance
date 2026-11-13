@@ -44,6 +44,9 @@ class IdentityWorkflowController extends Controller
         Gate::authorize('recordFingerprint', $form);
         abort_unless($form->submitted_at, 404);
         $reasons = $service->prerequisiteReasons($form, true);
+        if ($form->journey_version === 1) {
+            $reasons = array_merge($reasons, app(\App\Services\Identity\IdentityJourney::class)->evidenceReasons($form));
+        }
         $operationToken = (string) Str::uuid();
         $operations = $form->operations()->with('operator')->get();
         $latestSuccess = $service->successfulOperation($form);

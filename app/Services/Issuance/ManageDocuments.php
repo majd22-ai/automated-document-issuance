@@ -74,6 +74,9 @@ class ManageDocuments
             $delivery = $document->delivery;
             $next = $data['status'];
             $from = $delivery->status;
+            if (\App\Services\Identity\IdentityJourney::applies($request) && $next === 'delivered' && $from === 'ready') {
+                throw ValidationException::withMessages(['delivery' => 'سجل تجهيز بطاقة الهوية قبل تأكيد تسليمها.']);
+            }
             $allowed = match ($from) {
                 'ready' => ['preparing', ...($delivery->method === 'pickup' ? ['delivered'] : [])],
                 'preparing' => ['failed', ...($delivery->method === 'pickup' ? ['delivered'] : ['out_for_delivery'])],

@@ -75,4 +75,18 @@ class CitizenAttachment extends Model
             }
         }
     }
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $file) {
+            if (str_starts_with($file->getOriginal('document_code') ?? '', 'identity_visit_')) {
+                throw new \LogicException('Visit attachments are immutable; add a versioned replacement');
+            }
+        });
+        static::deleting(function (self $file) {
+            if (str_starts_with($file->document_code ?? '', 'identity_visit_')) {
+                throw new \LogicException('Visit evidence history is retained');
+            }
+        });
+    }
 }

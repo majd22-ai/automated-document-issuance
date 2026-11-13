@@ -26,6 +26,11 @@ class ReviewSnapshot
             $request->deficiencies()->orderBy('id')->get()->toArray(),
             $request->integrationAttempts()->orderBy('id')->get()->map(fn ($attempt) => $attempt->getAttributes())->all(),
         ];
+        if (\App\Services\Identity\IdentityJourney::applies($request)) {
+            $form = $request->identityCardForm;
+            $values[] = [$form->getAttributes(), $form->visitEvidence()->get()->toArray(), $form->operations()->get()->toArray(),
+                $form->administrativeDecisions()->get()->toArray(), $request->charge?->postalCollection?->toArray()];
+        }
 
         // Only the digest leaves this service; raw values and private notes never enter Logs.
         return hash('sha256', json_encode($values, JSON_THROW_ON_ERROR));

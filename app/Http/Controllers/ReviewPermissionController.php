@@ -17,7 +17,11 @@ class ReviewPermissionController extends Controller
     {
         abort_unless($request->user()->role === 'admin' && $request->user()->is_active, 403);
         $request->validate(['page' => ['sometimes', 'integer', 'min:1']]);
-        $employees = User::where('role', 'employee')->where('is_active', true)->orderBy('id')->get(['id', 'name']);
+        $employeeColumns = ['id', 'name'];
+        if ($request->user()->can('manageDemoCivilRegistry', User::class)) {
+            $employeeColumns[] = 'can_access_demo_civil_registry';
+        }
+        $employees = User::where('role', 'employee')->where('is_active', true)->orderBy('id')->get($employeeColumns);
         $services = GovernmentService::orderBy('id')->get(['id', 'name']);
         $permissions = ServiceReviewPermission::with(['employee', 'service'])->latest('id')->paginate(20);
 
@@ -51,5 +55,18 @@ class ReviewPermissionController extends Controller
         });
 
         return redirect()->route('admin.review-permissions.index')->with('status', 'تم تحديث صلاحيات الخدمة للموظف. لا تمنح الصلاحيات تلقائيًا لبقية الموظفين.');
+    }
+
+    public function updateDemoRegistryAccess(Request $request, User $user, \App\Services\DemoCivilRegistry\AuditLogger $audit)
+    {
+        \Illuminate\Support\Facades\Gate::authorize('manageDemoCivilRegistry', User::class);
+        $data = $request->validate(['can_access_demo_civil_registry' => ['required', 'boolean']]);
+        $target = $user->fresh();
+        abort_unless($target && $target->role === 'employee' && $target->is_active, 422, 'الوصول يُمنح لموظف نشط فقط.');
+        $target->forceFill(['can_access_demo_civil_registry' => $request->boolean('can_access_demo_civil_registry')])->save();
+        $audit->record($request, 'registry.access.'.($target->can_access_demo_civil_registry ? 'grant' : 'revoke'), metadata: ['target_user_id' => $target->id, 'target_role' => $target->role]);
+        Log::info('demo_civil_registry_access_changed', ['actor_id' => $request->user()->id, 'employee_id' => $target->id, 'granted' => $target->can_access_demo_civil_registry]);
+
+        return redirect()->route('admin.review-permissions.index')->with('status', 'تم تحديث صلاحية السجل المدني التجريبي مستقلاً عن صلاحيات الخدمات.');
     }
 }

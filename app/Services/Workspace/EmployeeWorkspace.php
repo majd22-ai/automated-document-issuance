@@ -80,6 +80,9 @@ class EmployeeWorkspace
 
     public function allowsRoute(User $user, string $route): bool
     {
+        if (str_starts_with($route, 'employee.demo-civil-registry.')) {
+            return $user->canAccessDemoCivilRegistry();
+        }
         if (in_array($route, ['employee.dashboard', 'employee.notifications.index', 'employee.notifications.open', 'employee.notifications.read', 'employee.notifications.read-all'], true)) {
             return $user->is_active;
         }
