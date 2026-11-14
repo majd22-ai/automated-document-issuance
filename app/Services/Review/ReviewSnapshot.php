@@ -30,6 +30,8 @@ class ReviewSnapshot
             $form = $request->identityCardForm;
             $values[] = [$form->getAttributes(), $form->visitEvidence()->get()->toArray(), $form->operations()->get()->toArray(),
                 $form->administrativeDecisions()->get()->toArray(), $request->charge?->postalCollection?->toArray()];
+            $values[] = collect(app(\App\Services\Identity\InitialIdentityReview::class)->tasks($form))
+                ->map(fn ($task) => [$task['fingerprint'], $task['approved'], $task['decision']?->id])->all();
         }
 
         // Only the digest leaves this service; raw values and private notes never enter Logs.

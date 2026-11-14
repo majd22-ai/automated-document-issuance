@@ -16,7 +16,7 @@
 <article class="ops-metric"><strong>{{ $grants->filter(fn($grant)=>collect(['can_review','can_approve','can_assign','can_issue','can_deliver','can_verify','can_activate'])->contains(fn($ability)=>(bool)$grant->{$ability}))->count() }}</strong><p>خدمات مفوضة</p></article>
 </div>
 @if($grants->isNotEmpty())
-<article class="card ops-card"><h2>خدماتي وصلاحياتي</h2><p class="ops-help">هذه الصلاحيات للعرض فقط؛ تعديلها متاح لمدير النظام.</p><div class="ops-table-wrap"><table><thead><tr><th>الخدمة</th><th>المهام المسموحة</th></tr></thead><tbody>
+<article class="card ops-card" id="my-permissions"><h2>خدماتي وصلاحياتي</h2><p class="ops-help">هذه الصلاحيات للعرض فقط؛ تعديلها متاح لمدير النظام.</p><div class="ops-table-wrap"><table><thead><tr><th>الخدمة</th><th>المهام المسموحة</th></tr></thead><tbody>
 @foreach($grants as $grant)@php($abilities=collect(['can_review'=>'المراجعة','can_approve'=>'الاعتماد','can_assign'=>'الإسناد','can_issue'=>'الإصدار','can_deliver'=>'التسليم','can_verify'=>'التحقق','can_activate'=>'تفعيل الحسابات'])->filter(fn($label,$key)=>(bool)$grant->{$key}))
 @if($abilities->isNotEmpty())<tr><td>{{ $grant->service?->name }}</td><td>{{ $abilities->implode('، ') }}</td></tr>@endif
 @endforeach

@@ -377,6 +377,7 @@ Route::middleware(['auth', 'role:employee'])
         Route::patch('/attachments/{attachment}/review', [CitizenAttachmentController::class, 'review'])->name('attachments.review');
 
         Route::get('/applications/{id}/review', [ApplicationReviewController::class, 'show'])->name('applications.review');
+        Route::post('/applications/{id}/identity-step', [ApplicationReviewController::class, 'identityStep'])->middleware('throttle:30,1')->name('applications.identity-step');
         Route::post('/applications/{id}/decisions', [ApplicationReviewController::class, 'decide'])->middleware('throttle:30,1')->name('applications.decisions');
         Route::post('/applications/{id}/assignment', [ApplicationReviewController::class, 'assign'])->name('applications.assignment');
         Route::post('/applications/{id}/deficiencies/{deficiency}/resolve', [ApplicationReviewController::class, 'resolve'])->name('applications.deficiencies.resolve');

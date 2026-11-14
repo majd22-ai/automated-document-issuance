@@ -19,6 +19,20 @@ use Illuminate\Support\Facades\Gate;
 
 class ApplicationReviewController extends Controller
 {
+    public function identityStep(Request $request, string $id)
+    {
+        $input = $request->validate([
+            'task' => ['required', 'in:photo,witness_1,witness_2,attestation'],
+            'outcome' => ['required', 'in:approved,correction_required'],
+            'decision_token' => ['required', 'uuid'], 'fingerprint' => ['required', 'string', 'size:64'],
+            'note' => ['nullable', 'string', 'max:1000'], 'confirmed' => ['sometimes', 'accepted'],
+            'consent_method' => ['nullable', 'in:signed_statement,independent_confirmation'],
+            'consent_reference' => ['nullable', 'string', 'min:3', 'max:200'],
+        ]);
+        app(\App\Services\Identity\InitialIdentityReview::class)->record($request->user(), CitizenServiceRequest::findOrFail($id), $input);
+        return redirect()->route('employee.applications.review', $id)->with('status', 'حُفظت نتيجة مراجعة العنصر وأدلتها.');
+    }
+
     public function index(Request $request)
     {
         Gate::authorize('searchCitizens', User::class);

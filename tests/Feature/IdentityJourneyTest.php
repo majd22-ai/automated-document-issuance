@@ -38,6 +38,14 @@ use Tests\TestCase;
 
 class IdentityJourneyTest extends TestCase
 {
+    use \Tests\Support\InitialIdentityEvidence;
+
+    private function initialAccept($request, $staff)
+    {
+        $request = $request->transitionTo(ServiceRequestStatus::UnderReview, $staff);
+        $this->completeInitialEvidence($request->identityCardForm, $staff);
+        return $request->fresh()->transitionTo(ServiceRequestStatus::Accepted, $staff);
+    }
     protected function setUp(): void
     {
         parent::setUp();
@@ -157,7 +165,7 @@ class IdentityJourneyTest extends TestCase
     private function acceptAndPay(): array
     {
         [$owner, $staff, $service, $request, $form] = $this->fixture();
-        $request = $request->transitionTo(ServiceRequestStatus::UnderReview, $staff)->transitionTo(ServiceRequestStatus::Accepted, $staff);
+        $request = $this->initialAccept($request, $staff);
         app(PostalCollections::class)->collect($this->collector(), $request->charge, ['operation_token' => (string) Str::uuid()]);
 
         return [$owner, $staff, $service, $request->fresh(), $form->fresh()];
@@ -186,7 +194,7 @@ class IdentityJourneyTest extends TestCase
     public function test_preliminary_acceptance_creates_invoice_before_fingerprint_and_cannot_approve(): void
     {
         [, $staff, , $request] = $this->fixture();
-        $request = $request->transitionTo(ServiceRequestStatus::UnderReview, $staff)->transitionTo(ServiceRequestStatus::Accepted, $staff);
+        $request = $this->initialAccept($request, $staff);
         $this->assertSame('accepted', $request->status);
         $this->assertNotNull($request->charge->invoice_number);
         $this->assertSame(1, $request->reviewDecisions()->where('action', 'accept')->count());
@@ -307,7 +315,7 @@ class IdentityJourneyTest extends TestCase
     public function test_postal_audit_failure_rolls_back_receipt_payment_and_notifications(): void
     {
         [$owner, $staff, , $request] = $this->fixture();
-        $request = $request->transitionTo(ServiceRequestStatus::UnderReview, $staff)->transitionTo(ServiceRequestStatus::Accepted, $staff);
+        $request = $this->initialAccept($request, $staff);
         $collector = $this->collector();
         $before = $owner->notifications()->count();
         $this->mock(AuditTrail::class)->shouldReceive('record')->andThrow(new \RuntimeException('synthetic audit failure'));
@@ -422,7 +430,7 @@ class IdentityJourneyTest extends TestCase
     public function test_postal_workspace_collects_only_the_invoice_and_shows_the_existing_receipt(): void
     {
         [$owner, $staff, , $request] = $this->fixture();
-        $request = $request->transitionTo(ServiceRequestStatus::UnderReview, $staff)->transitionTo(ServiceRequestStatus::Accepted, $staff);
+        $request = $this->initialAccept($request, $staff);
         $collector = $this->collector()->fresh();
         $this->withoutMiddleware(ValidateCsrfToken::class);
         $this->actingAs($collector, 'postal')->withSession(['postal_auth_version' => $collector->auth_version]);

@@ -99,7 +99,8 @@ class WorkspaceExperienceTest extends TestCase
         $employee->notifyNow(new CitizenActivity('workspace-activity', ['kind' => 'request_activity', 'title' => 'Update', 'body' => 'Request changed'], $application->id));
         $row = $employee->notifications()->firstOrFail();
         $this->actingAs($other)->post('/employee/notifications/'.$row->id.'/read')->assertNotFound();
-        $this->actingAs($employee)->post('/employee/notifications/'.$row->id.'/open')->assertRedirect(route('employee.tracking.show', $application->id));
+        $this->actingAs($employee)->get('/employee/notifications')->assertOk()->assertSee('فتح ملف الطلب');
+        $this->post('/employee/notifications/'.$row->id.'/open')->assertRedirect(route('employee.applications.review', $application->id));
         $permission->forceFill(['can_review' => false])->save();
         $this->post('/employee/notifications/'.$row->id.'/open')->assertForbidden();
     }
@@ -116,5 +117,16 @@ class WorkspaceExperienceTest extends TestCase
         $this->getJson('/notifications/unread-count')->assertJson(['unread' => 0]);
         $this->post('/employee/notifications/read-all')->assertRedirect();
         $this->assertSame(1, $other->unreadNotifications()->count());
+    }
+
+    public function test_permission_notification_opens_work_permissions_instead_of_profile(): void
+    {
+        $employee = User::factory()->create(['role' => 'employee']);
+        $employee->notifyNow(new CitizenActivity('workspace-permission', ['kind' => 'employee_permission', 'title' => 'Permissions changed',
+            'body' => 'Review permissions', 'target_user_id' => $employee->id]));
+        $row = $employee->notifications()->firstOrFail();
+        $this->actingAs($employee)->get('/employee/notifications')->assertOk()->assertSee('عرض خدماتي وصلاحياتي')->assertDontSee('فتح ومراجعة');
+        $this->post('/employee/notifications/'.$row->id.'/open')->assertRedirect(route('employee.dashboard').'#my-permissions');
+        $this->assertNotNull($row->fresh()->read_at);
     }
 }

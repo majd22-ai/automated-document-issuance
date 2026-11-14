@@ -173,6 +173,9 @@ class ServiceEligibility
             $report->add($check);
         }
         if ($request) {
+            foreach (app(\App\Services\Identity\InitialIdentityReview::class)->requirements($request, $target) as $check) {
+                $report->add($check);
+            }
             foreach (app(IdentityAttestations::class)->requirements($request, $target) as $check) {
                 $report->add($check);
             }

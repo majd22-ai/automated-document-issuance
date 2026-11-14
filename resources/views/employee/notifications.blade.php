@@ -8,7 +8,17 @@
 @forelse($notifications as $notification)
 <article class="card ops-card ops-inbox-item {{ !$notification->read_at ? 'is-unread' : '' }}" style="padding:1.5rem;margin-block:1rem"><h2>{{ is_string($notification->data['title']??null) ? $notification->data['title'] : 'إشعار' }}</h2><p>{{ is_string($notification->data['body']??null) ? $notification->data['body'] : '' }}</p><div class="ops-inbox-meta"><span class="ops-status">{{ $notification->read_at ? 'مقروء' : 'جديد' }}</span><time datetime="{{ $notification->created_at->toAtomString() }}" dir="ltr">{{ $notification->created_at->format('Y-m-d H:i') }}</time>@if(is_string($notification->data['request_reference']??null))<span>مرجع الطلب: <bdi class="ops-inbox-reference">{{ $notification->data['request_reference'] }}</bdi></span>@endif</div>
 <div class="ops-toolbar">
-<form method="POST" action="{{ route('employee.notifications.open', $notification->id) }}">@csrf<button class="btn btn-primary" type="submit">فتح ومراجعة</button></form>
+@php
+    $notificationButton = match ($notification->data['kind'] ?? null) {
+        'employee_permission' => 'عرض خدماتي وصلاحياتي',
+        'employee_account' => 'عرض تحديث الحساب',
+        'neighborhood_attestation' => 'فتح طلب المصادقة',
+        'activation_request' => 'مراجعة طلب تفعيل المواطن',
+        'activation_permission' => 'فتح طلبات التفعيل',
+        default => $notification->request_id ? 'فتح ملف الطلب' : 'عرض التفاصيل',
+    };
+@endphp
+<form method="POST" action="{{ route('employee.notifications.open', $notification->id) }}">@csrf<button class="btn btn-primary" type="submit">{{ $notificationButton }}</button></form>
 @if(!$notification->read_at)<form method="POST" action="{{ route('employee.notifications.read', $notification->id) }}">@csrf<button class="btn btn-outline" type="submit">تعليم كمقروء</button></form>@endif</div></article>
 @empty<div class="card ops-card ops-empty"><h2>صندوقك خالٍ من الإشعارات المطابقة</h2><p>ستظهر هنا العمليات الموجهة إلى حسابك أو طلباتك المسندة عند تسجيلها فعليًا.</p></div>@endforelse
 {{ $notifications->links() }}

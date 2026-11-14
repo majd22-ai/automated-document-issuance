@@ -32,6 +32,9 @@ class ReviewDecision extends Model
 
     public function label(): string
     {
+        if ($this->action === 'identity_step_review') {
+            return 'مراجعة عنصر من استمارة الهوية';
+        }
         return ['start' => 'بدء المراجعة', 'accept' => 'قبول بعد المراجعة', 'return' => 'إعادة للاستكمال', 'reject' => 'رفض نهائي', 'approve' => 'اعتماد تمهيدًا للإصدار', 'resubmit' => 'إعادة تقديم بعد الاستكمال', 'assign' => 'إسناد الطلب', 'resolve' => 'التحقق من استكمال نقص', 'processing' => 'بدء التجهيز'][$this->action] ?? $this->action;
     }
 

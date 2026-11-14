@@ -43,13 +43,19 @@ class EmployeeNotificationController extends Controller
             abort_unless((int) ($notification->data['target_user_id'] ?? $request->user()->id) === (int) $request->user()->id, 403);
             $notification->markAsRead();
 
-            return redirect()->route('profile.edit');
+            return $kind === 'employee_permission'
+                ? redirect()->to(route('employee.dashboard').'#my-permissions')
+                : redirect()->route('profile.edit');
         }
         if ($notification->request_id) {
             $application = CitizenServiceRequest::findOrFail($notification->request_id);
             Gate::authorize('track', $application);
             $notification->markAsRead();
 
+            if (in_array($application->status, ['submitted', 'under_review', 'requires_correction'], true)
+                && Gate::allows('viewReview', $application)) {
+                return redirect()->route('employee.applications.review', $application->id);
+            }
             return redirect()->route('employee.tracking.show', $application->id);
         }
         abort_unless(in_array($kind, ['activation_request', 'activation_permission'], true), 404);

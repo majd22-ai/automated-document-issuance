@@ -128,7 +128,8 @@ class CitizenServiceRequest extends Model
                     app(\App\Services\Identity\IdentityJourney::class)->notify($citizen, $locked, 'invoice:'.$charge->id, 'قبول مبدئي وفاتورة رسوم الهوية',
                         'قُبل طلبك مبدئيًا. الفاتورة '.$charge->invoice_number.' بقيمة '.$charge->amount.' '.$charge->currency.'. سدد نقدًا في مكتب بريد تجريبي، ثم سيحدد الموظف موعد الحضور. القبول المبدئي ليس اعتمادًا نهائيًا.');
                 }
-                $decision = $actions->save($locked, $actor, $action, $current->value, $visibleReason, $context, $report?->toArray());
+                $decision = $actions->save($locked, $actor, $action, $current->value, $visibleReason, $context, $report?->toArray(),
+                    $next === ServiceRequestStatus::Accepted && \App\Services\Identity\IdentityJourney::applies($locked) ? ['initial_identity_review_version' => 1] : []);
                 if ($next === ServiceRequestStatus::RequiresCorrection) {
                     app(ReviewDeficiencies::class)->create($locked, $decision, $context['deficiencies']);
                     if (\App\Services\Identity\IdentityJourney::applies($locked)) {
