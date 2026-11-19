@@ -10,7 +10,11 @@
     const update = () => {
         const isYemen = !country.value || ['اليمن', 'الجمهورية اليمنية'].includes(country.value.trim());
         fill(governorateOptions, isYemen ? locations.map(row => row.name) : []);
-        fill(districtOptions, isYemen ? (locations.find(row => row.name === governorate.value)?.districts || []) : []);
+        const selectedGovernorate = locations.find(row => row.name === governorate.value.trim());
+        const districts = selectedGovernorate
+            ? selectedGovernorate.districts
+            : locations.flatMap(row => row.districts);
+        fill(districtOptions, isYemen ? [...new Set(districts)].sort((a, b) => a.localeCompare(b, 'ar')) : []);
     };
     // Use the browser's Arabic territory names; stored values remain the displayed names.
     if (typeof Intl.DisplayNames === 'function') {

@@ -48,6 +48,9 @@ class IdentityCardFormController extends Controller
     public function show(Request $request, IdentityCardForm $form, IdentityCardForms $forms)
     {
         $this->owner($request, $form);
+        if ($form->isRenewal()) {
+            return redirect()->route('citizen.identity-renewal.show', $form);
+        }
         $request->validate(['step' => ['nullable', 'integer', 'between:1,7']]);
         $step = $form->submitted_at && ! $form->correctionIsOpen() ? 7 : min((int) $request->input('step', $form->current_step), $form->current_step);
         if ($step === 7 && (! $form->submitted_at || $form->correctionIsOpen())
@@ -70,6 +73,7 @@ class IdentityCardFormController extends Controller
 
     public function save(SaveIdentityCardForm $request, IdentityCardForm $form, IdentityCardForms $forms)
     {
+        abort_if($form->isRenewal(), 409, 'استخدم استمارة التجديد لتحديث العنوان والمرفقات فقط.');
         $form = $forms->save($request->user(), $form, $request->validated(), $request->file('photo'));
         $step = $request->input('action') === 'next' ? min(7, (int) $request->input('step') + 1) : (int) $request->input('step');
 

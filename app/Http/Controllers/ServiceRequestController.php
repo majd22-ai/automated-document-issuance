@@ -19,6 +19,7 @@ class ServiceRequestController extends Controller
     public function preview(PreviewServiceRequest $request, GovernmentService $service, ServiceRequestSubmission $submission): RedirectResponse
     {
         if ($service->code === 'identity-first-issue') { return redirect()->route('citizen.identity-card.index'); }
+        if ($service->code === 'identity-renewal') { return redirect()->route('citizen.identity-renewal.start'); }
         $preview = $submission->preview($request->user(), $service, $request->validated());
         $token = (string) Str::uuid();
         $previews = array_filter($request->session()->get('request_previews', []), fn ($item) => $item['expires_at'] >= now()->timestamp);
@@ -49,6 +50,7 @@ class ServiceRequestController extends Controller
     public function submit(SubmitServiceRequest $request, GovernmentService $service, ServiceRequestSubmission $submission): RedirectResponse
     {
         if ($service->code === 'identity-first-issue') { return redirect()->route('citizen.identity-card.index'); }
+        if ($service->code === 'identity-renewal') { return redirect()->route('citizen.identity-renewal.start'); }
         $token = $request->validated('preview_token');
         $application = $submission->submit($request->user(), $service, $token, $request->session()->get('request_previews.'.$token));
         $request->session()->forget('request_previews.'.$token);

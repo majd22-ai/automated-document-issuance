@@ -21,6 +21,10 @@ class ReviewDeficiencies
         }
         $fields = array_column($request->service_snapshot['application_fields'] ?? [], 'key');
         $attachments = array_column($request->service_snapshot['verification_rules']['documents'] ?? [], 'code');
+        if ($request->identityCardForm?->isRenewal()) {
+            $fields = array_unique(array_merge($fields, array_keys(config('identity_card.fields.3'))));
+            $attachments[] = 'renewal_previous_card';
+        }
         foreach ($items as $item) {
             if (! is_array($item) || ! in_array($item['target_type'] ?? null, ['field', 'attachment', 'requirement', 'other'], true) || ! is_string($item['target_key'] ?? null) || ! is_string($item['description'] ?? null) || trim($item['description']) === '') {
                 throw ValidationException::withMessages(['deficiencies' => 'تعريف النقص غير صالح.']);
@@ -62,7 +66,7 @@ class ReviewDeficiencies
         }
         $merged = array_replace($request->request_data ?? [], $data);
         $schema = new GovernmentService;
-        $schema->code = $request->service_code === 'identity-first-issue' ? 'identity-first-issue' : null;
+        $schema->code = in_array($request->service_code, ['identity-first-issue', 'identity-renewal'], true) ? $request->service_code : null;
         $schema->application_fields = $request->service_snapshot['application_fields'] ?? [];
         Validator::make(['data' => $merged, 'notes' => $request->notes], PreviewServiceRequest::payloadRules($schema))->validate();
 
@@ -80,11 +84,18 @@ class ReviewDeficiencies
     {
         if ($row->target_type === 'field') {
             $schema = new GovernmentService;
-            $schema->code = $request->service_code === 'identity-first-issue' ? 'identity-first-issue' : null;
+            $schema->code = in_array($request->service_code, ['identity-first-issue', 'identity-renewal'], true) ? $request->service_code : null;
             $schema->application_fields = $request->service_snapshot['application_fields'] ?? [];
             Validator::make(['data' => $request->request_data ?? [], 'notes' => $request->notes], PreviewServiceRequest::payloadRules($schema))->validate();
         } elseif (in_array($row->target_type, ['attachment', 'requirement'], true)) {
             $code = $row->target_type === 'attachment' ? 'attachment.'.$row->target_key : $row->target_key;
+            if ($request->identityCardForm?->isRenewal() && $row->target_type === 'attachment' && $row->target_key === 'renewal_previous_card') {
+                $task = app(\App\Services\Identity\InitialIdentityReview::class)->tasks($request->identityCardForm)['previous_card'];
+                if (! $task['approved']) {
+                    throw ValidationException::withMessages(['deficiencies' => 'يلزم اعتماد مراجعة صورة البطاقة السابقة للنسخة الحالية أولًا.']);
+                }
+                return;
+            }
             $check = app(ServiceEligibility::class)->evaluate($request->citizen, $request->service, $request)->checks[$code] ?? null;
             if (! $check || $check->state !== RequirementState::Met) {
                 throw ValidationException::withMessages(['deficiencies' => 'الشرط أو المرفق المحدد لم يستوف التحقق بعد.']);

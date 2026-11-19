@@ -29,6 +29,11 @@ class AttachmentRules
                 'max_kb' => (int) config('identity_card.photo.max_kb'), 'mandatory' => false];
         }
 
+        if ($service->code === 'identity-renewal') {
+            $result['renewal_previous_card'] = ['code' => 'renewal_previous_card', 'name' => 'صورة البطاقة السابقة للتجديد', 'kind' => 'document',
+                'requires_review' => true, 'allowed_mime_types' => ['image/jpeg', 'image/png', 'application/pdf'],
+                'max_kb' => (int) config('attachments.document_max_kb'), 'mandatory' => false];
+        }
         return $result;
     }
 

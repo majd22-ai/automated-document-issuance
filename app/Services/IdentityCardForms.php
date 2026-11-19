@@ -31,7 +31,7 @@ class IdentityCardForms
             $citizen = User::whereKey($actor->id)->lockForUpdate()->firstOrFail();
             abort_unless($citizen->is_active && $citizen->role === 'citizen', 403);
             $service = GovernmentService::where('code', 'identity-first-issue')->firstOrFail();
-            $form = IdentityCardForm::where('user_id', $citizen->id)->whereNull('submitted_at')->first();
+            $form = IdentityCardForm::where('user_id', $citizen->id)->where('government_service_id', $service->id)->whereNull('submitted_at')->first();
             if (! $form) {
                 $form = new IdentityCardForm;
                 $form->forceFill(['user_id' => $citizen->id, 'government_service_id' => $service->id, 'reference' => 'IDFORM-'.Str::ulid(), 'status' => 'draft', 'journey_version' => 1, 'current_step' => 1, 'version' => 1, 'data' => ['applicant_name' => $citizen->name, 'phone' => $citizen->phone]])->save();
@@ -61,6 +61,7 @@ class IdentityCardForms
                 abort_if($form->submitted_at && ! $correction, 409, 'أُرسل الطلب؛ لا يمكن تعديل المسودة.');
                 abort_unless($form->version === (int) $input['version'], 409, 'تغيرت المسودة في نافذة أخرى. حدّث الصفحة.');
                 $step = (int) $input['step'];
+                abort_if($form->isRenewal() && $step !== 4, 409, 'بيانات التجديد تُحدّث من مسار التجديد المخصص فقط.');
                 abort_if($step > $form->current_step, 409, 'أكمل المرحلة السابقة أولًا.');
                 if ($step <= 5 && (! $form->submitted_at || $correction)) {
                     $attestation = IdentityCardAttestation::where('identity_card_form_id', $form->id)
@@ -209,6 +210,7 @@ class IdentityCardForms
     {
         return hash('sha256', json_encode([
             'owner' => $actor->id, 'form' => $form->id, 'version' => $form->version,
+            'renewal' => $form->isRenewal() ? app(\App\Services\Identity\IdentityRenewals::class)->fingerprint($form) : null,
             'photo' => $form->photo?->only(['id', 'version_token', 'sha256', 'review_status', 'rules_version']),
             'witnesses' => $form->witnesses()->orderBy('position')->get()->map(fn ($witness) => $witness->only(['id', 'name', 'document_type', 'document_number', 'issued_place', 'issued_at', 'employer', 'work_address', 'phone', 'address', 'nearby_landmark', 'selfie_sha256']))->all(),
             'attestation' => $form->attestation?->only(['id', 'form_revision', 'status', 'verified_at', 'verification_source']),
@@ -237,7 +239,7 @@ class IdentityCardForms
             if ($form->current_step !== 7) {
                 throw ValidationException::withMessages(['submission' => 'لا يمكن تقديم الطلب قبل إكمال الخطوات السابقة ومصادقة العاقل. افتح الخطوة المتاحة وأكملها أولًا.']);
             }
-            if (! IdentityAttestations::approvedForSubmission($form->attestation)) {
+            if (! $form->isRenewal() && ! IdentityAttestations::approvedForSubmission($form->attestation)) {
                 throw ValidationException::withMessages(['attestation' => 'يلزم اعتماد مصادقة عاقل الحارة في الخطوة السادسة قبل تقديم الطلب.']);
             }
             if ($actor->needsCitizenActivation()) {
@@ -251,7 +253,16 @@ class IdentityCardForms
                 $witness['issued_at'] = $witness['issued_at']?->format('Y-m-d');
             }
             unset($witness);
-            Validator::make(['data' => $form->data, 'witnesses' => $witnesses], SaveIdentityCardForm::dataRules() + SaveIdentityCardForm::witnessRules(true), SaveIdentityCardForm::validationMessages())->validate();
+            if ($form->isRenewal()) {
+                app(\App\Services\Identity\IdentityRenewals::class)->assertReady($form);
+            } else {
+                Validator::make(['data' => $form->data, 'witnesses' => $witnesses], SaveIdentityCardForm::dataRules() + SaveIdentityCardForm::witnessRules(true), SaveIdentityCardForm::validationMessages())->validate();
+            }
+            $locationErrors = app(ResidenceLocations::class)->errors($form->data ?? []);
+            $locationErrors += app(ResidencePhones::class)->errors($form->data ?? [], $witnesses);
+            if ($locationErrors) {
+                throw ValidationException::withMessages($locationErrors);
+            }
             foreach ($form->witnesses as $witness) {
                 if (! $witness->selfieIntact()) {
                     throw ValidationException::withMessages(['witnesses.'.($witness->position - 1).'.selfie' => 'صورة الشاهد مفقودة أو غير سليمة؛ عد إلى خطوة الشاهدين وأرفقها.']);
@@ -274,12 +285,17 @@ class IdentityCardForms
                     && in_array($application->status, ['submitted', 'under_review', 'requires_correction', 'accepted', 'approved'], true), 409);
                 abort_unless($photo->user_id === $form->user_id && $photo->government_service_id === $form->government_service_id
                     && $photo->citizen_service_request_id === $application->id, 409);
-                $form->forceFill(['status' => 'pending_attestation', 'correction_opened_at' => null, 'declared_at' => now(),
+                $form->forceFill(['status' => $form->isRenewal() ? 'pending_photo_review' : 'pending_attestation', 'correction_opened_at' => null, 'declared_at' => now(),
                     'resubmitted_at' => now(), 'current_step' => 7, 'version' => $form->version + 1])->save();
                 if ($form->journey_version === 1) {
                     abort_unless($application->status === 'requires_correction' && ! $application->issuedDocument()->exists(), 409);
                     $responses = $application->deficiencies()->where('status', '!=', 'resolved')->get()->mapWithKeys(fn ($row) => [$row->id => 'تم استكمال استمارة الهوية وإعادة المصادقة عليها.'])->all();
-                    $application->transitionTo(\App\Enums\ServiceRequestStatus::Submitted, $actor, null, ['responses' => $responses]);
+                    $context = ['responses' => $responses];
+                    if ($form->isRenewal()) {
+                        $allowed = $application->deficiencies()->where('status', '!=', 'resolved')->where('target_type', 'field')->pluck('target_key')->all();
+                        $context['data'] = array_intersect_key($form->data, array_flip($allowed));
+                    }
+                    $application->transitionTo(\App\Enums\ServiceRequestStatus::Submitted, $actor, null, $context);
                 }
                 app(AuditTrail::class)->record('identity_correction_resubmitted', IdentityCardForm::class, $form->id, $actor,
                     changes: ['changed_fields' => ['data', 'witnesses', 'citizen_attachment_id', 'declared_at', 'resubmitted_at'], 'status' => $form->status]);

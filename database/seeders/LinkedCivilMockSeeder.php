@@ -36,18 +36,21 @@ class LinkedCivilMockSeeder extends Seeder
                 Storage::disk('attachments')->put($photo, $bytes);
             }
             foreach ([
-                ['father', 'أب محاكاة أسرة تجريبية', '99010000901', 'MATCH', true, true],
-                ['mother', 'أم محاكاة أسرة تجريبية', '99010000902', 'MATCH', true, true],
-                ['match', 'مواطن محاكاة ناجح كامل', '99010000001', 'MATCH', true, true],
-                ['review', 'مواطن محاكاة مراجعة كامل', '99010000002', 'REVIEW', true, true],
-                ['no-photo', 'مواطن محاكاة بلا صورة', '99010000003', 'NO_REFERENCE_IMAGE', true, true],
-                ['no-match', 'مواطن محاكاة غير مطابق', '99010000004', 'NO_MATCH', true, true],
-                ['quality', 'مواطن محاكاة جودة كامل', '99010000005', 'IMAGE_QUALITY_FAILED', true, true],
-                ['liveness', 'مواطن محاكاة حيوية كامل', '99010000006', 'MATCH', false, true],
-                ['child', 'طفل محاكاة أسري كامل', null, 'REVIEW', true, true],
-                ['incomplete', 'طفل محاكاة بيانات ناقصة', null, 'REVIEW', true, false],
+                ['father', 'أحمد عبد الله ناصر العمري', '99010000901', 'MATCH', true, true],
+                ['mother', 'سعاد علي صالح الحداد', '99010000902', 'MATCH', true, true],
+                ['match', 'خالد محمد أحمد الجيفي', '99010000001', 'MATCH', true, true],
+                ['review', 'عمر علي حسين الفضلي', '99010000002', 'REVIEW', true, true],
+                ['no-photo', 'علي جابر صالح الحداد', '99010000003', 'NO_REFERENCE_IMAGE', true, true],
+                ['no-match', 'فيصل عبد الله سعيد اليافعي', '99010000004', 'NO_MATCH', true, true],
+                ['quality', 'هشام محمد حزام الحمادي', '99010000005', 'IMAGE_QUALITY_FAILED', true, true],
+                ['liveness', 'نبيل ناصر أحمد الشرعبي', '99010000006', 'MATCH', false, true],
+                ['child', 'سالم عبد الله سالم باحاج', null, 'REVIEW', true, true],
+                ['incomplete', 'يوسف قائد أحمد المولى', null, 'REVIEW', true, false],
             ] as [$key, $name, $national, $scenario, $live, $complete]) {
-                DB::table('mock_civil_persons')->updateOrInsert(['fixture_key' => $key], ['name' => $name, 'national_id' => $national, 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'family_id' => $family, 'family_role' => in_array($key, ['father', 'mother']) ? $key : 'child', 'father_name' => 'أب محاكاة أسرة تجريبية', 'mother_name' => 'أم محاكاة أسرة تجريبية', 'reference_photo' => $key === 'no-photo' ? null : $photo, 'face_scenario' => $scenario, 'liveness_pass' => $live, 'complete' => $complete, 'created_at' => now(), 'updated_at' => now()]);
+                $name = config('mock_people.names.'.$key, $name);
+                $portrait = 'mock-registry/portraits/'.$key.'.jpg';
+                $reference = $key === 'no-photo' ? null : (Storage::disk('attachments')->exists($portrait) ? $portrait : $photo);
+                DB::table('mock_civil_persons')->updateOrInsert(['fixture_key' => $key], ['name' => $name, 'national_id' => $national, 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'family_id' => $family, 'family_role' => in_array($key, ['father', 'mother']) ? $key : 'child', 'father_name' => config('mock_people.names.father'), 'mother_name' => config('mock_people.names.mother'), 'reference_photo' => $reference, 'face_scenario' => $scenario, 'liveness_pass' => $live, 'complete' => $complete, 'created_at' => now(), 'updated_at' => now()]);
                 $id = DB::table('mock_civil_persons')->where('fixture_key', $key)->value('id');
                 DB::table('mock_civil_persons')->where('id', $id)->update(['phone' => '777000'.str_pad((string) $id, 3, '0', STR_PAD_LEFT)]);
                 DB::table('mock_birth_records')->updateOrInsert(['person_id' => $id], ['number' => 'MOCK-BIRTH-'.$id, 'created_at' => now(), 'updated_at' => now()]);

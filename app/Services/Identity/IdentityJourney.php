@@ -21,7 +21,7 @@ class IdentityJourney
     {
         $form = $request->identityCardForm()->first();
 
-        return $request->service_code === 'identity-first-issue' && $form?->journey_version === 1
+        return in_array($request->service_code, ['identity-first-issue', 'identity-renewal'], true) && $form?->journey_version === 1
             && $form->user_id === $request->user_id && $form->government_service_id === $request->government_service_id;
     }
 
@@ -77,6 +77,9 @@ class IdentityJourney
     {
         $reasons = [];
         foreach (['blood_result' => 'نتيجة فحص الدم الخارجي', 'card_photo' => 'صورة الوجه المخصصة للبطاقة'] as $kind => $label) {
+            if ($form->isRenewal() && $kind === 'blood_result') {
+                continue;
+            }
             $evidence = $this->evidence($form, $kind);
             $file = $evidence?->attachment;
             if (! $evidence || $evidence->status !== 'approved' || ! $evidence->reviewed_by || ! $evidence->reviewed_at?->lte(now())

@@ -108,6 +108,24 @@ class MockActivationController extends Controller
         abort_unless(MockCivilSystems::enabled() && $r->user()->role === 'admin', 403);
         $people = DB::table('mock_civil_persons')->leftJoin('mock_civil_families', 'family_id', '=', 'mock_civil_families.id')->leftJoin('mock_identity_cards', 'mock_identity_cards.person_id', '=', 'mock_civil_persons.id')->leftJoin('mock_birth_records', 'mock_birth_records.person_id', '=', 'mock_civil_persons.id')->select('mock_civil_persons.*', 'mock_civil_families.reference as family_reference', 'mock_identity_cards.number as card_number', 'mock_birth_records.number as birth_number')->orderBy('mock_civil_persons.id')->paginate(20);
 
+        foreach ($people as $person) {
+            $person->display_photo = app(\App\Services\Registration\MockPortraits::class)->path($person);
+        }
         return response()->view('admin.mock-systems', compact('people'))->header('Cache-Control', 'no-store, private');
+    }
+
+    public function registryPortrait(Request $request, int $person)
+    {
+        abort_unless(MockCivilSystems::enabled() && $request->user()->is_active && $request->user()->role === 'admin', 403);
+        $record = DB::table('mock_civil_persons')->find($person);
+        abort_unless($record, 404);
+        $path = app(\App\Services\Registration\MockPortraits::class)->path($record);
+        abort_unless($path, 404);
+        abort_unless(str_starts_with($path, 'mock-registry/') && ! str_contains($path, '..') && Storage::disk('attachments')->exists($path), 404);
+        $absolute = Storage::disk('attachments')->path($path);
+        $size = @getimagesize($absolute);
+        abort_unless($size && $size[0] >= 600 && $size[1] >= 600 && in_array($size['mime'], ['image/png', 'image/jpeg'], true)
+            && filesize($absolute) <= 2 * 1024 * 1024, 404);
+        return response()->file($absolute, ['Content-Type' => $size['mime'], 'Cache-Control' => 'no-store, private', 'X-Content-Type-Options' => 'nosniff']);
     }
 }

@@ -237,7 +237,7 @@ class GovernmentServicesTest extends TestCase
         $document = $citizen->documents()->create(['document_type' => 'بطاقة', 'document_type_code' => 'identity', 'document_number' => 'OWN', 'status' => 'سارية', 'issued_at' => now()->subYear(), 'expires_at' => now()->addYear()]);
         $this->post($url)->assertStatus(422);
         $document->update(['expires_at' => now()->addDay()]);
-        $this->post($url)->assertOk();
+        $this->post($url)->assertRedirect(route('citizen.identity-renewal.start'));
         $document->update(['status' => 'ملغاة']);
         $this->post($url)->assertStatus(422);
         $document->update(['status' => 'سارية', 'issued_at' => null]);
@@ -247,7 +247,7 @@ class GovernmentServicesTest extends TestCase
         $document->update(['issued_at' => today()->subDay(), 'expires_at' => today()->subDays(2)]);
         $this->post($url)->assertStatus(422);
         $document->update(['issued_at' => today()->subYear(), 'expires_at' => today()->addDays(30)]);
-        $this->post($url)->assertOk();
+        $this->post($url)->assertRedirect(route('citizen.identity-renewal.start'));
     }
 
     public function test_driving_age_and_changed_rules_require_current_authorized_assessment(): void

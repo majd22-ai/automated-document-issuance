@@ -51,6 +51,9 @@ class IssueDocuments
                 }
                 $previous = null;
                 if ($service->operation === 'renewal') {
+                    if ($request->identityCardForm?->isRenewal() && (int) ($data['previous_document_id'] ?? 0) !== (int) data_get($request->identityCardForm->data, 'previous_document_id')) {
+                        throw ValidationException::withMessages(['previous_document_id' => 'يجب إصدار التجديد للبطاقة السابقة المحددة في الطلب نفسه.']);
+                    }
                     $previous = $owner->documents()->whereKey($data['previous_document_id'] ?? 0)->lockForUpdate()->first();
                     if (! $previous || $previous->document_type_code !== $service->document_type || $previous->successor()->exists()) {
                         throw ValidationException::withMessages(['previous_document_id' => 'اختر وثيقة سابقة من النوع نفسه تخص المواطن ولم يسبق تجديدها.']);

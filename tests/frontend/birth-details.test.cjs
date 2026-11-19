@@ -25,7 +25,7 @@ class MockSelect {
   }
 }
 
-function runBirthDetails(savedBirthPlace = '') {
+function runBirthDetails(savedBirthPlace = '', field = 'birth_place') {
   const lists = {
     'options-birth_place': ['مستشفى', 'مركز صحي', 'منزل'],
     'options-birth_country': ['اليمن'],
@@ -58,7 +58,7 @@ function runBirthDetails(savedBirthPlace = '') {
   const inputsById = Object.fromEntries(inputs.map(input => [input.id, input]));
   const root = {
     querySelector(selector) {
-      if (selector === '[data-birth-locations]') return {textContent: '[{"name":"صنعاء","districts":["أمانة العاصمة"]}]'};
+      if (selector === '[data-birth-locations]') return {textContent: '[{"name":"تعز","districts":["المعافر","المظفر"]},{"name":"عدن","districts":["المنصورة","خور مكسر"]}]'};
       if (selector.startsWith('label[for="')) return {setAttribute() {}};
       return inputsById[selector.slice(1)] || listsById[selector.slice(1)] || null;
     },
@@ -75,7 +75,7 @@ function runBirthDetails(savedBirthPlace = '') {
     Event: class {},
     Intl: {DisplayNames: undefined},
   });
-  return inputsById['field-birth_place'];
+  return Object.assign(inputsById['field-' + field], {fields: inputsById});
 }
 
 test('birth place dropdown only offers its listed choices, not an enter-custom-name option', () => {
@@ -95,4 +95,22 @@ test('previously saved custom birth place remains editable without adding a drop
   assert.equal(input.hidden, false);
   assert.equal(input.select.value, '');
   assert.equal(input.select.options.some(option => option.value === '__custom'), false);
+});
+
+test('birth district offers districts from every governorate before selecting a governorate', () => {
+  const input = runBirthDetails('', 'birth_district');
+  for (const district of ['المعافر', 'المظفر', 'المنصورة', 'خور مكسر']) {
+    assert.ok(input.select.options.some(option => option.value === district));
+  }
+});
+
+test('selecting birth governorate filters districts and clears the previous selection', () => {
+  const input = runBirthDetails('', 'birth_district');
+  input.value = 'المنصورة';
+  const governorate = input.fields['field-birth_governorate'];
+  governorate.value = 'تعز';
+  governorate.listeners.input();
+  assert.equal(input.value, '');
+  assert.ok(input.select.options.some(option => option.value === 'المعافر'));
+  assert.equal(input.select.options.some(option => option.value === 'المنصورة'), false);
 });

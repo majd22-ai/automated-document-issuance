@@ -32,7 +32,40 @@ class LinkedRegistrationTest extends TestCase
 
     private function data(array $extra = []): array
     {
-        return $extra + ['identity_path' => 'has_identity', 'name' => 'مواطن محاكاة ناجح كامل', 'national_id' => '99010000001', 'email' => 'mock@example.test', 'phone' => '777123456', 'terms' => '1'];
+        return $extra + ['identity_path' => 'has_identity', 'name' => 'خالد محمد أحمد الجيفي', 'national_id' => '99010000001', 'email' => 'mock@example.test', 'phone' => '777123456', 'terms' => '1'];
+    }
+
+    public function test_mock_portrait_button_and_private_image_require_admin_and_preserve_no_photo_scenario(): void
+    {
+        $person = DB::table('mock_civil_persons')->where('fixture_key', 'match')->first();
+        $this->assertSame('خالد محمد أحمد الجيفي', $person->name);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)->get(route('admin.mock-systems.index'))->assertOk()->assertSee('عرض الصورة')->assertSee('خالد محمد أحمد الجيفي');
+        $this->get(route('admin.mock-systems.portrait', $person->id))->assertOk()->assertHeader('Content-Type', 'image/png');
+        $missing = DB::table('mock_civil_persons')->where('fixture_key', 'no-photo')->first();
+        $this->assertNull($missing->reference_photo);
+        $this->get(route('admin.mock-systems.portrait', $missing->id))->assertNotFound();
+        $this->actingAs(User::factory()->create())->get(route('admin.mock-systems.portrait', $person->id))->assertForbidden();
+    }
+
+    public function test_mock_portrait_rejects_undersized_files(): void
+    {
+        $person = DB::table('mock_civil_persons')->where('fixture_key', 'match')->first();
+        $tiny = UploadedFile::fake()->image('tiny.png', 200, 200);
+        Storage::disk('attachments')->put('mock-registry/tiny.png', file_get_contents($tiny->getRealPath()));
+        DB::table('mock_civil_persons')->where('id', $person->id)->update(['reference_photo' => 'mock-registry/tiny.png']);
+        $this->actingAs(User::factory()->create(['role' => 'admin']))->get(route('admin.mock-systems.portrait', $person->id))->assertNotFound();
+    }
+
+    public function test_display_portrait_does_not_override_missing_biometric_reference_scenario(): void
+    {
+        $person = DB::table('mock_civil_persons')->where('fixture_key', 'no-photo')->first();
+        $portrait = UploadedFile::fake()->image('no-photo.jpg', 800, 800);
+        Storage::disk('attachments')->put('mock-registry/portraits/no-photo.jpg', file_get_contents($portrait->getRealPath()));
+        $this->actingAs(User::factory()->create(['role' => 'admin']))->get(route('admin.mock-systems.portrait', $person->id))->assertOk()->assertHeader('Content-Type', 'image/jpeg');
+        $current = DB::table('mock_civil_persons')->find($person->id);
+        $this->assertNull($current->reference_photo);
+        $this->assertSame('NO_REFERENCE_IMAGE', $current->face_scenario);
     }
 
     public function test_registry_requires_matching_name_and_card(): void
@@ -49,7 +82,7 @@ class LinkedRegistrationTest extends TestCase
 
     public function test_no_identity_registration_requires_father_and_mother_national_id(): void
     {
-        $this->post('/register', $this->data(['identity_path' => 'no_identity', 'national_id' => null, 'name' => 'طفل محاكاة أسري كامل', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أب محاكاة أسرة تجريبية', 'mother_name' => 'أم محاكاة أسرة تجريبية']))
+        $this->post('/register', $this->data(['identity_path' => 'no_identity', 'national_id' => null, 'name' => 'سالم عبد الله سالم باحاج', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أحمد عبد الله ناصر العمري', 'mother_name' => 'سعاد علي صالح الحداد']))
             ->assertSessionHasErrors(['father_national_id', 'mother_national_id']);
     }
 
@@ -72,7 +105,7 @@ class LinkedRegistrationTest extends TestCase
 
     public function test_birth_and_family_lookup_is_linked_and_not_name_only(): void
     {
-        $data = ['identity_path' => 'no_identity', 'name' => 'طفل محاكاة أسري كامل', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أب محاكاة أسرة تجريبية', 'mother_name' => 'أم محاكاة أسرة تجريبية'];
+        $data = ['identity_path' => 'no_identity', 'name' => 'سالم عبد الله سالم باحاج', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أحمد عبد الله ناصر العمري', 'mother_name' => 'سعاد علي صالح الحداد'];
         $this->assertSame('MATCH', app(MockCivilSystems::class)->lookup($data)['registry_result']);
         $this->assertSame('NOT_FOUND', app(MockCivilSystems::class)->lookup(array_replace($data, ['birth_date' => '2000-01-01']))['registry_result']);
         $this->assertSame('REVIEW', app(MockCivilSystems::class)->lookup($data + ['father_national_id' => '00000'])['registry_result']);
@@ -212,7 +245,7 @@ class LinkedRegistrationTest extends TestCase
 
     public function test_no_card_linked_family_retains_first_issuance_constraints(): void
     {
-        $this->post('/register', $this->data(['identity_path' => 'no_identity', 'national_id' => null, 'name' => 'طفل محاكاة أسري كامل', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أب محاكاة أسرة تجريبية', 'mother_name' => 'أم محاكاة أسرة تجريبية', 'father_national_id' => '99010000901', 'mother_national_id' => '99010000902']))->assertRedirect();
+        $this->post('/register', $this->data(['identity_path' => 'no_identity', 'national_id' => null, 'name' => 'سالم عبد الله سالم باحاج', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أحمد عبد الله ناصر العمري', 'mother_name' => 'سعاد علي صالح الحداد', 'father_national_id' => '99010000901', 'mother_national_id' => '99010000902']))->assertRedirect();
         $code = Crypt::decryptString(session('mock_registration_code'));
         $this->post('/register/password', ['password' => 'StrongPass123!', 'password_confirmation' => 'StrongPass123!'])->assertForbidden();
         $this->post('/register/verify', ['code' => $code])->assertRedirect();

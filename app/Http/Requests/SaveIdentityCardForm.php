@@ -65,6 +65,19 @@ class SaveIdentityCardForm extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator) {
+            $data = (array) $this->route('form')?->data;
+            if (is_array($this->input('data'))) {
+                $data = array_replace($data, $this->input('data'));
+            }
+            $witnesses = $this->input('witnesses', []);
+            foreach (app(\App\Services\ResidencePhones::class)->errors($data, is_array($witnesses) ? $witnesses : []) as $key => $message) {
+                $validator->errors()->add($key, $message);
+            }
+            if ((int) $this->input('step') === 3 && $this->input('action') === 'next' && ! $validator->errors()->any()) {
+                foreach (app(\App\Services\ResidenceLocations::class)->errors($this->input('data', [])) as $key => $message) {
+                    $validator->errors()->add($key, $message);
+                }
+            }
             foreach (['birth_gregorian', 'birth_hijri'] as $field) {
                 if ($this->input('invalid_birth_date_'.$field)) {
                     $validator->errors()->add('data.'.$field, 'اختر يومًا وشهرًا وسنة لتاريخ صحيح.');

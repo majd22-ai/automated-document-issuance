@@ -42,6 +42,7 @@ class IdentityJourneyController extends Controller
 
     public function witnesses(Request $request, IdentityCardForm $form)
     {
+        abort_if($form->isRenewal(), 409);
         abort_unless(FingerprintService::enabled(), 403);
         $data = $request->validate(['version' => ['required', 'integer'], 'reason' => ['required', 'string', 'min:3', 'max:1000'], 'present_and_verified' => ['sometimes', 'accepted']]);
         app(LockedRequest::class)->run($request->user(), $form->application, 'recordOperations', function ($actor, $owner, $service, $application) use ($form, $data) {

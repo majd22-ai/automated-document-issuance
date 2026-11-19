@@ -43,7 +43,15 @@ class IdentityJourneyTest extends TestCase
     private function initialAccept($request, $staff)
     {
         $request = $request->transitionTo(ServiceRequestStatus::UnderReview, $staff);
-        $this->completeInitialEvidence($request->identityCardForm, $staff);
+        if ($request->identityCardForm->isRenewal()) {
+            $reviews = app(\App\Services\Identity\InitialIdentityReview::class);
+            foreach (['photo', 'previous_card'] as $key) {
+                $task = $reviews->tasks($request->identityCardForm)[$key];
+                $reviews->record($staff, $request->fresh(), ['task' => $key, 'outcome' => 'approved', 'fingerprint' => $task['fingerprint'], 'decision_token' => (string) Str::uuid(), 'confirmed' => '1']);
+            }
+        } else {
+            $this->completeInitialEvidence($request->identityCardForm, $staff);
+        }
         return $request->fresh()->transitionTo(ServiceRequestStatus::Accepted, $staff);
     }
     protected function setUp(): void
@@ -59,11 +67,11 @@ class IdentityJourneyTest extends TestCase
         config(['postal_network.enabled' => true, 'identity_card.fingerprint.simulation_enabled' => true, 'identity_card.simulation_enabled' => true]);
     }
 
-    private function fixture(): array
+    private function fixture(bool $renewal = false): array
     {
         $owner = User::factory()->create(['username' => 'JOURNEY-'.Str::random(8)]);
         $staff = User::factory()->create(['role' => 'employee']);
-        $service = GovernmentService::where('code', 'identity-first-issue')->firstOrFail();
+        $service = GovernmentService::where('code', $renewal ? 'identity-renewal' : 'identity-first-issue')->firstOrFail();
         $service->update(['is_active' => true, 'rules_approved' => true, 'source_reference' => 'synthetic policy', 'fee' => '100.00', 'currency' => 'YER', 'issuance_rules' => ['enabled' => true, 'source_reference' => 'synthetic issuance', 'expiry' => ['required' => false], 'number_prefix' => 'TEST', 'include_year' => false, 'electronic_copy' => 'internal_html', 'citizen_download' => true, 'completion_stage' => 'issuance', 'delivery' => ['methods' => ['pickup'], 'centers' => ['مركز اصطناعي']]]]);
         (new ServiceReviewPermission)->forceFill(['user_id' => $staff->id, 'government_service_id' => $service->id, 'can_review' => true, 'can_approve' => true, 'can_issue' => true, 'can_deliver' => true, 'granted_by' => $staff->id])->save();
         $service->assessments()->create(['user_id' => $owner->id, 'rules_version' => $service->rules_version, 'identity_verified' => true, 'conditions_met' => true, 'reviewed_by' => $staff->id, 'reviewed_at' => now(), 'verification_reference' => 'synthetic assessment']);
@@ -89,6 +97,17 @@ class IdentityJourneyTest extends TestCase
             'sha256' => hash_file('sha256', $photo->getRealPath()), 'review_status' => 'approved', 'reviewed_by' => $staff->id, 'reviewed_at' => now()]);
         $attachment->save();
         $form->forceFill(['data' => $fields, 'citizen_attachment_id' => $attachment->id])->save();
+        if ($renewal) {
+            $service->update(['renewal_statuses' => ['active'], 'verification_rules' => ['renewal_validity' => 'any']]);
+            $service->assessments()->update(['rules_version' => $service->rules_version]);
+            $attachment->forceFill(['rules_version' => $service->rules_version])->save();
+            $previous = $owner->documents()->create(['document_type_code' => 'identity', 'document_type' => 'identity', 'document_number' => 'PRIOR-'.Str::uuid(), 'status' => 'active', 'issued_at' => today()->subYears(5), 'expires_at' => today()->subDay()]);
+            $copy = $attachment->replicate(['slot_key']);
+            $copy->forceFill(['slot_key' => hash('sha256', (string) Str::uuid()), 'kind' => 'document', 'document_code' => 'renewal_previous_card'])->save();
+            $form->forceFill(['data' => array_replace($fields, ['applicant_name' => $owner->name, 'previous_document_id' => $previous->id])])->save();
+            $request->forceFill(['request_data' => $form->data])->save();
+            return [$owner, $staff, $service, $request->fresh(), $form->fresh()];
+        }
         foreach ([1, 2] as $position) {
             (new IdentityCardWitness)->forceFill(['identity_card_form_id' => $form->id, 'position' => $position,
                 'name' => 'شاهد محاكاة اسم كامل', 'document_type' => 'بطاقة شخصية', 'document_number' => '123456'.$position,
@@ -162,18 +181,18 @@ class IdentityJourneyTest extends TestCase
         app(AppointmentBookings::class)->book($staff, $request->fresh(), 1);
     }
 
-    private function acceptAndPay(): array
+    private function acceptAndPay(bool $renewal = false): array
     {
-        [$owner, $staff, $service, $request, $form] = $this->fixture();
+        [$owner, $staff, $service, $request, $form] = $this->fixture($renewal);
         $request = $this->initialAccept($request, $staff);
         app(PostalCollections::class)->collect($this->collector(), $request->charge, ['operation_token' => (string) Str::uuid()]);
 
         return [$owner, $staff, $service, $request->fresh(), $form->fresh()];
     }
 
-    private function visit(): array
+    private function visit(bool $renewal = false): array
     {
-        [$owner, $staff, $service, $request, $form] = $this->acceptAndPay();
+        [$owner, $staff, $service, $request, $form] = $this->acceptAndPay($renewal);
         $slot = (new AppointmentSlot)->forceFill(['government_service_id' => $service->id, 'center' => 'مركز اصطناعي', 'starts_at' => now()->addHour(), 'ends_at' => now()->addHours(2), 'capacity' => 2, 'is_active' => true, 'created_by' => $staff->id]);
         $slot->save();
         app(AppointmentBookings::class)->book($staff, $request, $slot->id);
@@ -253,6 +272,30 @@ class IdentityJourneyTest extends TestCase
         $this->assertSame('completed', $request->fresh()->status);
         $this->assertDatabaseCount('medical_examinations', 0);
         $this->assertSame(2, $form->visitEvidence()->count());
+    }
+
+    public function test_renewal_completes_payment_visit_fingerprint_issuance_and_delivery_without_witnesses(): void
+    {
+        [$owner, $staff, , $request, $form] = $this->visit(true);
+        $this->assertSame(0, $form->witnesses()->count());
+        $this->assertNull($form->attestation);
+        $row = app(VisitEvidence::class)->store($staff, $form->fresh(), 'card_photo', UploadedFile::fake()->image('renewal.png', 600, 600), $form->fresh()->version);
+        app(VisitEvidence::class)->review($staff, $row, 'approved', null, $form->fresh()->version);
+        $fingerprints = app(FingerprintService::class);
+        $result = $fingerprints->capture($staff, $form->fresh(), ['version' => $form->fresh()->version, 'operation_token' => (string) Str::uuid()]);
+        $this->assertSame('success', $result->result);
+        $fingerprints->administer($staff, $form->fresh(), ['version' => $form->fresh()->version, 'decision_token' => (string) Str::uuid(), 'action' => 'approved']);
+        $priorId = $form->data['previous_document_id'];
+        $document = app(IssueDocuments::class)->issue($staff, $request->fresh(), ['operation_token' => (string) Str::uuid(), 'previous_document_id' => $priorId]);
+        $this->assertSame($priorId, $document->previous_document_id);
+        $this->assertSame('superseded', $owner->documents()->find($priorId)->status);
+        $this->assertSame('processing', $request->fresh()->status);
+        $manager = app(ManageDocuments::class);
+        $manager->choose($staff, $document->fresh(), ['operation_token' => (string) Str::uuid(), 'expected_version' => $document->fresh()->workflow_version, 'method' => 'pickup', 'center' => 'مركز اصطناعي']);
+        $manager->status($staff, $document->fresh(), ['operation_token' => (string) Str::uuid(), 'expected_version' => $document->fresh()->workflow_version, 'status' => 'preparing']);
+        $manager->status($staff, $document->fresh(), ['operation_token' => (string) Str::uuid(), 'expected_version' => $document->fresh()->workflow_version, 'status' => 'delivered', 'proof_reference' => 'RENEWAL-DELIVERED']);
+        $this->assertSame('completed', $request->fresh()->status);
+        $this->assertSame(1, $form->visitEvidence()->count());
     }
 
     public function test_arrival_without_paid_appointment_is_rejected(): void

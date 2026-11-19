@@ -16,7 +16,7 @@
         $serviceIconSprite = str_contains($serviceIcon, '-') ? 'service' : 'outline';
         $startPath = $service->code === 'identity-first-issue'
             ? route('citizen.identity-card.start')
-            : route('citizen.applications.create', ['service' => $service->code]);
+            : ($service->code === 'identity-renewal' ? route('citizen.identity-renewal.start') : route('citizen.applications.create', ['service' => $service->code]));
         $startUrl = auth()->check() && auth()->user()->role === 'citizen'
             ? $startPath
             : route('login', ['redirect' => $startPath]);

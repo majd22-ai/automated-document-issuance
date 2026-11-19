@@ -238,6 +238,9 @@ class IdentityAttestations
 
     public function requirements(CitizenServiceRequest $application, ?ServiceRequestStatus $target): array
     {
+        if ($application->identityCardForm?->isRenewal()) {
+            return [];
+        }
         $form = $application->identityCardForm;
         if (! $form) {
             return [];

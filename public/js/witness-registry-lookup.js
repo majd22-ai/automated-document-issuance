@@ -15,7 +15,10 @@
 
         const clearAutofill = () => {
             ['name', 'phone', 'issued_place'].forEach(field => {
-                if (autoFields[field]) autoFields[field].value = '';
+                if (autoFields[field]) {
+                    autoFields[field].value = '';
+                    autoFields[field].dispatchEvent(new Event('change', {bubbles: true}));
+                }
             });
             dateFields.querySelectorAll('select').forEach(select => {
                 select.value = '';
@@ -65,7 +68,10 @@
 
                 const record = payload.data;
                 ['name', 'phone', 'issued_place'].forEach(field => {
-                    if (autoFields[field]) autoFields[field].value = record[field] || '';
+                    if (autoFields[field]) {
+                        autoFields[field].value = record[field] || '';
+                        autoFields[field].dispatchEvent(new Event('change', {bubbles: true}));
+                    }
                 });
                 if (record.issued_at) {
                     const [year, month, day] = record.issued_at.split('-');

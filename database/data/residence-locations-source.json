@@ -1,0 +1,22 @@
+{
+  "source": "GeoNames",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "source_url": "https://download.geonames.org/export/dump/",
+  "retrieved_on": "2026-11-14",
+  "countries": 250,
+  "source_admin1_rows": 3865,
+  "source_admin2_rows": 47753,
+  "files": {
+    "countryInfo.txt": {
+      "sha256": "79f8f59ea01cbb40438bf1856dd6c2ff201f03f8fc72d0530b2646aaf603ef04"
+    },
+    "admin1CodesASCII.txt": {
+      "sha256": "2e4867f5397acb056ea26377601b57af37cb4c81399770225018e9e439e91ad3"
+    },
+    "admin2Codes.txt": {
+      "sha256": "67492a022984623460aaaec97f4d1d49e74356c8b5730be9fe23e736223b71dc"
+    }
+  },
+  "notes": "ADM1 and ADM2 only; countries without a supplied administrative level use explicit manual entry. Yemen uses the existing Arabic directory. Withdrawn AN/CS country codes excluded. Names retain the source spelling."
+}

@@ -43,7 +43,7 @@ class GovernmentServiceController extends Controller
         return response()->view('public.services.show', compact('service', 'reasons', 'report'))->header('Cache-Control', 'no-store, private');
     }
 
-    public function entry(Request $request, ServiceEligibility $eligibility): Response
+    public function entry(Request $request, ServiceEligibility $eligibility): Response|\Illuminate\Http\RedirectResponse
     {
         $data = Validator::make($request->query(), ['service' => ['nullable', 'string', 'max:100']])->validate();
         if (empty($data['service'])) {
@@ -55,10 +55,13 @@ class GovernmentServiceController extends Controller
         return $this->start($request, GovernmentService::resolveCode($data['service']), $eligibility);
     }
 
-    public function start(Request $request, GovernmentService $service, ServiceEligibility $eligibility): Response
+    public function start(Request $request, GovernmentService $service, ServiceEligibility $eligibility): Response|\Illuminate\Http\RedirectResponse
     {
         $report = $eligibility->evaluate($request->user(), $service);
         $reasons = $report->reasons();
+        if ($service->code === 'identity-renewal' && ! $reasons) {
+            return redirect()->route('citizen.identity-renewal.start');
+        }
         $draft = $service->code === 'birth-certificate-first-issue'
             ? BirthCertificateDraft::where('user_id', $request->user()->id)->where('government_service_id', $service->id)->first()
             : null;

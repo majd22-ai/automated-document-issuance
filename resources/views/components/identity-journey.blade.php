@@ -16,7 +16,7 @@
 @else<p>تصدر الفاتورة تلقائيًا بعد القبول المبدئي.</p>@endif
 <h3>موعد الحضور الواحد</h3>
 @foreach($application->appointments()->with('slot')->latest('id')->get() as $journeyBooking)<p>{{ $journeyBooking->slot?->center }} — {{ $journeyBooking->slot?->starts_at->setTimezone(config('operations.timezone'))->format('Y-m-d H:i') }} — {{ $journeyBooking->statusLabel() }}</p>@endforeach
-<p>أحضر نتيجة فحص الدم الذي أُجري خارج مقر الإصدار. لا يلزم حجز منفصل للبصمة أو التصوير أو الفحص.</p>
+@if($journeyForm->isRenewal())<p>أحضر أصل البطاقة السابقة لمطابقتها عند الحضور. لا يلزم شاهدان أو مصادقة عاقل أو إعادة فحص الدم للتجديد العادي.</p>@else<p>أحضر نتيجة فحص الدم الذي أُجري خارج مقر الإصدار. لا يلزم حجز منفصل للبصمة أو التصوير أو الفحص.</p>@endif
 @if($journeyStaff && $application->status==='accepted' && $journeyPaid && ! $journeyForm->arrived_at)
 <p><a class="btn btn-outline" href="{{ route('employee.applications.operations',$application->id) }}">تحديد موعد الحضور أو إعادة جدولته</a></p>
 @endif
@@ -26,6 +26,7 @@
 <p>الحضور: {{ $journeyForm->arrived_at?->format('Y-m-d H:i') ?? 'لم يُسجل' }}</p>
 <h3>أدلة الزيارة</h3>
 @foreach(['blood_result'=>'نتيجة فحص الدم الخارجي','card_photo'=>'صورة الوجه المخصصة للبطاقة'] as $journeyKind=>$journeyLabel)
+@continue($journeyForm->isRenewal() && $journeyKind === 'blood_result')
 @php($journeyEvidence = $journey->evidence($journeyForm,$journeyKind))
 <article style="border-block-start:1px solid #ddd;padding-block:1rem"><h4>{{ $journeyLabel }}</h4>
 @if($journeyEvidence)<p>الحالة: {{ ['pending'=>'بانتظار المراجعة','approved'=>'مقبول','rejected'=>'مرفوض','requires_correction'=>'يحتاج إلى استكمال'][$journeyEvidence->status] ?? $journeyEvidence->status }} — {{ $journeyEvidence->reason }}</p><a target="_blank" rel="noopener" href="{{ route('identity-workflow.evidence.file',$journeyEvidence) }}">عرض الملف الخاص</a>
@@ -39,9 +40,11 @@
 <button class="btn btn-primary">حفظ دليل جديد مع إبقاء التاريخ</button></form>
 @endif</article>
 @endforeach
+@if(!$journeyForm->isRenewal())
 <h3>الشاهدان</h3><p>{{ $journeyForm->witness_attendance_reason ? 'طُلب حضورهما بسبب: '.$journeyForm->witness_attendance_reason : 'تراجع بياناتهما ومصادقاتهما المقدمة؛ لا يُطلب حضور إضافي افتراضيًا.' }}</p>
 @if($journeyStaff && in_array($application->status,['submitted','under_review','accepted']) && ! $journeyForm->operations()->where('form_revision',$journeyForm->revision)->where('result','success')->exists())
 <details><summary>طلب حضور استثنائي للشاهدين أو تسجيل التحقق</summary><form method="POST" action="{{ route('identity-workflow.witnesses',$journeyForm) }}">@csrf<input type="hidden" name="version" value="{{ $journeyForm->version }}"><label>السبب أو مرجع فحص الوثائق<input class="form-control" name="reason" minlength="3" maxlength="1000" required></label>@if($journeyForm->arrived_at && $journeyForm->witness_attendance_reason)<label><input type="checkbox" name="present_and_verified" value="1"> حضر الشاهدان وفحصت وثائقهما وقبلتها</label>@endif<button class="btn btn-outline">حفظ إجراء الشاهدين</button></form></details>
+@endif
 @endif
 <h3>البصمة والمراجعة النهائية</h3><p>{{ $journeyForm->fingerprintStatusLabel() }}</p>
 @foreach($journeyForm->operations()->latest('id')->get() as $journeyOperation)<p>{{ $journeyOperation->executed_at->format('Y-m-d H:i') }} — {{ $journeyOperation->resultLabel() }} — {{ $journeyOperation->sourceLabel() }}</p>@endforeach

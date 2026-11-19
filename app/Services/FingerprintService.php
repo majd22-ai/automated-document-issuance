@@ -32,7 +32,7 @@ class FingerprintService
     public static function canUse(User $actor, string $permission = 'can_review'): bool
     {
         return self::enabled() && $actor->is_active && ($actor->role === 'admin'
-            || ($actor->role === 'employee' && $actor->canReviewService(GovernmentService::where('code', 'identity-first-issue')->value('id'), $permission)));
+            || ($actor->role === 'employee' && GovernmentService::whereIn('code', ['identity-first-issue', 'identity-renewal'])->get()->contains(fn ($service) => $actor->canReviewService($service->id, $permission))));
     }
 
     public function scopedForms(User $actor, string $permission = 'can_review')
@@ -76,7 +76,13 @@ class FingerprintService
 
             return $data;
         })->all();
-        if (Validator::make(['data' => $form->data, 'witnesses' => $witnesses], SaveIdentityCardForm::dataRules() + SaveIdentityCardForm::witnessRules(true))->fails()) {
+        if ($form->isRenewal()) {
+            try {
+                app(\App\Services\Identity\IdentityRenewals::class)->assertReady($form);
+            } catch (\Illuminate\Validation\ValidationException $error) {
+                $reasons = array_merge($reasons, $error->validator->errors()->all());
+            }
+        } elseif (Validator::make(['data' => $form->data, 'witnesses' => $witnesses], SaveIdentityCardForm::dataRules() + SaveIdentityCardForm::witnessRules(true))->fails()) {
             $reasons[] = 'البيانات الشخصية أو بيانات الشاهدين غير مكتملة أو غير صحيحة.';
         }
         $photo = $form->photo;

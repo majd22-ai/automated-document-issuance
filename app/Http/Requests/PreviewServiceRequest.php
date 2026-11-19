@@ -17,7 +17,7 @@ class PreviewServiceRequest extends FormRequest
     public static function payloadRules(GovernmentService $service): array
     {
         $fields = $service->application_fields ?? [];
-        if ($service->code === 'identity-first-issue') {
+        if (in_array($service->code, ['identity-first-issue', 'identity-renewal'], true)) {
             foreach (config('identity_card.fields') as $group) {
                 foreach ($group as $key => $field) {
                     if (! in_array($key, array_column($fields, 'key'), true)) {
@@ -25,6 +25,10 @@ class PreviewServiceRequest extends FormRequest
                     }
                 }
             }
+        }
+        if ($service->code === 'identity-renewal') {
+            // Versioned renewal forms enforce selection themselves; historical generic requests remain valid.
+            $fields[] = ['key' => 'previous_document_id', 'type' => 'integer', 'required' => false];
         }
         $rules = ['data' => ['sometimes', 'array', $fields ? 'array:'.implode(',', array_column($fields, 'key')) : 'size:0'], 'notes' => ['nullable', 'string', 'max:2000']];
         foreach ($fields as $field) {

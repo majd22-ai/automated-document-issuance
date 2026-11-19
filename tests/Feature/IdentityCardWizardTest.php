@@ -66,6 +66,38 @@ class IdentityCardWizardTest extends TestCase
         return $this->post('/citizen/identity-card/'.$form->id, $payload + ['step' => $step, 'action' => $action, 'version' => $form->fresh()->version]);
     }
 
+    public function test_step_three_country_cascade_and_foreign_address_membership(): void
+    {
+        $form = $this->draft();
+        foreach ([1, 2] as $step) {
+            $this->save($form, $step, ['data' => $this->data($step)])->assertSessionHasNoErrors();
+        }
+        $this->get('/citizen/identity-card/'.$form->id.'?step=3')->assertOk()
+            ->assertSee('data-residence-cascade', false)
+            ->assertSeeInOrder(['دولة الإقامة', 'محافظة الإقامة / المنطقة', 'مديرية الإقامة / التقسيم الإداري']);
+        $data = array_replace($this->data(3), ['residence_country' => 'السعودية', 'residence_governorate' => 'تعز', 'residence_district' => 'المعافر']);
+        $this->save($form, 3, ['data' => $data])->assertSessionHasErrors('data.residence_governorate');
+        $region = collect(app(\App\Services\ResidenceLocations::class)->governorates('SA'))->first(fn ($row) => count($row['districts']) > 0);
+        $data['residence_governorate'] = $region['name'];
+        $data['residence_district'] = $region['districts'][0]['name'];
+        $this->save($form, 3, ['data' => $data])->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertSame($region['name'], $form->fresh()->data['residence_governorate']);
+        $this->assertSame(4, $form->fresh()->current_step);
+    }
+
+    public function test_final_submission_rechecks_hierarchy_saved_as_an_incomplete_draft(): void
+    {
+        $form = $this->draft();
+        $this->ready($form);
+        $fresh = $form->fresh();
+        $fresh->forceFill(['data' => array_replace($fresh->data, ['residence_country' => 'السعودية', 'residence_governorate' => 'تعز', 'residence_district' => 'المعافر'])])->save();
+        $this->get('/citizen/identity-card/'.$form->id.'?step=7')->assertOk();
+        $reviews = session('identity_card_reviews');
+        $this->post('/citizen/identity-card/'.$form->id.'/submit', ['version' => $form->fresh()->version, 'declaration' => '1', 'review_token' => array_key_last($reviews)])
+            ->assertSessionHasErrors('data.residence_governorate');
+        $this->assertNull($form->fresh()->submitted_at);
+    }
+
     private function ready(IdentityCardForm $form): void
     {
         for ($step = 1; $step <= 3; $step++) {

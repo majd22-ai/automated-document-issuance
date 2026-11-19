@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminGovernmentServiceController;
+use App\Http\Controllers\ResidenceLocationController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ApplicationReviewController;
 use App\Http\Controllers\ApplicationTrackingController;
@@ -236,6 +237,7 @@ Route::get('/notifications/unread-count', function (Request $request) {
     return response()->json(['unread' => $request->user()->unreadNotifications()->count()])->header('Cache-Control', 'no-store, private');
 })->middleware(['auth', 'throttle:60,1,notification-count:'])->name('notifications.unread-count');
 Route::get('/profile', [ProfileController::class, 'edit'])->middleware('auth')->name('profile.edit');
+Route::get('/locations/residence/{country}', [ResidenceLocationController::class, 'show'])->middleware('auth')->where('country', '[A-Z]{2}')->name('locations.residence');
 Route::patch('/profile', [ProfileController::class, 'update'])->middleware('auth')->name('profile.update');
 
 Route::get('/attachments/{attachment}/preview', [CitizenAttachmentController::class, 'preview'])->middleware('auth')->name('attachments.preview');
@@ -280,6 +282,9 @@ Route::middleware(['auth', 'role:citizen'])
     ->name('citizen.')
     ->group(function () {
 
+        Route::get('/identity-renewal/start', [\App\Http\Controllers\IdentityRenewalController::class, 'start'])->name('identity-renewal.start');
+        Route::get('/identity-renewal/{form}', [\App\Http\Controllers\IdentityRenewalController::class, 'show'])->name('identity-renewal.show');
+        Route::post('/identity-renewal/{form}', [\App\Http\Controllers\IdentityRenewalController::class, 'save'])->middleware('throttle:30,1')->name('identity-renewal.save');
         Route::get('/identity-card', [IdentityCardFormController::class, 'index'])->name('identity-card.index');
         Route::get('/identity-card/start', [IdentityCardFormController::class, 'start'])->name('identity-card.start');
         Route::post('/birth-certificates/drafts', [BirthCertificateController::class, 'saveDraft'])->middleware('throttle:20,1')->name('birth-certificates.drafts.store');
@@ -422,6 +427,7 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::get('/neighborhood-officials', [NeighborhoodOfficialController::class, 'index'])->name('neighborhood-officials.index');
         Route::get('/mock-systems', [\App\Http\Controllers\MockActivationController::class, 'systems'])->name('mock-systems.index');
+        Route::get('/mock-systems/{person}/portrait', [\App\Http\Controllers\MockActivationController::class, 'registryPortrait'])->whereNumber('person')->name('mock-systems.portrait');
         Route::get('/simulations', [\App\Http\Controllers\SimulationCenterController::class, 'index'])->name('simulations.index');
         Route::post('/neighborhood-officials', [NeighborhoodOfficialController::class, 'store'])->middleware('throttle:20,1')->name('neighborhood-officials.store');
         Route::patch('/neighborhood-officials/{official}', [NeighborhoodOfficialController::class, 'update'])->name('neighborhood-officials.update');

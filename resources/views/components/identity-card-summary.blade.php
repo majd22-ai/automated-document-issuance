@@ -1,12 +1,13 @@
 @php
     $summaryGroups = config('identity_card.fields', []);
+    if ($identityForm->isRenewal()) $summaryGroups = [3 => $summaryGroups[3]];
     $groupTitles = [1 => 'البيانات الشخصية', 2 => 'بيانات الميلاد', 3 => 'العنوان والحالة الاجتماعية'];
     $witnessLabels = ['name'=>'الاسم الكامل','document_type'=>'نوع البطاقة','document_number'=>'رقم البطاقة','issued_place'=>'محل صدورها','issued_at'=>'تاريخ صدورها','employer'=>'جهة العمل','work_address'=>'مقر جهة العمل','phone'=>'رقم التلفون','address'=>'عنوان السكن','nearby_landmark'=>'جوار / أقرب معلم'];
 @endphp
 <div class="identity-summary">
-    @include('components.identity-attestation-stamp', ['attestation' => $identityForm->attestation])
+    @if(!$identityForm->isRenewal())@include('components.identity-attestation-stamp', ['attestation' => $identityForm->attestation])@endif
     <section class="identity-panel"><h3>بيانات الطلب</h3><dl class="identity-details">
-        <div><dt>نوع الطلب</dt><dd>إصدار البطاقة الشخصية</dd></div>
+        <div><dt>نوع الطلب</dt><dd>{{ $identityForm->isRenewal() ? 'تجديد البطاقة الشخصية' : 'إصدار البطاقة الشخصية' }}</dd></div>
         <div><dt>المرجع الداخلي</dt><dd dir="ltr">{{ $identityForm->application?->reference ?? $identityForm->reference }}</dd></div>
         <div><dt>تاريخ التقديم</dt><dd>{{ $identityForm->submitted_at?->format('Y-m-d H:i') ?? 'مسودة — لم تُقدّم بعد' }}</dd></div>
         <div><dt>الحالة</dt><dd>{{ $identityForm->statusLabel() }}</dd></div>
@@ -26,7 +27,7 @@
         @error('photo')<p class="identity-field-error">{{ $message }}</p>@enderror
         @if($identityForm->photo)<a href="{{ route('citizen.identity-card.photo', $identityForm) }}" target="_blank" rel="noopener"><img class="identity-photo" src="{{ route('citizen.identity-card.photo', $identityForm) }}" alt="الصورة الشخصية المرفقة"></a>@else<p>غير مسجلة</p>@endif
     </section>
-    @foreach([1, 2] as $position)
+    @foreach($identityForm->isRenewal() ? [] : [1, 2] as $position)
         @php($witness = $identityForm->witnesses->firstWhere('position', $position))
         <section class="identity-panel"><h3>الشاهد {{ $position === 1 ? 'الأول' : 'الثاني' }}</h3>
             <dl class="identity-details">@foreach($witnessLabels as $key => $label)<div><dt>{{ $label }}</dt><dd>{{ data_get($witness, $key) ?: 'غير مسجل' }}@error('witnesses.'.($position-1).'.'.$key)<p class="identity-field-error">{{ $message }}</p>@enderror</dd></div>@endforeach</dl>

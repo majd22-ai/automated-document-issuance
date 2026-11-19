@@ -30,6 +30,11 @@ class IdentityCardForm extends Model
         return self::STATUSES[$this->status] ?? $this->status;
     }
 
+    public function isRenewal(): bool
+    {
+        return $this->service?->code === 'identity-renewal';
+    }
+
     public function citizen()
     {
         return $this->belongsTo(User::class, 'user_id');

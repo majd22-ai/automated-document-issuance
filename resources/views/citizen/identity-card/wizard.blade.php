@@ -2,6 +2,7 @@
 @section('title', 'استمارة طلب البطاقة الشخصية')
 @push('styles')<link rel="stylesheet" href="{{ asset('css/identity-card-wizard.css') }}?v={{ filemtime(public_path('css/identity-card-wizard.css')) }}">@endpush
 @push('scripts')<script src="{{ asset('js/identity-card-wizard.js') }}" defer></script>@endpush
+@push('scripts')<script src="{{ asset('js/identity-phones.js') }}?v={{ filemtime(public_path('js/identity-phones.js')) }}" defer></script>@endpush
 @push('scripts')<script src="{{ asset('js/witness-selfies.js') }}?v={{ filemtime(public_path('js/witness-selfies.js')) }}" defer></script>@endpush
 @push('scripts')<script src="{{ asset('js/witness-registry-lookup.js') }}?v={{ filemtime(public_path('js/witness-registry-lookup.js')) }}" defer></script>@endpush
 @section('content')
@@ -10,7 +11,7 @@
     $witnessFields = ['document_type'=>'نوع البطاقة','document_number'=>'رقم البطاقة','name'=>'الاسم الكامل','phone'=>'رقم التلفون','issued_place'=>'محل صدور البطاقة','issued_at'=>'تاريخ صدورها','employer'=>'جهة العمل','work_address'=>'مقر جهة العمل','address'=>'عنوان السكن','nearby_landmark'=>'جوار / أقرب معلم'];
     $completion = (int) round(min(7, max(1, $step)) / count($steps) * 100);
 @endphp
-<section class="section identity-wizard"><div class="container">
+<section class="section identity-wizard" data-identity-phones data-phone-codes='@json(config("residence_phones"))' data-phone-country="{{ app(\App\Services\ResidenceLocations::class)->countryCode(data_get($form->data, 'residence_country', '')) ?? 'YE' }}"><div class="container">
     <a href="{{ route('citizen.identity-card.index') }}">جميع الاستمارات</a>
     <div class="identity-heading"><div><h1>استمارة طلب البطاقة الشخصية</h1><p>مرجع الاستمارة الداخلي: <b dir="ltr">{{ $form->reference }}</b> · {{ $form->statusLabel() }}</p></div><p>الخطوة {{ $step }} من 7</p></div>
     <nav aria-label="مراحل الاستمارة"><ol class="identity-progress">@foreach($steps as $number => $title)<li class="{{ $number === $step ? 'is-current' : '' }}" @if($number === $step) aria-current="step" @endif><span>{{ $number }}</span>{{ $title }}</li>@endforeach</ol></nav>
@@ -63,18 +64,18 @@
             @csrf<input type="hidden" name="step" value="{{ $step }}"><input type="hidden" name="version" value="{{ $form->version }}">
             @if($step <= 3)
                 <p>الحقول المشار إليها بـ * مطلوبة للانتقال إلى الخطوة التالية. يمكنك حفظ مسودة غير مكتملة.</p>
-                <div class="identity-field-grid identity-panel" @if($step === 3) data-residence-selects data-location-values="names" @endif>
+                <div class="identity-field-grid identity-panel" @if($step === 3) data-residence-cascade data-residence-url="{{ route('locations.residence', ['country' => 'ZZ']) }}" @endif>
                 @if($step === 3)
-                    @include('components.residence-selects', ['prefix'=>'identity-residence', 'byName'=>true, 'governorateName'=>'data[residence_governorate]', 'districtName'=>'data[residence_district]', 'selectedGovernorate'=>old('data.residence_governorate',data_get($form->data,'residence_governorate')), 'selectedDistrict'=>old('data.residence_district',data_get($form->data,'residence_district'))])
+                    @include('components.residence-country-selects')
                 @endif
                 @foreach($fields[$step] as $key => $field)
                     @if($step === 2 && $loop->first)@include('components.birth-details')@endif
                     @continue($step === 2 && str_starts_with($key,'birth_'))
-                    @continue($step === 3 && in_array($key,['residence_governorate','residence_district']))
+                    @continue($step === 3 && in_array($key,['residence_country','residence_governorate','residence_district']))
                     @php
                         $errorKey = 'data.'.$key;
                     @endphp
-                    <div class="identity-field"><label for="field-{{ $key }}">{{ $field['label'] }} @if($field['required'] ?? false)<span aria-label="مطلوب">*</span>@endif</label>
+                    <div class="identity-field"><label for="field-{{ $key }}">{{ $field['label'] }} @if($key === 'residence_village') (اختياري) @endif @if($field['required'] ?? false)<span aria-label="مطلوب">*</span>@endif</label>
                     @if(($field['type'] ?? 'text') === 'select')
                         <select id="field-{{ $key }}" name="data[{{ $key }}]" @required($field['required'] ?? false) @error($errorKey) aria-invalid="true" aria-describedby="error-{{ $key }}" @enderror><option value="">اختر</option>@foreach($field['options'] as $value => $label)<option value="{{ $value }}" @selected((string)old($errorKey, data_get($form->data,$key)) === (string)$value)>{{ $label }}</option>@endforeach</select>
                     @else

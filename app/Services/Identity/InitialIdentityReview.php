@@ -39,6 +39,22 @@ class InitialIdentityReview
         if (! $validPhoto) {
             $tasks['photo']['issues'][] = 'يلزم ملف صورة سليم مرتبط بهذا الطلب، بدقة ٦٠٠ × ٦٠٠ على الأقل ونوع PNG أو JPEG.';
         }
+        if ($form->isRenewal()) {
+            $renewals = app(IdentityRenewals::class);
+            $previous = $renewals->previous($form);
+            $copy = $renewals->cardCopy($form);
+            $ready = false;
+            try {
+                $renewals->assertPrevious($form);
+                $ready = $copy && $copy->intact() && ! in_array($copy->review_status, ['rejected', 'replacement_required'], true);
+            } catch (ValidationException) {
+            }
+            $tasks['previous_card'] = $this->task('البطاقة السابقة', (bool) $ready,
+                'راجع صورة البطاقة السابقة مقابل الرقم وتواريخ السجل المرتبط بالمواطن. اختلاف بيانات الهوية يحتاج إجراء تصحيح مستقل؛ ويجب مطابقة الأصل عند الحضور.',
+                [$form->data, $previous?->getAttributes(), $copy?->getAttributes(), $ready], []);
+            $tasks['previous_card']['source_id'] = $previous?->id;
+            if (! $ready) $tasks['previous_card']['issues'][] = 'يلزم سجل بطاقة سابقة صالح للتجديد وصورة سليمة للبطاقة نفسها.';
+        } else {
         foreach ([1, 2] as $position) {
             $witness = $form->witnesses->firstWhere('position', $position);
             $document = $witness && MockCivilSystems::enabled() ? DB::table('mock_civil_documents')
@@ -106,6 +122,7 @@ class InitialIdentityReview
         if (! $validAttestation) {
             $tasks['attestation']['issues'][] = 'المصادقة لا تستوفي النسخة الحالية، أو هوية صاحب القرار، أو صلاحية العاقل ونطاق الحي. راجع مرجع المصادقة قبل قبولها.';
         }
+        }
         foreach ($tasks as $key => &$task) {
             $task['fingerprint'] = hash('sha256', json_encode([$form->id, $form->revision, $key, $task['evidence']], JSON_THROW_ON_ERROR));
             unset($task['evidence']);
@@ -123,7 +140,7 @@ class InitialIdentityReview
     {
         $input = array_map(fn ($value) => is_string($value) ? trim($value) : $value, $input);
         $input = \Illuminate\Support\Facades\Validator::make($input, [
-            'task' => ['required', 'in:photo,witness_1,witness_2,attestation'],
+            'task' => ['required', 'in:photo,witness_1,witness_2,attestation,previous_card'],
             'outcome' => ['required', 'in:approved,correction_required'], 'decision_token' => ['required', 'uuid'],
             'fingerprint' => ['required', 'string', 'size:64'], 'note' => ['nullable', 'string', 'max:1000'],
             'confirmed' => ['required_if:outcome,approved', 'accepted'],

@@ -43,6 +43,9 @@
           <p>أكمل الاستمارة خطوة بخطوة، واحفظها كمسودة للعودة إليها لاحقًا.</p>
           <a class="btn btn-primary" href="{{ route('citizen.identity-card.index') }}">بدء الطلب أو استكمال مسودتي</a>
           <small>حفظ المسودة لا يعني قبول الطلب؛ تُراجع الشروط قبل الإرسال.</small>
+        @elseif($service->code === 'identity-renewal' && $service->is_active && $service->rules_approved)
+          <p>اختر بطاقتك السابقة وحدّث العنوان وارفع الصورة الحديثة وصورة البطاقة. لا يُطلب شاهدان أو مصادقة عاقل للتجديد العادي.</p>
+          <a class="btn btn-primary" href="{{ route('citizen.identity-renewal.start') }}">بدء التجديد أو استكمال مسودتي</a>
         @else
         @if($service->is_active && $service->rules_approved)<p><a class="btn btn-outline" href="{{ route('citizen.services.attachments.index', $service) }}">استكمال الصور والمرفقات</a></p>@endif
         @if($reasons)

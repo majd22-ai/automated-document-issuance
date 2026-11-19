@@ -4,7 +4,7 @@
 @endphp
 <section aria-label="مراجعة الخطوات ٤ و٥ و٦">
 <h2>ملف معاملة الهوية — المراجعة الأولية</h2>
-<p>ابدأ باستلام الطلب، ثم راجع الصورة والشاهدين ومصادقة العاقل. البيانات التي تحقق منها النظام موجودة في التفاصيل أدناه. القبول المبدئي متاح بعد اكتمال المهام الثلاث.</p>
+@if($identityForm->isRenewal())<p>ابدأ باستلام طلب التجديد، ثم راجع الصورة الحديثة وصورة البطاقة السابقة مقابل السجل. لا تُعد مراجعة البيانات التي تحقق منها النظام. القبول المبدئي يتطلب إكمال المهمتين.</p>@else<p>ابدأ باستلام الطلب، ثم راجع الصورة والشاهدين ومصادقة العاقل. البيانات التي تحقق منها النظام موجودة في التفاصيل أدناه. القبول المبدئي متاح بعد اكتمال المهام الثلاث.</p>@endif
 @if($application->status === 'submitted')
 @can('transition', [$application, \App\Enums\ServiceRequestStatus::UnderReview])
 <form method="POST" action="{{ route('employee.applications.decisions', $application) }}">@csrf
@@ -21,6 +21,12 @@
 @if($taskKey === 'photo' && $identityForm->photo?->intact())
 <a href="{{ route('citizen.identity-card.photo', $identityForm) }}" target="_blank" rel="noopener"><img src="{{ route('citizen.identity-card.photo', $identityForm) }}" alt="الصورة المرفوعة للمراجعة" style="max-width:220px;max-height:240px;object-fit:contain"></a>
 <p>قرار الموافقة هنا لجودة الصورة وملاءمتها؛ مطابقة صاحبها تُستكمل عند الحضور.</p>
+@endif
+@if($taskKey === 'previous_card')
+@php($renewalCopy = app(\App\Services\Identity\IdentityRenewals::class)->cardCopy($identityForm))
+@php($renewalPrevious = app(\App\Services\Identity\IdentityRenewals::class)->previous($identityForm))
+<p>رقم البطاقة المسجلة: <bdi>{{ $renewalPrevious?->document_number }}</bdi> — الإصدار: {{ $renewalPrevious?->issued_at?->format('Y-m-d') }} — الانتهاء: {{ $renewalPrevious?->expires_at?->format('Y-m-d') }}</p>
+@if($renewalCopy)<a target="_blank" rel="noopener" href="{{ route('attachments.preview',$renewalCopy) }}">عرض صورة البطاقة السابقة</a>@endif
 @endif
 @if($task['comparisons'])
 <p>مرجع الوثيقة في سجل المحاكاة: {{ $task['source_id'] ?? 'غير موجود' }} — وقت المقارنة: {{ $task['source_checked_at'] }}</p>

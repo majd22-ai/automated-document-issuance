@@ -4,7 +4,7 @@
  $hijriMonths = [1=>'محرم',2=>'صفر',3=>'ربيع الأول',4=>'ربيع الآخر',5=>'جمادى الأولى',6=>'جمادى الآخرة',7=>'رجب',8=>'شعبان',9=>'رمضان',10=>'شوال',11=>'ذو القعدة',12=>'ذو الحجة'];
 @endphp
 <div class="birth-details identity-field-grid" data-birth-details>
- <p class="birth-help">اختر الموقع من الاقتراحات، أو اكتب الاسم كما ورد في وثيقة الميلاد إذا لم تجده. تتغير اقتراحات المديريات حسب المحافظة.</p>
+ <p class="birth-help">اختر مكان الميلاد كما ورد في الوثيقة. تعرض قائمة المديريات جميع مديريات اليمن، ثم مديريات المحافظة التي تختارها. يمكنك إدخال الاسم إذا لم تجده.</p>
  @foreach(['birth_gregorian'=>'تاريخ الميلاد الميلادي','birth_hijri'=>'تاريخ الميلاد الهجري'] as $dateKey=>$dateLabel)
  @php
   $dateValue = $birthValues($dateKey);
@@ -41,6 +41,9 @@
  @endif
  @if($key === 'birth_governorate')
  @foreach($birthLocations as $g)<option value="{{ $g['name'] }}"></option>@endforeach
+ @endif
+ @if($key === 'birth_district')
+ @foreach($birthLocations->flatMap(fn($g) => $g['districts'])->unique()->sort() as $district)<option value="{{ $district }}"></option>@endforeach
  @endif
  @if($key === 'birth_village')
  @foreach(config('identity_card.birth_villages',[]) as $village)<option value="{{ $village }}"></option>@endforeach
