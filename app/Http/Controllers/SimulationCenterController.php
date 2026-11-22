@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\FingerprintService;
 use App\Services\Integrations\LocalCivilRegistryProvider;
+use App\Services\MockCivilRegistry;
 use App\Services\Registration\MockCivilSystems;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -22,11 +23,11 @@ class SimulationCenterController extends Controller
                 'route' => 'admin.demo-civil-registry.index',
             ],
             [
-                'title' => 'أنظمة التسجيل والتفعيل المدنية',
-                'description' => 'عرض أنظمة المحاكاة المدنية الحالية في نوافذ: السجل، المواليد، الأسرة، البطاقات، مطابقة الوجه ورموز التحقق.',
-                'enabled' => MockCivilSystems::enabled(),
-                'tables' => ['mock_civil_persons', 'mock_civil_families', 'mock_identity_cards', 'mock_birth_records', 'mock_civil_documents'],
-                'route' => 'admin.mock-systems.index',
+                'title' => 'ملفات المواطنين في السجل التجريبي',
+                'description' => 'ابحث في قيود المحاكاة المدنية وافتح ملف المواطن للاطلاع على بيانات الأسرة والميلاد والبطاقة والوثائق.',
+                'enabled' => $request->user()->is_active && MockCivilSystems::enabled(),
+                'tables' => MockCivilRegistry::TABLES,
+                'route' => 'admin.mock-civil-registry.index',
             ],
             [
                 'title' => 'شبكة البريد التجريبية',

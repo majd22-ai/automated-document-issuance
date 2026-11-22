@@ -28,7 +28,8 @@ class EmployeeReportingTest extends TestCase
         $a = $this->admin();
         $d = $this->department();
         $before = AuditEvent::where('event', 'department.updated')->count();
-        $this->actingAs($a)->patch('/admin/departments/'.$d->id, ['name' => $d->name, 'description' => 'Private department explanation', 'is_active' => 1])->assertRedirect();
+        $this->actingAs($a);
+        $d->forceFill(['description' => 'Private department explanation'])->save();
         $this->assertSame($before + 1, AuditEvent::where('event', 'department.updated')->count());
         $event = AuditEvent::where('event', 'department.updated')->latest('id')->firstOrFail();
         $this->assertContains('description', $event->changes['changed_fields']);
@@ -358,16 +359,20 @@ class EmployeeReportingTest extends TestCase
         $this->actingAs($this->admin())->post('/admin/employees/'.$e->id.'/reset-password')->assertSessionHasErrors('reset');
     }
 
-    public function test_department_creation_deactivation_and_search_work_and_are_protected(): void
+    public function test_retired_admin_modules_are_unavailable_and_department_employee_search_still_works(): void
     {
-        $this->actingAs($this->admin())->post('/admin/departments', ['name' => 'قسم الوثائق', 'is_active' => 1])->assertRedirect();
-        $d = Department::where('name', 'قسم الوثائق')->firstOrFail();
+        $d = $this->department();
         $e = User::factory()->create(['role' => 'employee', 'department_id' => $d->id, 'employee_number' => 'STAFF-999']);
+        $this->actingAs($this->admin())->get('/admin/dashboard')->assertOk()
+            ->assertDontSee('href="'.url('/admin/settings').'"', false)
+            ->assertDontSee('href="'.url('/admin/departments').'"', false);
+        $this->get('/admin/settings')->assertNotFound();
+        $this->get('/admin/departments')->assertNotFound();
+        $this->post('/admin/departments', ['name' => 'Retired department creation', 'is_active' => 1])->assertNotFound();
+        $this->patch('/admin/departments/'.$d->id, ['name' => $d->name, 'is_active' => 0])->assertNotFound();
         $this->get('/admin/employees?search=STAFF-999&department_id='.$d->id)->assertOk()->assertSee($e->name);
-        $this->patch('/admin/departments/'.$d->id, ['name' => $d->name, 'is_active' => 0])->assertRedirect();
-        $this->assertFalse($d->fresh()->is_active);
-        $this->delete('/admin/departments/'.$d->id)->assertStatus(405);
-        $this->actingAs($e)->post('/admin/departments', ['name' => 'forged', 'is_active' => 1])->assertForbidden();
+        $this->assertTrue($d->fresh()->is_active);
+        $this->assertDatabaseMissing('departments', ['name' => 'Retired department creation']);
     }
 
     public function test_auth_events_record_no_credentials_and_last_login_is_recorded(): void

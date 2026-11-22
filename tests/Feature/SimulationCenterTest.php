@@ -37,7 +37,7 @@ class SimulationCenterTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/simulations')
             ->assertOk()->assertSee('غير مفعّل')
             ->assertDontSee('href="'.route('admin.postal-network.index').'"', false)
-            ->assertDontSee('href="'.route('admin.mock-systems.index').'"', false);
+            ->assertDontSee('href="'.route('admin.mock-civil-registry.index').'"', false);
     }
 
     public function test_enabled_systems_link_to_existing_pages_and_sidebar_has_one_center_entry(): void
@@ -45,11 +45,13 @@ class SimulationCenterTest extends TestCase
         config(['demo_civil_registry.enabled' => true, 'citizen_mock.enabled' => true, 'postal_network.enabled' => true]);
         $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/simulations')
             ->assertOk()->assertSee('href="'.route('admin.postal-network.index').'"', false)
-            ->assertSee('href="'.route('admin.mock-systems.index').'"', false)
+            ->assertSee('href="'.route('admin.mock-civil-registry.index').'"', false)
+            ->assertDontSee('href="'.route('admin.mock-systems.index').'"', false)
             ->assertSee('href="'.route('admin.demo-civil-registry.index').'"', false)
             ->assertSee('التحصيل غير متاح');
         $this->get('/admin/dashboard')->assertOk()
             ->assertSee('href="'.route('admin.simulations.index').'"', false)
+            ->assertSee('href="'.route('admin.mock-civil-registry.index').'"', false)
             ->assertDontSee('href="'.route('admin.mock-systems.index').'"', false);
     }
 

@@ -14,7 +14,6 @@ use App\Http\Controllers\CitizenDataController;
 use App\Http\Controllers\CitizenNotificationController;
 use App\Http\Controllers\CivilRegistrySimulationController;
 use App\Http\Controllers\DemoCivilRegistryController;
-use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DocumentIssuanceController;
 use App\Http\Controllers\ElectronicVerificationController;
 use App\Http\Controllers\EmployeeManagementController;
@@ -428,6 +427,8 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/neighborhood-officials', [NeighborhoodOfficialController::class, 'index'])->name('neighborhood-officials.index');
         Route::get('/mock-systems', [\App\Http\Controllers\MockActivationController::class, 'systems'])->name('mock-systems.index');
         Route::get('/mock-systems/{person}/portrait', [\App\Http\Controllers\MockActivationController::class, 'registryPortrait'])->whereNumber('person')->name('mock-systems.portrait');
+        Route::get('/mock-civil-registry', [\App\Http\Controllers\MockCivilRegistryController::class, 'index'])->name('mock-civil-registry.index');
+        Route::get('/mock-civil-registry/{person}', [\App\Http\Controllers\MockCivilRegistryController::class, 'show'])->whereNumber('person')->name('mock-civil-registry.show');
         Route::get('/simulations', [\App\Http\Controllers\SimulationCenterController::class, 'index'])->name('simulations.index');
         Route::post('/neighborhood-officials', [NeighborhoodOfficialController::class, 'store'])->middleware('throttle:20,1')->name('neighborhood-officials.store');
         Route::patch('/neighborhood-officials/{official}', [NeighborhoodOfficialController::class, 'update'])->name('neighborhood-officials.update');
@@ -446,9 +447,6 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/employees/{employee}', [EmployeeManagementController::class, 'show'])->name('employees.show');
         Route::patch('/employees/{employee}', [EmployeeManagementController::class, 'update'])->name('employees.update');
         Route::post('/employees/{employee}/reset-password', [EmployeeManagementController::class, 'resetPassword'])->middleware('throttle:6,1')->name('employees.reset-password');
-        Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
-        Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
-        Route::patch('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
 
         Route::get('/services', [AdminGovernmentServiceController::class, 'index'])->name('services.index');
         Route::get('/services/create', [AdminGovernmentServiceController::class, 'create'])->name('services.create');
@@ -468,10 +466,6 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::get('/audit-logs', [OperationalReportController::class, 'audit'])->name('audit-logs.index');
         Route::get('/audit-logs/export', [OperationalReportController::class, 'exportAudit'])->middleware('throttle:6,1')->name('audit-logs.export');
-
-        Route::get('/settings', function () {
-            return view('admin.settings.index');
-        })->name('settings.index');
 
     });
 

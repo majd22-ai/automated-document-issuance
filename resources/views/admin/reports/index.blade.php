@@ -6,7 +6,7 @@
 <x-workspace-heading title="لوحة الإدارة والرقابة" role-label="مساحة المدير" description="تابع مؤشرات المنصة وأدر الحسابات والخدمات والصلاحيات." />
 <x-workspace-quick-links title="إدارة المنصة" :items="[
     ['label' => 'المستخدمون', 'description' => 'إدارة الحسابات والأدوار وحالاتها.', 'route' => 'admin.users.index'],
-    ['label' => 'الموظفون والأقسام', 'description' => 'إدارة فريق العمل والأقسام.', 'route' => 'admin.employees.index'],
+    ['label' => 'الموظفون', 'description' => 'إدارة حسابات فريق العمل.', 'route' => 'admin.employees.index'],
     ['label' => 'الخدمات والمتطلبات', 'description' => 'تهيئة كتالوج الخدمات وقواعدها.', 'route' => 'admin.services.index'],
     ['label' => 'صلاحيات الخدمات', 'description' => 'تفويض مهام الموظفين لكل خدمة.', 'route' => 'admin.review-permissions.index'],
     ['label' => 'التقارير', 'description' => 'عرض المؤشرات التشغيلية وتصديرها.', 'route' => 'admin.reports.index'],
