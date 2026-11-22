@@ -1,0 +1,1020 @@
+﻿========== PROJECT STRUCTURE ==========
+
+Mode   Name                      Length
+----   ----                      ------
+d--h-- .git                            
+d----- .venv-photo                     
+d----- .vscode                         
+d----- app                             
+d----- bootstrap                       
+d----- config                          
+d----- database                        
+d----- docs                            
+d----- node_modules                    
+d----- public                          
+d----- resources                       
+d----- routes                          
+d----- scripts                         
+d----- storage                         
+d----- tests                           
+d----- vendor                          
+-a---- .editorconfig             252   
+-a---- .env                      1657  
+-a---- .env.example              2345  
+-a---- .gitattributes            186   
+-a---- .gitignore                487   
+-a---- .phpunit.result.cache     115164
+-a---- artisan                   425   
+-a---- BANDWIDTH-FINAL-REPORT.md 19019 
+-a---- composer.json             2929  
+-a---- composer.lock             330738
+-a---- package-lock.json         98104 
+-a---- package.json              414   
+-a---- phpunit.xml               1322  
+-a---- project-structure.txt     44    
+-a---- README.md                 3911  
+-a---- server.php                2435  
+-a---- vite.config.js            457   
+
+
+
+========== APP FILES ==========
+
+FullName                                                                               
+--------                                                                               
+C:\Users\w3h333\e-issuance\app\Casts\EncryptedJsonArray.php                            
+C:\Users\w3h333\e-issuance\app\Console\Commands\DispatchCitizenNotificationMail.php    
+C:\Users\w3h333\e-issuance\app\Console\Commands\NotifyDocumentExpiry.php               
+C:\Users\w3h333\e-issuance\app\Console\Commands\PrepareIdentityCardDemoSubmission.php  
+C:\Users\w3h333\e-issuance\app\Console\Commands\PrepareIdentityRenewal.php             
+C:\Users\w3h333\e-issuance\app\Console\Commands\PrepareLocalServices.php               
+C:\Users\w3h333\e-issuance\app\Contracts\FingerprintConnector.php                      
+C:\Users\w3h333\e-issuance\app\Contracts\IntegrationProvider.php                       
+C:\Users\w3h333\e-issuance\app\Contracts\RegistrationSms.php                           
+C:\Users\w3h333\e-issuance\app\Contracts\ServiceEvidenceSource.php                     
+C:\Users\w3h333\e-issuance\app\Enums\RequirementState.php                              
+C:\Users\w3h333\e-issuance\app\Enums\ServiceRequestStatus.php                          
+C:\Users\w3h333\e-issuance\app\Enums\VerificationStatus.php                            
+C:\Users\w3h333\e-issuance\app\Http\Controllers\AdminGovernmentServiceController.php   
+C:\Users\w3h333\e-issuance\app\Http\Controllers\AdminUserController.php                
+C:\Users\w3h333\e-issuance\app\Http\Controllers\ApplicationReviewController.php        
+C:\Users\w3h333\e-issuance\app\Http\Controllers\ApplicationTrackingController.php      
+C:\Users\w3h333\e-issuance\app\Http\Controllers\AppointmentController.php              
+C:\Users\w3h333\e-issuance\app\Http\Controllers\AuthController.php                     
+C:\Users\w3h333\e-issuance\app\Http\Controllers\BirthCertificateController.php         
+C:\Users\w3h333\e-issuance\app\Http\Controllers\CitizenAccountController.php           
+C:\Users\w3h333\e-issuance\app\Http\Controllers\CitizenAttachmentController.php        
+C:\Users\w3h333\e-issuance\app\Http\Controllers\CitizenDataController.php              
+C:\Users\w3h333\e-issuance\app\Http\Controllers\CitizenNotificationController.php      
+C:\Users\w3h333\e-issuance\app\Http\Controllers\CivilRegistrySimulationController.php  
+C:\Users\w3h333\e-issuance\app\Http\Controllers\Controller.php                         
+C:\Users\w3h333\e-issuance\app\Http\Controllers\DemoCivilRegistryController.php        
+C:\Users\w3h333\e-issuance\app\Http\Controllers\DepartmentController.php               
+C:\Users\w3h333\e-issuance\app\Http\Controllers\DocumentIssuanceController.php         
+C:\Users\w3h333\e-issuance\app\Http\Controllers\ElectronicVerificationController.php   
+C:\Users\w3h333\e-issuance\app\Http\Controllers\EmployeeManagementController.php       
+C:\Users\w3h333\e-issuance\app\Http\Controllers\EmployeeNotificationController.php     
+C:\Users\w3h333\e-issuance\app\Http\Controllers\EmployeePasswordController.php         
+C:\Users\w3h333\e-issuance\app\Http\Controllers\GovernmentServiceController.php        
+C:\Users\w3h333\e-issuance\app\Http\Controllers\IdentityAttestationController.php      
+C:\Users\w3h333\e-issuance\app\Http\Controllers\IdentityCardFormController.php         
+C:\Users\w3h333\e-issuance\app\Http\Controllers\IdentityJourneyController.php          
+C:\Users\w3h333\e-issuance\app\Http\Controllers\IdentityRenewalController.php          
+C:\Users\w3h333\e-issuance\app\Http\Controllers\IdentityWorkflowController.php         
+C:\Users\w3h333\e-issuance\app\Http\Controllers\LinkedRegistrationController.php       
+C:\Users\w3h333\e-issuance\app\Http\Controllers\LocalPasswordRecoveryController.php    
+C:\Users\w3h333\e-issuance\app\Http\Controllers\MockActivationController.php           
+C:\Users\w3h333\e-issuance\app\Http\Controllers\NeighborhoodAttestationController.php  
+C:\Users\w3h333\e-issuance\app\Http\Controllers\NeighborhoodOfficialController.php     
+C:\Users\w3h333\e-issuance\app\Http\Controllers\OperationalReportController.php        
+C:\Users\w3h333\e-issuance\app\Http\Controllers\PostalAuthController.php               
+C:\Users\w3h333\e-issuance\app\Http\Controllers\PostalCollectionController.php         
+C:\Users\w3h333\e-issuance\app\Http\Controllers\PostalNetworkController.php            
+C:\Users\w3h333\e-issuance\app\Http\Controllers\ProfileController.php                  
+C:\Users\w3h333\e-issuance\app\Http\Controllers\RegistrationController.php             
+C:\Users\w3h333\e-issuance\app\Http\Controllers\RemoteActivationController.php         
+C:\Users\w3h333\e-issuance\app\Http\Controllers\RequestOperationsController.php        
+C:\Users\w3h333\e-issuance\app\Http\Controllers\ResidenceLocationController.php        
+C:\Users\w3h333\e-issuance\app\Http\Controllers\ReviewPermissionController.php         
+C:\Users\w3h333\e-issuance\app\Http\Controllers\ServiceRequestController.php           
+C:\Users\w3h333\e-issuance\app\Http\Controllers\SimulationCenterController.php         
+C:\Users\w3h333\e-issuance\app\Http\Controllers\WorkspaceController.php                
+C:\Users\w3h333\e-issuance\app\Http\Middleware\AuditDemoCivilRegistryDenials.php       
+C:\Users\w3h333\e-issuance\app\Http\Middleware\AuthenticatePostalCollector.php         
+C:\Users\w3h333\e-issuance\app\Http\Middleware\EnsureAccountIsActive.php               
+C:\Users\w3h333\e-issuance\app\Http\Middleware\EnsureCitizenDataIsComplete.php         
+C:\Users\w3h333\e-issuance\app\Http\Middleware\EnsurePostalNetworkEnabled.php          
+C:\Users\w3h333\e-issuance\app\Http\Middleware\EnsureUserHasRole.php                   
+C:\Users\w3h333\e-issuance\app\Http\Requests\AssignReviewRequest.php                   
+C:\Users\w3h333\e-issuance\app\Http\Requests\BookAppointmentRequest.php                
+C:\Users\w3h333\e-issuance\app\Http\Requests\ChangeAppointmentRequest.php              
+C:\Users\w3h333\e-issuance\app\Http\Requests\ChooseIdentityAttestation.php             
+C:\Users\w3h333\e-issuance\app\Http\Requests\ConfirmCitizenAccountRequest.php          
+C:\Users\w3h333\e-issuance\app\Http\Requests\DecideIdentityAttestation.php             
+C:\Users\w3h333\e-issuance\app\Http\Requests\DemoCivilDocumentRequest.php              
+C:\Users\w3h333\e-issuance\app\Http\Requests\DemoCivilPersonRequest.php                
+C:\Users\w3h333\e-issuance\app\Http\Requests\DocumentCommandRequest.php                
+C:\Users\w3h333\e-issuance\app\Http\Requests\IdentityWorkflowAction.php                
+C:\Users\w3h333\e-issuance\app\Http\Requests\IssueDocumentRequest.php                  
+C:\Users\w3h333\e-issuance\app\Http\Requests\PreviewServiceRequest.php                 
+C:\Users\w3h333\e-issuance\app\Http\Requests\RecordManualPaymentRequest.php            
+C:\Users\w3h333\e-issuance\app\Http\Requests\RecordMedicalExaminationRequest.php       
+C:\Users\w3h333\e-issuance\app\Http\Requests\RegisterCitizenRequest.php                
+C:\Users\w3h333\e-issuance\app\Http\Requests\ReportFiltersRequest.php                  
+C:\Users\w3h333\e-issuance\app\Http\Requests\ResolveReviewDeficiencyRequest.php        
+C:\Users\w3h333\e-issuance\app\Http\Requests\ResubmitReviewedRequest.php               
+C:\Users\w3h333\e-issuance\app\Http\Requests\ReviewCitizenAttachmentRequest.php        
+C:\Users\w3h333\e-issuance\app\Http\Requests\ReviewDecisionRequest.php                 
+C:\Users\w3h333\e-issuance\app\Http\Requests\SaveAppointmentSlotRequest.php            
+C:\Users\w3h333\e-issuance\app\Http\Requests\SaveEmployeeRequest.php                   
+C:\Users\w3h333\e-issuance\app\Http\Requests\SaveGovernmentServiceRequest.php          
+C:\Users\w3h333\e-issuance\app\Http\Requests\SaveIdentityCardForm.php                  
+C:\Users\w3h333\e-issuance\app\Http\Requests\SaveServiceAssessmentRequest.php          
+C:\Users\w3h333\e-issuance\app\Http\Requests\SearchCitizensRequest.php                 
+C:\Users\w3h333\e-issuance\app\Http\Requests\StartVerificationRequest.php              
+C:\Users\w3h333\e-issuance\app\Http\Requests\StoreCitizenAttachmentRequest.php         
+C:\Users\w3h333\e-issuance\app\Http\Requests\SubmitServiceRequest.php                  
+C:\Users\w3h333\e-issuance\app\Jobs\SendCitizenNotificationMail.php                    
+C:\Users\w3h333\e-issuance\app\Mail\CitizenUpdateMail.php                              
+C:\Users\w3h333\e-issuance\app\Models\ActivationFingerprintAttempt.php                 
+C:\Users\w3h333\e-issuance\app\Models\AppointmentSlot.php                              
+C:\Users\w3h333\e-issuance\app\Models\AuditEvent.php                                   
+C:\Users\w3h333\e-issuance\app\Models\BirthCertificate.php                             
+C:\Users\w3h333\e-issuance\app\Models\BirthCertificateDraft.php                        
+C:\Users\w3h333\e-issuance\app\Models\CitizenAccountConfirmation.php                   
+C:\Users\w3h333\e-issuance\app\Models\CitizenActivationRequest.php                     
+C:\Users\w3h333\e-issuance\app\Models\CitizenAppointment.php                           
+C:\Users\w3h333\e-issuance\app\Models\CitizenAttachment.php                            
+C:\Users\w3h333\e-issuance\app\Models\CitizenDocument.php                              
+C:\Users\w3h333\e-issuance\app\Models\CitizenServiceAssessment.php                     
+C:\Users\w3h333\e-issuance\app\Models\CitizenServiceRequest.php                        
+C:\Users\w3h333\e-issuance\app\Models\DemoCivilDocument.php                            
+C:\Users\w3h333\e-issuance\app\Models\DemoCivilFamily.php                              
+C:\Users\w3h333\e-issuance\app\Models\DemoCivilFamilyMember.php                        
+C:\Users\w3h333\e-issuance\app\Models\DemoCivilPerson.php                              
+C:\Users\w3h333\e-issuance\app\Models\DemoCivilRecord.php                              
+C:\Users\w3h333\e-issuance\app\Models\DemoCivilRecordParty.php                         
+C:\Users\w3h333\e-issuance\app\Models\DemoCivilRegistryAudit.php                       
+C:\Users\w3h333\e-issuance\app\Models\Department.php                                   
+C:\Users\w3h333\e-issuance\app\Models\DocumentCopy.php                                 
+C:\Users\w3h333\e-issuance\app\Models\DocumentDelivery.php                             
+C:\Users\w3h333\e-issuance\app\Models\DocumentEvent.php                                
+C:\Users\w3h333\e-issuance\app\Models\GovernmentService.php                            
+C:\Users\w3h333\e-issuance\app\Models\IdentityAdministrativeDecision.php               
+C:\Users\w3h333\e-issuance\app\Models\IdentityCardAttestation.php                      
+C:\Users\w3h333\e-issuance\app\Models\IdentityCardForm.php                             
+C:\Users\w3h333\e-issuance\app\Models\IdentityCardWitness.php                          
+C:\Users\w3h333\e-issuance\app\Models\IdentityFingerprintOperation.php                 
+C:\Users\w3h333\e-issuance\app\Models\IdentityVisitEvidence.php                        
+C:\Users\w3h333\e-issuance\app\Models\IntegrationAttempt.php                           
+C:\Users\w3h333\e-issuance\app\Models\ManualPayment.php                                
+C:\Users\w3h333\e-issuance\app\Models\MedicalExamination.php                           
+C:\Users\w3h333\e-issuance\app\Models\NeighborhoodOfficial.php                         
+C:\Users\w3h333\e-issuance\app\Models\PostalCollection.php                             
+C:\Users\w3h333\e-issuance\app\Models\PostalCollector.php                              
+C:\Users\w3h333\e-issuance\app\Models\PostalOffice.php                                 
+C:\Users\w3h333\e-issuance\app\Models\RequestCharge.php                                
+C:\Users\w3h333\e-issuance\app\Models\RequestDeficiency.php                            
+C:\Users\w3h333\e-issuance\app\Models\ResidenceDistrict.php                            
+C:\Users\w3h333\e-issuance\app\Models\ResidenceGovernorate.php                         
+C:\Users\w3h333\e-issuance\app\Models\ReviewDecision.php                               
+C:\Users\w3h333\e-issuance\app\Models\ServiceReviewPermission.php                      
+C:\Users\w3h333\e-issuance\app\Models\User.php                                         
+C:\Users\w3h333\e-issuance\app\Notifications\CitizenActivity.php                       
+C:\Users\w3h333\e-issuance\app\Notifications\Channels\InboxChannel.php                 
+C:\Users\w3h333\e-issuance\app\Observers\IdentityAttestationObserver.php               
+C:\Users\w3h333\e-issuance\app\Observers\OperationalAuditObserver.php                  
+C:\Users\w3h333\e-issuance\app\Observers\OperationalNotificationObserver.php           
+C:\Users\w3h333\e-issuance\app\Policies\AppointmentSlotPolicy.php                      
+C:\Users\w3h333\e-issuance\app\Policies\CitizenAttachmentPolicy.php                    
+C:\Users\w3h333\e-issuance\app\Policies\CitizenDocumentPolicy.php                      
+C:\Users\w3h333\e-issuance\app\Policies\CitizenServiceRequestPolicy.php                
+C:\Users\w3h333\e-issuance\app\Policies\DemoCivilPersonPolicy.php                      
+C:\Users\w3h333\e-issuance\app\Policies\GovernmentServicePolicy.php                    
+C:\Users\w3h333\e-issuance\app\Policies\IdentityCardFormPolicy.php                     
+C:\Users\w3h333\e-issuance\app\Policies\UserPolicy.php                                 
+C:\Users\w3h333\e-issuance\app\Providers\AppServiceProvider.php                        
+C:\Users\w3h333\e-issuance\app\Rules\PostalPasswordLength.php                          
+C:\Users\w3h333\e-issuance\app\Services\FingerprintService.php                         
+C:\Users\w3h333\e-issuance\app\Services\IdentityAttestations.php                       
+C:\Users\w3h333\e-issuance\app\Services\IdentityCardForms.php                          
+C:\Users\w3h333\e-issuance\app\Services\PhotoQuality.php                               
+C:\Users\w3h333\e-issuance\app\Services\ResidenceLocations.php                         
+C:\Users\w3h333\e-issuance\app\Services\ResidencePhones.php                            
+C:\Users\w3h333\e-issuance\app\Services\ServiceEligibility.php                         
+C:\Users\w3h333\e-issuance\app\Services\ServiceRequestSubmission.php                   
+C:\Users\w3h333\e-issuance\app\Services\Attachments\AttachmentRules.php                
+C:\Users\w3h333\e-issuance\app\Services\Attachments\AttachmentSubmission.php           
+C:\Users\w3h333\e-issuance\app\Services\Attachments\ManageAttachments.php              
+C:\Users\w3h333\e-issuance\app\Services\Attachments\ValidateAttachmentFile.php         
+C:\Users\w3h333\e-issuance\app\Services\DemoCivilRegistry\AuditLogger.php              
+C:\Users\w3h333\e-issuance\app\Services\Fingerprint\FingerprintCaptureResult.php       
+C:\Users\w3h333\e-issuance\app\Services\Fingerprint\LocalFingerprintSimulator.php      
+C:\Users\w3h333\e-issuance\app\Services\Fingerprint\UnavailableFingerprintConnector.php
+C:\Users\w3h333\e-issuance\app\Services\Identity\IdentityJourney.php                   
+C:\Users\w3h333\e-issuance\app\Services\Identity\IdentityRenewals.php                  
+C:\Users\w3h333\e-issuance\app\Services\Identity\InitialIdentityReview.php             
+C:\Users\w3h333\e-issuance\app\Services\Identity\VisitEvidence.php                     
+C:\Users\w3h333\e-issuance\app\Services\Integrations\IntegrationManager.php            
+C:\Users\w3h333\e-issuance\app\Services\Integrations\IntegrationRequirements.php       
+C:\Users\w3h333\e-issuance\app\Services\Integrations\IntegrationRules.php              
+C:\Users\w3h333\e-issuance\app\Services\Integrations\IntegrationTransport.php          
+C:\Users\w3h333\e-issuance\app\Services\Integrations\LocalCivilRegistryProvider.php    
+C:\Users\w3h333\e-issuance\app\Services\Integrations\VerificationContext.php           
+C:\Users\w3h333\e-issuance\app\Services\Integrations\VerificationResult.php            
+C:\Users\w3h333\e-issuance\app\Services\Issuance\BirthCertificateIssuance.php          
+C:\Users\w3h333\e-issuance\app\Services\Issuance\DocumentAudit.php                     
+C:\Users\w3h333\e-issuance\app\Services\Issuance\DocumentNumbers.php                   
+C:\Users\w3h333\e-issuance\app\Services\Issuance\ElectronicCopies.php                  
+C:\Users\w3h333\e-issuance\app\Services\Issuance\IssuanceLifecycle.php                 
+C:\Users\w3h333\e-issuance\app\Services\Issuance\IssuanceRules.php                     
+C:\Users\w3h333\e-issuance\app\Services\Issuance\IssueDocuments.php                    
+C:\Users\w3h333\e-issuance\app\Services\Issuance\ManageDocuments.php                   
+C:\Users\w3h333\e-issuance\app\Services\Notifications\CitizenUpdates.php               
+C:\Users\w3h333\e-issuance\app\Services\Notifications\ExpiryAlerts.php                 
+C:\Users\w3h333\e-issuance\app\Services\Notifications\NotificationMail.php             
+C:\Users\w3h333\e-issuance\app\Services\Notifications\OperationalNotifications.php     
+C:\Users\w3h333\e-issuance\app\Services\Operations\AppointmentBookings.php             
+C:\Users\w3h333\e-issuance\app\Services\Operations\LockedRequest.php                   
+C:\Users\w3h333\e-issuance\app\Services\Operations\RecordExamination.php               
+C:\Users\w3h333\e-issuance\app\Services\Operations\RequestCharges.php                  
+C:\Users\w3h333\e-issuance\app\Services\Operations\RequestPrerequisites.php            
+C:\Users\w3h333\e-issuance\app\Services\Oversight\AuditTrail.php                       
+C:\Users\w3h333\e-issuance\app\Services\Oversight\OperationalReports.php               
+C:\Users\w3h333\e-issuance\app\Services\Postal\PostalCollections.php                   
+C:\Users\w3h333\e-issuance\app\Services\Registration\ActivationRequests.php            
+C:\Users\w3h333\e-issuance\app\Services\Registration\CitizenAccountActivation.php      
+C:\Users\w3h333\e-issuance\app\Services\Registration\CitizenIdentifiers.php            
+C:\Users\w3h333\e-issuance\app\Services\Registration\CitizenRegistration.php           
+C:\Users\w3h333\e-issuance\app\Services\Registration\InPersonActivation.php            
+C:\Users\w3h333\e-issuance\app\Services\Registration\LinkedRegistration.php            
+C:\Users\w3h333\e-issuance\app\Services\Registration\LocalPasswordRecovery.php         
+C:\Users\w3h333\e-issuance\app\Services\Registration\LocalSms.php                      
+C:\Users\w3h333\e-issuance\app\Services\Registration\MockCivilSystems.php              
+C:\Users\w3h333\e-issuance\app\Services\Registration\MockIdentityVerification.php      
+C:\Users\w3h333\e-issuance\app\Services\Registration\MockPortraits.php                 
+C:\Users\w3h333\e-issuance\app\Services\Registration\RemoteActivation.php              
+C:\Users\w3h333\e-issuance\app\Services\Registration\UnavailableSms.php                
+C:\Users\w3h333\e-issuance\app\Services\Requirements\EligibilityResult.php             
+C:\Users\w3h333\e-issuance\app\Services\Requirements\EvidenceLookup.php                
+C:\Users\w3h333\e-issuance\app\Services\Requirements\EvidenceRequirements.php          
+C:\Users\w3h333\e-issuance\app\Services\Requirements\LocalAttachmentEvidenceSource.php 
+C:\Users\w3h333\e-issuance\app\Services\Requirements\PriorDocumentRequirements.php     
+C:\Users\w3h333\e-issuance\app\Services\Requirements\RequirementResult.php             
+C:\Users\w3h333\e-issuance\app\Services\Requirements\UnavailableEvidenceSource.php     
+C:\Users\w3h333\e-issuance\app\Services\Review\ApprovalReadiness.php                   
+C:\Users\w3h333\e-issuance\app\Services\Review\ReviewActions.php                       
+C:\Users\w3h333\e-issuance\app\Services\Review\ReviewAdministration.php                
+C:\Users\w3h333\e-issuance\app\Services\Review\ReviewDeficiencies.php                  
+C:\Users\w3h333\e-issuance\app\Services\Review\ReviewSnapshot.php                      
+C:\Users\w3h333\e-issuance\app\Services\Tracking\ApplicationTimeline.php               
+C:\Users\w3h333\e-issuance\app\Services\Workspace\EmployeeWorkspace.php                
+C:\Users\w3h333\e-issuance\app\Support\ResponsiveImages.php                            
+
+
+
+========== ROUTES ==========
+
+  GET|HEAD  / ........................................................................................................ home ظ║ routes/web.php:112
+  GET|HEAD  account-activation/{citizen}/images/{field} ............................ account-activation.image ظ║ RemoteActivationController@image
+  GET|HEAD  admin/audit-logs ........................................................ admin.audit-logs.index ظ║ OperationalReportController@audit
+  GET|HEAD  admin/audit-logs/export .......................................... admin.audit-logs.export ظ║ OperationalReportController@exportAudit
+  GET|HEAD  admin/dashboard ................................................................ admin.dashboard ظ║ OperationalReportController@index
+  GET|HEAD  admin/demo-civil-registry ................................. admin.demo-civil-registry.index ظ║ DemoCivilRegistryController@adminIndex
+  GET|HEAD  admin/demo-civil-registry/audits ....................... admin.demo-civil-registry.audits.index ظ║ DemoCivilRegistryController@audits
+  POST      admin/demo-civil-registry/documents .......... admin.demo-civil-registry.documents.store ظ║ DemoCivilRegistryController@storeDocument
+  GET|HEAD  admin/demo-civil-registry/documents/{document} ..... admin.demo-civil-registry.documents.show ظ║ DemoCivilRegistryController@document
+  PUT       admin/demo-civil-registry/documents/{document} admin.demo-civil-registry.documents.replace ظ║ DemoCivilRegistryController@replaceDocظخ
+  DELETE    admin/demo-civil-registry/documents/{document} admin.demo-civil-registry.documents.archive ظ║ DemoCivilRegistryController@archiveDocظخ
+  POST      admin/demo-civil-registry/families .............. admin.demo-civil-registry.families.store ظ║ DemoCivilRegistryController@storeFamily
+  PATCH     admin/demo-civil-registry/families/{family} ... admin.demo-civil-registry.families.update ظ║ DemoCivilRegistryController@updateFamily
+  DELETE    admin/demo-civil-registry/families/{family} . admin.demo-civil-registry.families.archive ظ║ DemoCivilRegistryController@archiveFamily
+  POST      admin/demo-civil-registry/families/{family}/members admin.demo-civil-registry.families.members.store ظ║ DemoCivilRegistryController@ظخ
+  POST      admin/demo-civil-registry/people .................. admin.demo-civil-registry.people.store ظ║ DemoCivilRegistryController@storePerson
+  GET|HEAD  admin/demo-civil-registry/people/{person} ................. admin.demo-civil-registry.people.show ظ║ DemoCivilRegistryController@show
+  PATCH     admin/demo-civil-registry/people/{person} ....... admin.demo-civil-registry.people.update ظ║ DemoCivilRegistryController@updatePerson
+  DELETE    admin/demo-civil-registry/people/{person} ..... admin.demo-civil-registry.people.archive ظ║ DemoCivilRegistryController@archivePerson
+  GET|HEAD  admin/demo-civil-registry/people/{person}/photo ......... admin.demo-civil-registry.people.photo ظ║ DemoCivilRegistryController@photo
+  POST      admin/demo-civil-registry/people/{person}/photo admin.demo-civil-registry.people.photo.store ظ║ DemoCivilRegistryController@storePhoظخ
+  GET|HEAD  admin/demo-civil-registry/people/{person}/sections/{section} admin.demo-civil-registry.people.section ظ║ DemoCivilRegistryControllerظخ
+  POST      admin/demo-civil-registry/records ................ admin.demo-civil-registry.records.store ظ║ DemoCivilRegistryController@storeRecord
+  PATCH     admin/demo-civil-registry/records/{record} ..... admin.demo-civil-registry.records.update ظ║ DemoCivilRegistryController@updateRecord
+  DELETE    admin/demo-civil-registry/records/{record} ... admin.demo-civil-registry.records.archive ظ║ DemoCivilRegistryController@archiveRecord
+  GET|HEAD  admin/demo-civil-registry/search ............................. admin.demo-civil-registry.search ظ║ DemoCivilRegistryController@search
+  GET|HEAD  admin/departments ............................................................. admin.departments.index ظ║ DepartmentController@index
+  POST      admin/departments ............................................................. admin.departments.store ظ║ DepartmentController@store
+  PATCH     admin/departments/{department} .............................................. admin.departments.update ظ║ DepartmentController@update
+  GET|HEAD  admin/employees ......................................................... admin.employees.index ظ║ EmployeeManagementController@index
+  POST      admin/employees ......................................................... admin.employees.store ظ║ EmployeeManagementController@store
+  GET|HEAD  admin/employees/create ................................................ admin.employees.create ظ║ EmployeeManagementController@create
+  GET|HEAD  admin/employees/{employee} ................................................ admin.employees.show ظ║ EmployeeManagementController@show
+  PATCH     admin/employees/{employee} ............................................ admin.employees.update ظ║ EmployeeManagementController@update
+  POST      admin/employees/{employee}/reset-password .............. admin.employees.reset-password ظ║ EmployeeManagementController@resetPassword
+  GET|HEAD  admin/integrations ...................................... admin.integrations.index ظ║ ElectronicVerificationController@administration
+  GET|HEAD  admin/mock-systems ..................................................... admin.mock-systems.index ظ║ MockActivationController@systems
+  GET|HEAD  admin/mock-systems/{person}/portrait ....................... admin.mock-systems.portrait ظ║ MockActivationController@registryPortrait
+  GET|HEAD  admin/neighborhood-officials ............................. admin.neighborhood-officials.index ظ║ NeighborhoodOfficialController@index
+  POST      admin/neighborhood-officials ............................. admin.neighborhood-officials.store ظ║ NeighborhoodOfficialController@store
+  PATCH     admin/neighborhood-officials/{official} ................ admin.neighborhood-officials.update ظ║ NeighborhoodOfficialController@update
+  GET|HEAD  admin/postal-network .................................................... admin.postal-network.index ظ║ PostalNetworkController@index
+  POST      admin/postal-network/collectors ...................... admin.postal-network.collectors.store ظ║ PostalNetworkController@saveCollector
+  PATCH     admin/postal-network/collectors/{collectorId} ....... admin.postal-network.collectors.update ظ║ PostalNetworkController@saveCollector
+  POST      admin/postal-network/offices ............................... admin.postal-network.offices.store ظ║ PostalNetworkController@saveOffice
+  PATCH     admin/postal-network/offices/{officeId} ................... admin.postal-network.offices.update ظ║ PostalNetworkController@saveOffice
+  GET|HEAD  admin/reports .............................................................. admin.reports.index ظ║ OperationalReportController@index
+  GET|HEAD  admin/reports/export ..................................................... admin.reports.export ظ║ OperationalReportController@export
+  GET|HEAD  admin/review-permissions ......................................... admin.review-permissions.index ظ║ ReviewPermissionController@index
+  GET|HEAD  admin/roles ................................................................................. admin.roles.index ظ║ routes/web.php:465
+  GET|HEAD  admin/services ....................................................... admin.services.index ظ║ AdminGovernmentServiceController@index
+  POST      admin/services ....................................................... admin.services.store ظ║ AdminGovernmentServiceController@store
+  GET|HEAD  admin/services/create .............................................. admin.services.create ظ║ AdminGovernmentServiceController@create
+  PATCH     admin/services/{service} ........................................... admin.services.update ظ║ AdminGovernmentServiceController@update
+  GET|HEAD  admin/services/{service}/assessment ............ admin.services.assessments.create ظ║ AdminGovernmentServiceController@assessmentForm
+  POST      admin/services/{service}/assessments ................ admin.services.assessments.store ظ║ AdminGovernmentServiceController@assessment
+  GET|HEAD  admin/services/{service}/edit .......................................... admin.services.edit ظ║ AdminGovernmentServiceController@edit
+  GET|HEAD  admin/settings ........................................................................... admin.settings.index ظ║ routes/web.php:472
+  GET|HEAD  admin/simulations ....................................................... admin.simulations.index ظ║ SimulationCenterController@index
+  GET|HEAD  admin/users .......................................................................... admin.users.index ظ║ AdminUserController@index
+  PATCH     admin/users/{user} ................................................................. admin.users.update ظ║ AdminUserController@update
+  POST      admin/users/{user}/demo-civil-registry-access admin.review-permissions.demo-registry ظ║ ReviewPermissionController@updateDemoRegistrظخ
+  POST      admin/users/{user}/review-permissions .............................. admin.review-permissions.save ظ║ ReviewPermissionController@save
+  GET|HEAD  appointments/book ........................................................................... appointments.book ظ║ routes/web.php:137
+  GET|HEAD  attachments/{attachment}/download ...................................... attachments.download ظ║ CitizenAttachmentController@download
+  GET|HEAD  attachments/{attachment}/preview ......................................... attachments.preview ظ║ CitizenAttachmentController@preview
+  POST      citizen/account/activation-request ............................ citizen.account.activation-request ظ║ CitizenAccountController@submit
+  POST      citizen/account/activation/code ...................................... citizen.account.remote.code ظ║ RemoteActivationController@send
+  POST      citizen/account/activation/documents ............................. citizen.account.remote.submit ظ║ RemoteActivationController@submit
+  POST      citizen/account/activation/verify ................................ citizen.account.remote.verify ظ║ RemoteActivationController@verify
+  POST      citizen/account/mock-correction ................................. citizen.account.mock-correction ظ║ MockActivationController@correct
+  POST      citizen/account/mock-face ............................................. citizen.account.mock-face ظ║ MockActivationController@capture
+  GET|HEAD  citizen/account/status .................................................... citizen.account.status ظ║ CitizenAccountController@status
+  GET|HEAD  citizen/applications .............................................. citizen.applications.index ظ║ ApplicationTrackingController@index
+  GET|HEAD  citizen/applications/new ........................................... citizen.applications.create ظ║ GovernmentServiceController@entry
+  GET|HEAD  citizen/applications/preview/{token} ................................ citizen.applications.preview ظ║ ServiceRequestController@review
+  GET|HEAD  citizen/applications/{id} ........................................... citizen.applications.show ظ║ ApplicationTrackingController@show
+  POST      citizen/applications/{id}/appointments ........................ citizen.applications.appointments.store ظ║ AppointmentController@book
+  GET|HEAD  citizen/applications/{id}/attachments ............. citizen.applications.attachments.index ظ║ CitizenAttachmentController@application
+  POST      citizen/applications/{id}/attachments ..... citizen.applications.attachments.store ظ║ CitizenAttachmentController@storeForApplication
+  GET|HEAD  citizen/applications/{id}/correction ...................... citizen.applications.correction ظ║ ApplicationReviewController@correction
+  GET|HEAD  citizen/applications/{id}/operations ............................ citizen.applications.operations ظ║ RequestOperationsController@show
+  POST      citizen/applications/{id}/requirements/check ... citizen.applications.requirements.check ظ║ CitizenDataController@recheckRequirements
+  POST      citizen/applications/{id}/resubmit ............................ citizen.applications.resubmit ظ║ ApplicationReviewController@resubmit
+  GET|HEAD  citizen/applications/{id}/success .................................. citizen.applications.success ظ║ ServiceRequestController@success
+  GET|HEAD  citizen/applications/{id}/verifications ......................... citizen.verifications.show ظ║ ElectronicVerificationController@show
+  GET|HEAD  citizen/appointments ...................................................... citizen.appointments.index ظ║ AppointmentController@index
+  PATCH     citizen/appointments/{appointment} ...................................... citizen.appointments.update ظ║ AppointmentController@change
+  DELETE    citizen/attachments/{attachment} ................................. citizen.attachments.destroy ظ║ CitizenAttachmentController@destroy
+  POST      citizen/birth-certificates/drafts ................... citizen.birth-certificates.drafts.store ظ║ BirthCertificateController@saveDraft
+  GET|HEAD  citizen/dashboard .................................................................. citizen.dashboard ظ║ WorkspaceController@citizen
+  GET|HEAD  citizen/data ............................................................................. citizen.data ظ║ CitizenDataController@show
+  GET|HEAD  citizen/documents ........................................................ citizen.documents.index ظ║ CitizenDataController@documents
+  GET|HEAD  citizen/documents/{id} .................................................... citizen.documents.show ظ║ DocumentIssuanceController@show
+  POST      citizen/documents/{id}/delivery .............................. citizen.documents.delivery.choose ظ║ DocumentIssuanceController@choose
+  GET|HEAD  citizen/documents/{id}/download ................................... citizen.documents.download ظ║ DocumentIssuanceController@download
+  GET|HEAD  citizen/identity-card ............................................... citizen.identity-card.index ظ║ IdentityCardFormController@index
+  POST      citizen/identity-card ............................................... citizen.identity-card.store ظ║ IdentityCardFormController@store
+  GET|HEAD  citizen/identity-card/start ......................................... citizen.identity-card.start ظ║ IdentityCardFormController@start
+  GET|HEAD  citizen/identity-card/{form} .......................................... citizen.identity-card.show ظ║ IdentityCardFormController@show
+  POST      citizen/identity-card/{form} .......................................... citizen.identity-card.save ظ║ IdentityCardFormController@save
+  POST      citizen/identity-card/{form}/attestation ............. citizen.identity-card.attestation.store ظ║ IdentityAttestationController@store
+  POST      citizen/identity-card/{form}/submit ............................... citizen.identity-card.submit ظ║ IdentityCardFormController@submit
+  POST      citizen/identity-card/{form}/witness-lookup ........ citizen.identity-card.witness.lookup ظ║ IdentityCardFormController@lookupWitness
+  GET|HEAD  citizen/identity-renewal/start .................................... citizen.identity-renewal.start ظ║ IdentityRenewalController@start
+  GET|HEAD  citizen/identity-renewal/{form} ..................................... citizen.identity-renewal.show ظ║ IdentityRenewalController@show
+  POST      citizen/identity-renewal/{form} ..................................... citizen.identity-renewal.save ظ║ IdentityRenewalController@save
+  GET|HEAD  citizen/notifications ............................................ citizen.notifications.index ظ║ CitizenNotificationController@index
+  POST      citizen/notifications/read-all .............................. citizen.notifications.read-all ظ║ CitizenNotificationController@readAll
+  POST      citizen/notifications/{id}/open .................................... citizen.notifications.open ظ║ CitizenNotificationController@open
+  POST      citizen/notifications/{id}/read .................................... citizen.notifications.read ظ║ CitizenNotificationController@read
+  GET|HEAD  citizen/payments ..................................................... citizen.payments.index ظ║ RequestOperationsController@payments
+  GET|HEAD  citizen/services/{service}/attachments ...................... citizen.services.attachments.index ظ║ CitizenAttachmentController@index
+  POST      citizen/services/{service}/attachments ...................... citizen.services.attachments.store ظ║ CitizenAttachmentController@store
+  POST      citizen/services/{service}/preview ..................................... citizen.services.preview ظ║ ServiceRequestController@preview
+  POST      citizen/services/{service}/start ........................................ citizen.services.start ظ║ GovernmentServiceController@start
+  POST      citizen/services/{service}/submit ........................................ citizen.services.submit ظ║ ServiceRequestController@submit
+  GET|HEAD  contact .............................................................................................................. contact.index
+  GET|HEAD  contact/complaint ................................................................................................ contact.complaint
+  GET|HEAD  contact/report ...................................................................................................... contact.report
+  GET|HEAD  employee/accounts ......................................................... employee.accounts.index ظ║ CitizenAccountController@index
+  GET|HEAD  employee/accounts/{citizen} ................................................. employee.accounts.show ظ║ CitizenAccountController@show
+  POST      employee/accounts/{citizen}/code .............................. employee.accounts.code ظ║ CitizenAccountController@sendActivationCode
+  POST      employee/accounts/{citizen}/confirm ................................... employee.accounts.confirm ظ║ CitizenAccountController@confirm
+  POST      employee/accounts/{citizen}/finger ...................................... employee.accounts.finger ظ║ CitizenAccountController@finger
+  POST      employee/accounts/{citizen}/mock-review ............................ employee.accounts.mock-review ظ║ MockActivationController@review
+  POST      employee/accounts/{citizen}/prepare ................................... employee.accounts.prepare ظ║ CitizenAccountController@prepare
+  POST      employee/accounts/{citizen}/review .................................... employee.accounts.review ظ║ RemoteActivationController@review
+  POST      employee/accounts/{citizen}/verify-code .............. employee.accounts.verify-code ظ║ CitizenAccountController@verifyActivationCode
+  GET|HEAD  employee/applications .............................................. employee.applications.index ظ║ ApplicationReviewController@index
+  POST      employee/applications/{id}/appointments ...................... employee.applications.appointments.store ظ║ AppointmentController@book
+  POST      employee/applications/{id}/assignment ........................ employee.applications.assignment ظ║ ApplicationReviewController@assign
+  POST      employee/applications/{id}/charges ........................ employee.applications.charges.store ظ║ RequestOperationsController@charge
+  POST      employee/applications/{id}/decisions .......................... employee.applications.decisions ظ║ ApplicationReviewController@decide
+  POST      employee/applications/{id}/deficiencies/{deficiency}/resolve employee.applications.deficiencies.resolve ظ║ ApplicationReviewControllظخ
+  POST      employee/applications/{id}/examinations ......... employee.applications.examinations.store ظ║ RequestOperationsController@examination
+  POST      employee/applications/{id}/identity-step ............ employee.applications.identity-step ظ║ ApplicationReviewController@identityStep
+  GET|HEAD  employee/applications/{id}/operations .......................... employee.applications.operations ظ║ RequestOperationsController@show
+  POST      employee/applications/{id}/payments ..................... employee.applications.payments.store ظ║ RequestOperationsController@payment
+  POST      employee/applications/{id}/requirements/check . employee.applications.requirements.check ظ║ CitizenDataController@recheckRequirements
+  GET|HEAD  employee/applications/{id}/review .................................. employee.applications.review ظ║ ApplicationReviewController@show
+  GET|HEAD  employee/applications/{id}/verifications ....................... employee.verifications.show ظ║ ElectronicVerificationController@show
+  POST      employee/applications/{id}/verifications ..................... employee.verifications.start ظ║ ElectronicVerificationController@start
+  GET|HEAD  employee/appointment-slots .......................................... employee.appointment-slots.index ظ║ AppointmentController@slots
+  POST      employee/appointment-slots ....................................... employee.appointment-slots.store ظ║ AppointmentController@saveSlot
+  PATCH     employee/appointment-slots/{slot} ............................... employee.appointment-slots.update ظ║ AppointmentController@saveSlot
+  GET|HEAD  employee/appointments .................................................... employee.appointments.index ظ║ AppointmentController@index
+  PATCH     employee/appointments/{appointment} .................................... employee.appointments.update ظ║ AppointmentController@change
+  GET|HEAD  employee/attachments ........................................ employee.attachments.index ظ║ CitizenAttachmentController@employeeIndex
+  PATCH     employee/attachments/{attachment}/review .......................... employee.attachments.review ظ║ CitizenAttachmentController@review
+  GET|HEAD  employee/citizens ........................................................... employee.citizens.index ظ║ CitizenDataController@search
+  GET|HEAD  employee/citizens/{citizen} ............................................ employee.citizens.show ظ║ CitizenDataController@employeeShow
+  GET|HEAD  employee/dashboard ............................................................... employee.dashboard ظ║ WorkspaceController@employee
+  GET|HEAD  employee/deliveries .............................................. employee.deliveries.index ظ║ DocumentIssuanceController@deliveries
+  GET|HEAD  employee/demo-civil-registry/documents/{document} employee.demo-civil-registry.documents.show ظ║ DemoCivilRegistryController@document
+  GET|HEAD  employee/demo-civil-registry/people/{person} ........... employee.demo-civil-registry.people.show ظ║ DemoCivilRegistryController@show
+  GET|HEAD  employee/demo-civil-registry/people/{person}/photo ... employee.demo-civil-registry.people.photo ظ║ DemoCivilRegistryController@photo
+  GET|HEAD  employee/demo-civil-registry/people/{person}/sections/{section} employee.demo-civil-registry.people.section ظ║ DemoCivilRegistryContظخ
+  GET|HEAD  employee/demo-civil-registry/search ....................... employee.demo-civil-registry.search ظ║ DemoCivilRegistryController@search
+  GET|HEAD  employee/documents/{id} .................................................. employee.documents.show ظ║ DocumentIssuanceController@show
+  POST      employee/documents/{id}/delivery ............................ employee.documents.delivery.choose ظ║ DocumentIssuanceController@choose
+  POST      employee/documents/{id}/delivery-status ..................... employee.documents.delivery.status ظ║ DocumentIssuanceController@status
+  GET|HEAD  employee/documents/{id}/download ................................. employee.documents.download ظ║ DocumentIssuanceController@download
+  POST      employee/documents/{id}/regenerate ........................... employee.documents.regenerate ظ║ DocumentIssuanceController@regenerate
+  GET|HEAD  employee/identity-card/{form} .................................... employee.identity-card.show ظ║ IdentityCardFormController@employee
+  GET|HEAD  employee/issuance ....................................................... employee.issuance.index ظ║ DocumentIssuanceController@index
+  GET|HEAD  employee/issuance/{id} ................................................ employee.issuance.review ظ║ DocumentIssuanceController@review
+  POST      employee/issuance/{id} .................................................. employee.issuance.store ظ║ DocumentIssuanceController@issue
+  GET|HEAD  employee/neighborhood-attestations .............. employee.neighborhood-attestations.index ظ║ NeighborhoodAttestationController@index
+  GET|HEAD  employee/neighborhood-attestations/{attestation} .. employee.neighborhood-attestations.show ظ║ NeighborhoodAttestationController@show
+  POST      employee/neighborhood-attestations/{attestation}/confirm employee.neighborhood-attestations.confirm ظ║ NeighborhoodAttestationControظخ
+  POST      employee/neighborhood-attestations/{attestation}/decision employee.neighborhood-attestations.decide ظ║ NeighborhoodAttestationControظخ
+  GET|HEAD  employee/notifications ......................................... employee.notifications.index ظ║ EmployeeNotificationController@index
+  POST      employee/notifications/read-all ........................... employee.notifications.read-all ظ║ EmployeeNotificationController@readAll
+  POST      employee/notifications/{id}/open ................................. employee.notifications.open ظ║ EmployeeNotificationController@open
+  POST      employee/notifications/{id}/read ................................. employee.notifications.read ظ║ EmployeeNotificationController@read
+  GET|HEAD  employee/payments ................................................... employee.payments.index ظ║ RequestOperationsController@payments
+  GET|HEAD  employee/reports ........................................................ employee.reports.index ظ║ OperationalReportController@index
+  GET|HEAD  employee/reports/export ............................................... employee.reports.export ظ║ OperationalReportController@export
+  GET|HEAD  employee/tracking .................................................... employee.tracking.index ظ║ ApplicationTrackingController@index
+  GET|HEAD  employee/tracking/{id} ................................................. employee.tracking.show ظ║ ApplicationTrackingController@show
+  GET|HEAD  employee/verifications ....................................... employee.verifications.index ظ║ ElectronicVerificationController@index
+  GET|HEAD  forgot-password .............................................................................. password.request ظ║ routes/web.php:200
+  POST      forgot-password ................................................................................ password.email ظ║ routes/web.php:206
+  POST      forgot-password/local/reset ..................................... password.local.complete ظ║ LocalPasswordRecoveryController@complete
+  POST      forgot-password/local/verify ........................................ password.local.verify ظ║ LocalPasswordRecoveryController@verify
+  GET|HEAD  help/technical-issue .......................................................................................... help.technical-issue
+  GET|HEAD  identity-card/forms/{form}/photo .................................... citizen.identity-card.photo ظ║ IdentityCardFormController@photo
+  GET|HEAD  identity-card/forms/{form}/witness-selfie/{position} citizen.identity-card.witness-selfie ظ║ IdentityCardFormController@witnessSelfie
+  GET|HEAD  identity-workflow/administration ........... identity-workflow.administration.index ظ║ IdentityWorkflowController@administrationIndex
+  GET|HEAD  identity-workflow/reception ..................................... identity-workflow.reception ظ║ IdentityWorkflowController@reception
+  GET|HEAD  identity-workflow/visit-evidence/{evidence}/file .................. identity-workflow.evidence.file ظ║ IdentityJourneyController@file
+  POST      identity-workflow/visit-evidence/{evidence}/review ............ identity-workflow.evidence.review ظ║ IdentityJourneyController@review
+  GET|HEAD  identity-workflow/{form}/administration ...... identity-workflow.administration.show ظ║ IdentityWorkflowController@administrationShow
+  POST      identity-workflow/{form}/administration .. identity-workflow.administration.decide ظ║ IdentityWorkflowController@administrationDecide
+  POST      identity-workflow/{form}/arrival .................................... identity-workflow.arrival ظ║ IdentityWorkflowController@arrival
+  GET|HEAD  identity-workflow/{form}/fingerprint .................................. identity-workflow.device ظ║ IdentityWorkflowController@device
+  POST      identity-workflow/{form}/fingerprint ................................ identity-workflow.capture ظ║ IdentityWorkflowController@capture
+  POST      identity-workflow/{form}/manual-device-result ......................... identity-workflow.manual ظ║ IdentityWorkflowController@manual
+  GET|HEAD  identity-workflow/{form}/print .......................................... identity-workflow.print ظ║ IdentityWorkflowController@print
+  POST      identity-workflow/{form}/requeue ..................... identity-workflow.administration.requeue ظ║ IdentityWorkflowController@requeue
+  POST      identity-workflow/{form}/security-paper ........................... identity-workflow.security ظ║ IdentityWorkflowController@security
+  POST      identity-workflow/{form}/visit-evidence ......................... identity-workflow.evidence.store ظ║ IdentityJourneyController@store
+  POST      identity-workflow/{form}/witness-attendance ...................... identity-workflow.witnesses ظ║ IdentityJourneyController@witnesses
+  GET|HEAD  inquiry/my-requests .............................................................................. inquiry.mine ظ║ routes/web.php:146
+  GET|HEAD  inquiry/request ............................................................................. inquiry.reference ظ║ routes/web.php:145
+  POST      integrations/civil-registry-demo .................. integrations.civil-registry-demo.run ظ║ CivilRegistrySimulationController@preview
+  GET|HEAD  integrations/civil-registry-demo ...................... integrations.civil-registry-demo ظ║ CivilRegistrySimulationController@preview
+  GET|HEAD  locations/residence/{country} ............................................... locations.residence ظ║ ResidenceLocationController@show
+  GET|HEAD  login ................................................................................................... login ظ║ routes/web.php:172
+  POST      login ............................................................................................ login.post ظ║ AuthController@login
+  POST      logout .............................................................................................. logout ظ║ AuthController@logout
+  GET|HEAD  mock-activation/{citizen}/images/{kind} ..................................... mock-activation.image ظ║ MockActivationController@image
+  GET|HEAD  notifications/unread-count ......................................................... notifications.unread-count ظ║ routes/web.php:236
+  GET|HEAD  platform/{page} ................................................................................. platform.page ظ║ routes/web.php:116
+  GET|HEAD  postal ..................................................................................... postal.home ظ║ PostalAuthController@home
+  GET|HEAD  postal/collections ....................................................... postal.collections.show ظ║ PostalCollectionController@show
+  POST      postal/collections ................................................... postal.collections.store ظ║ PostalCollectionController@collect
+  GET|HEAD  postal/login ......................................................................... postal.login ظ║ PostalAuthController@loginForm
+  POST      postal/login ....................................................................... postal.login.store ظ║ PostalAuthController@login
+  POST      postal/logout .......................................................................... postal.logout ظ║ PostalAuthController@logout
+  GET|HEAD  profile ...................................................................................... profile.edit ظ║ ProfileController@edit
+  PATCH     profile .................................................................................. profile.update ظ║ ProfileController@update
+  GET|HEAD  register .................................................................................... register ظ║ RegistrationController@show
+  POST      register .............................................................................. register.post ظ║ RegistrationController@store
+  GET|HEAD  register/captcha ................................................................. register.captcha ظ║ RegistrationController@captcha
+  POST      register/captcha/check ................................................ register.captcha.check ظ║ RegistrationController@checkCaptcha
+  GET|HEAD  register/complete .............................................................. register.complete ظ║ RegistrationController@complete
+  POST      register/edit .......................................................................... register.edit ظ║ RegistrationController@edit
+  GET|POST|HEAD register/password .................................................... register.password ظ║ LinkedRegistrationController@password
+  POST      register/resend .................................................................... register.resend ظ║ RegistrationController@resend
+  GET|HEAD  register/verify ................................................................ register.verify ظ║ RegistrationController@verifyPage
+  POST      register/verify ............................................................... register.verify.post ظ║ RegistrationController@verify
+  POST      reset-password .................................................................. password.update ظ║ EmployeePasswordController@reset
+  GET|HEAD  reset-password/{token} ............................................................ password.reset ظ║ EmployeePasswordController@form
+  GET|HEAD  residence/districts/{district}/officials ............................ residence.officials ظ║ NeighborhoodOfficialController@officials
+  GET|HEAD  services ........................................................................ services.index ظ║ GovernmentServiceController@index
+  GET|HEAD  services/catalog/{service} ................................................ services.catalog.show ظ║ GovernmentServiceController@show
+  GET|HEAD  services/civil-registry/{guideKey} .............................................. services.civil-registry.guide ظ║ routes/web.php:125
+  GET|HEAD  services/driving-licenses ............................................ services.driving-licenses ظ║ GovernmentServiceController@index
+  GET|HEAD  services/driving-licenses/{type} ......................... services.driving-licenses.show ظ║ GovernmentServiceController@legacyDetail
+  GET|HEAD  services/identity ............................................................ services.identity ظ║ GovernmentServiceController@index
+  GET|HEAD  services/identity/{type} ......................................... services.identity.show ظ║ GovernmentServiceController@legacyDetail
+  GET|HEAD  services/passports .......................................................... services.passports ظ║ GovernmentServiceController@index
+  GET|HEAD  services/passports/{type} ....................................... services.passports.show ظ║ GovernmentServiceController@legacyDetail
+  GET|HEAD  simulation/identity-attestations ...................... simulation.identity-attestations.index ظ║ IdentityAttestationController@index
+  GET|HEAD  simulation/identity-attestations/notifications .......... simulation.identity-attestations.feed ظ║ IdentityAttestationController@feed
+  GET|HEAD  simulation/identity-attestations/{attestation} .......... simulation.identity-attestations.show ظ║ IdentityAttestationController@show
+  POST      simulation/identity-attestations/{attestation}/decision simulation.identity-attestations.decide ظ║ IdentityAttestationController@decظخ
+  POST      simulation/identity-attestations/{attestation}/open ..... simulation.identity-attestations.open ظ║ IdentityAttestationController@open
+  GET|HEAD  storage/{path} ................. storage.local ظ║ vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServiceProvider.php:98
+  PUT       storage/{path} ......... storage.local.upload ظ║ vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServiceProvider.php:106
+  GET|HEAD  terms ........................................................................................................................ terms
+  GET|HEAD  up ..................................... vendor/laravel/framework/src/Illuminate/Foundation/Configuration/ApplicationBuilder.php:219
+  GET|HEAD  verify/birth-certificate/{token} ................................. birth-certificates.verify ظ║ BirthCertificateController@showPublic
+
+                                                                                                                            Showing [255] routes
+
+
+========== DATABASE MIGRATIONS ==========
+
+Name                                                          
+----                                                          
+0001_01_01_000000_create_users_table.php                      
+0001_01_01_000001_create_cache_table.php                      
+0001_01_01_000002_create_jobs_table.php                       
+2026_10_21_000001_complete_user_authentication_fields.php     
+2026_10_22_000001_create_citizen_records.php                  
+2026_10_23_000001_create_government_service_catalog.php       
+2026_10_23_000002_add_service_request_snapshot.php            
+2026_10_24_000001_extend_service_request_submission.php       
+2026_10_25_000001_extend_service_requirements_validation.php  
+2026_10_25_000002_preserve_explicit_assessment_review_time.php
+2026_10_26_000001_create_citizen_attachments.php              
+2026_10_26_000002_ensure_attachment_context_index.php         
+2026_10_27_000001_create_request_operations.php               
+2026_10_28_000001_add_application_review.php                  
+2026_10_28_000001_add_birth_certificate_number_to_users.php   
+2026_10_29_000001_add_document_issuance_and_delivery.php      
+2026_10_29_000001_create_identity_card_forms.php              
+2026_10_29_000002_create_identity_card_attestations.php       
+2026_10_29_000003_complete_identity_trial_workflow.php        
+2026_10_30_000001_add_citizen_notifications.php               
+2026_10_31_000001_add_electronic_integrations.php             
+2026_11_01_000001_add_employee_oversight.php                  
+2026_11_02_000001_add_staged_registration.php                 
+2026_11_03_000001_add_citizen_account_activation.php          
+2026_11_04_000001_add_citizen_activation_requests.php         
+2026_11_05_000001_add_in_person_activation_checks.php         
+2026_11_06_000001_add_neighborhood_official_directory.php     
+2026_11_07_000001_add_birth_certificate_workflow.php          
+2026_11_07_000001_link_neighborhood_official_accounts.php     
+2026_11_08_000001_add_remote_account_activation.php           
+2026_11_09_000001_add_linked_citizen_simulation.php           
+2026_11_09_000002_add_private_audit_reason.php                
+2026_11_10_000001_add_mock_witness_document_registry.php      
+2026_11_10_000001_add_witness_selfies.php                     
+2026_11_11_000001_create_demo_civil_registry.php              
+2026_11_11_000002_create_postal_network_tables.php            
+2026_11_12_000001_add_identity_journey.php                    
+
+
+
+========== BLADE VIEWS ==========
+
+FullName                                                                                    
+--------                                                                                    
+C:\Users\w3h333\e-issuance\resources\views\welcome.blade.php                                
+C:\Users\w3h333\e-issuance\resources\views\admin\dashboard.blade.php                        
+C:\Users\w3h333\e-issuance\resources\views\admin\departments.blade.php                      
+C:\Users\w3h333\e-issuance\resources\views\admin\integrations.blade.php                     
+C:\Users\w3h333\e-issuance\resources\views\admin\mock-systems.blade.php                     
+C:\Users\w3h333\e-issuance\resources\views\admin\neighborhood-officials.blade.php           
+C:\Users\w3h333\e-issuance\resources\views\admin\oversight-feedback.blade.php               
+C:\Users\w3h333\e-issuance\resources\views\admin\postal-network-collector-fields.blade.php  
+C:\Users\w3h333\e-issuance\resources\views\admin\postal-network-office-fields.blade.php     
+C:\Users\w3h333\e-issuance\resources\views\admin\postal-network.blade.php                   
+C:\Users\w3h333\e-issuance\resources\views\admin\recent-audit.blade.php                     
+C:\Users\w3h333\e-issuance\resources\views\admin\report-activity.blade.php                  
+C:\Users\w3h333\e-issuance\resources\views\admin\review-permissions.blade.php               
+C:\Users\w3h333\e-issuance\resources\views\admin\simulations.blade.php                      
+C:\Users\w3h333\e-issuance\resources\views\admin\audit-logs\index.blade.php                 
+C:\Users\w3h333\e-issuance\resources\views\admin\demo-civil-registry\audits.blade.php       
+C:\Users\w3h333\e-issuance\resources\views\admin\demo-civil-registry\index.blade.php        
+C:\Users\w3h333\e-issuance\resources\views\admin\employees\form.blade.php                   
+C:\Users\w3h333\e-issuance\resources\views\admin\employees\index.blade.php                  
+C:\Users\w3h333\e-issuance\resources\views\admin\reports\index.blade.php                    
+C:\Users\w3h333\e-issuance\resources\views\admin\roles\index.blade.php                      
+C:\Users\w3h333\e-issuance\resources\views\admin\services\assessment-form.blade.php         
+C:\Users\w3h333\e-issuance\resources\views\admin\services\assessment.blade.php              
+C:\Users\w3h333\e-issuance\resources\views\admin\services\edit.blade.php                    
+C:\Users\w3h333\e-issuance\resources\views\admin\services\index.blade.php                   
+C:\Users\w3h333\e-issuance\resources\views\admin\services\technical.blade.php               
+C:\Users\w3h333\e-issuance\resources\views\admin\settings\index.blade.php                   
+C:\Users\w3h333\e-issuance\resources\views\admin\users\index.blade.php                      
+C:\Users\w3h333\e-issuance\resources\views\auth\employee-reset.blade.php                    
+C:\Users\w3h333\e-issuance\resources\views\auth\forgot-password.blade.php                   
+C:\Users\w3h333\e-issuance\resources\views\auth\linked-register.blade.php                   
+C:\Users\w3h333\e-issuance\resources\views\auth\login.blade.php                             
+C:\Users\w3h333\e-issuance\resources\views\auth\register.blade.php                          
+C:\Users\w3h333\e-issuance\resources\views\auth\terms.blade.php                             
+C:\Users\w3h333\e-issuance\resources\views\citizen\account-status.blade.php                 
+C:\Users\w3h333\e-issuance\resources\views\citizen\dashboard.blade.php                      
+C:\Users\w3h333\e-issuance\resources\views\citizen\data.blade.php                           
+C:\Users\w3h333\e-issuance\resources\views\citizen\mock-activation.blade.php                
+C:\Users\w3h333\e-issuance\resources\views\citizen\applications\correction.blade.php        
+C:\Users\w3h333\e-issuance\resources\views\citizen\applications\create.blade.php            
+C:\Users\w3h333\e-issuance\resources\views\citizen\applications\index.blade.php             
+C:\Users\w3h333\e-issuance\resources\views\citizen\applications\preview.blade.php           
+C:\Users\w3h333\e-issuance\resources\views\citizen\applications\show.blade.php              
+C:\Users\w3h333\e-issuance\resources\views\citizen\applications\success.blade.php           
+C:\Users\w3h333\e-issuance\resources\views\citizen\appointments\index.blade.php             
+C:\Users\w3h333\e-issuance\resources\views\citizen\attachments\index.blade.php              
+C:\Users\w3h333\e-issuance\resources\views\citizen\documents\index.blade.php                
+C:\Users\w3h333\e-issuance\resources\views\citizen\identity-card\index.blade.php            
+C:\Users\w3h333\e-issuance\resources\views\citizen\identity-card\renewal.blade.php          
+C:\Users\w3h333\e-issuance\resources\views\citizen\identity-card\wizard.blade.php           
+C:\Users\w3h333\e-issuance\resources\views\citizen\notifications\index.blade.php            
+C:\Users\w3h333\e-issuance\resources\views\citizen\payments\index.blade.php                 
+C:\Users\w3h333\e-issuance\resources\views\components\account-navigation.blade.php          
+C:\Users\w3h333\e-issuance\resources\views\components\attachment-list.blade.php             
+C:\Users\w3h333\e-issuance\resources\views\components\birth-certificate-fields.blade.php    
+C:\Users\w3h333\e-issuance\resources\views\components\birth-details.blade.php               
+C:\Users\w3h333\e-issuance\resources\views\components\citizen-details.blade.php             
+C:\Users\w3h333\e-issuance\resources\views\components\citizen-documents.blade.php           
+C:\Users\w3h333\e-issuance\resources\views\components\citizen-requests.blade.php            
+C:\Users\w3h333\e-issuance\resources\views\components\civil-registry-guide.blade.php        
+C:\Users\w3h333\e-issuance\resources\views\components\civil-registry-links.blade.php        
+C:\Users\w3h333\e-issuance\resources\views\components\demo-civil-registry-window.blade.php  
+C:\Users\w3h333\e-issuance\resources\views\components\icon.blade.php                        
+C:\Users\w3h333\e-issuance\resources\views\components\identity-attestation-stamp.blade.php  
+C:\Users\w3h333\e-issuance\resources\views\components\identity-card-attestation.blade.php   
+C:\Users\w3h333\e-issuance\resources\views\components\identity-card-summary.blade.php       
+C:\Users\w3h333\e-issuance\resources\views\components\identity-journey-summary.blade.php    
+C:\Users\w3h333\e-issuance\resources\views\components\identity-journey.blade.php            
+C:\Users\w3h333\e-issuance\resources\views\components\image-preload.blade.php               
+C:\Users\w3h333\e-issuance\resources\views\components\initial-identity-review.blade.php     
+C:\Users\w3h333\e-issuance\resources\views\components\integration-rules-editor.blade.php    
+C:\Users\w3h333\e-issuance\resources\views\components\integration-status.blade.php          
+C:\Users\w3h333\e-issuance\resources\views\components\location-map.blade.php                
+C:\Users\w3h333\e-issuance\resources\views\components\mobile-attestation-simulator.blade.php
+C:\Users\w3h333\e-issuance\resources\views\components\neighborhood-phone.blade.php          
+C:\Users\w3h333\e-issuance\resources\views\components\operations-sidebar.blade.php          
+C:\Users\w3h333\e-issuance\resources\views\components\page-banner.blade.php                 
+C:\Users\w3h333\e-issuance\resources\views\components\portal-demo.blade.php                 
+C:\Users\w3h333\e-issuance\resources\views\components\public-footer.blade.php               
+C:\Users\w3h333\e-issuance\resources\views\components\public-header.blade.php               
+C:\Users\w3h333\e-issuance\resources\views\components\request-details.blade.php             
+C:\Users\w3h333\e-issuance\resources\views\components\request-filters.blade.php             
+C:\Users\w3h333\e-issuance\resources\views\components\requirements-result.blade.php         
+C:\Users\w3h333\e-issuance\resources\views\components\residence-country-selects.blade.php   
+C:\Users\w3h333\e-issuance\resources\views\components\residence-selects.blade.php           
+C:\Users\w3h333\e-issuance\resources\views\components\responsive-image.blade.php            
+C:\Users\w3h333\e-issuance\resources\views\components\review-history.blade.php              
+C:\Users\w3h333\e-issuance\resources\views\components\service-banner.blade.php              
+C:\Users\w3h333\e-issuance\resources\views\components\service-requirements.blade.php        
+C:\Users\w3h333\e-issuance\resources\views\components\workspace-dashboard.blade.php         
+C:\Users\w3h333\e-issuance\resources\views\components\workspace-heading.blade.php           
+C:\Users\w3h333\e-issuance\resources\views\components\workspace-quick-links.blade.php       
+C:\Users\w3h333\e-issuance\resources\views\documents\birth-certificate.blade.php            
+C:\Users\w3h333\e-issuance\resources\views\documents\command-fields.blade.php               
+C:\Users\w3h333\e-issuance\resources\views\documents\show.blade.php                         
+C:\Users\w3h333\e-issuance\resources\views\documents\copies\birth_certificate.blade.php     
+C:\Users\w3h333\e-issuance\resources\views\documents\copies\driving_license.blade.php       
+C:\Users\w3h333\e-issuance\resources\views\documents\copies\identity.blade.php              
+C:\Users\w3h333\e-issuance\resources\views\documents\copies\layout.blade.php                
+C:\Users\w3h333\e-issuance\resources\views\documents\copies\passport.blade.php              
+C:\Users\w3h333\e-issuance\resources\views\emails\citizen-update.blade.php                  
+C:\Users\w3h333\e-issuance\resources\views\employee\dashboard.blade.php                     
+C:\Users\w3h333\e-issuance\resources\views\employee\neighborhood-attestation.blade.php      
+C:\Users\w3h333\e-issuance\resources\views\employee\neighborhood-attestations.blade.php     
+C:\Users\w3h333\e-issuance\resources\views\employee\notifications.blade.php                 
+C:\Users\w3h333\e-issuance\resources\views\employee\accounts\confirmation.blade.php         
+C:\Users\w3h333\e-issuance\resources\views\employee\accounts\in-person.blade.php            
+C:\Users\w3h333\e-issuance\resources\views\employee\accounts\index.blade.php                
+C:\Users\w3h333\e-issuance\resources\views\employee\accounts\mock-review.blade.php          
+C:\Users\w3h333\e-issuance\resources\views\employee\accounts\remote-review.blade.php        
+C:\Users\w3h333\e-issuance\resources\views\employee\accounts\show.blade.php                 
+C:\Users\w3h333\e-issuance\resources\views\employee\applications\index.blade.php            
+C:\Users\w3h333\e-issuance\resources\views\employee\applications\readonly.blade.php         
+C:\Users\w3h333\e-issuance\resources\views\employee\attachments\index.blade.php             
+C:\Users\w3h333\e-issuance\resources\views\employee\citizens\index.blade.php                
+C:\Users\w3h333\e-issuance\resources\views\employee\citizens\show.blade.php                 
+C:\Users\w3h333\e-issuance\resources\views\employee\deliveries\index.blade.php              
+C:\Users\w3h333\e-issuance\resources\views\employee\identity-card\show.blade.php            
+C:\Users\w3h333\e-issuance\resources\views\employee\issuance\index.blade.php                
+C:\Users\w3h333\e-issuance\resources\views\employee\issuance\review.blade.php               
+C:\Users\w3h333\e-issuance\resources\views\employee\reviews\show.blade.php                  
+C:\Users\w3h333\e-issuance\resources\views\identity-workflow\administration-index.blade.php 
+C:\Users\w3h333\e-issuance\resources\views\identity-workflow\administration-show.blade.php  
+C:\Users\w3h333\e-issuance\resources\views\identity-workflow\device.blade.php               
+C:\Users\w3h333\e-issuance\resources\views\identity-workflow\print.blade.php                
+C:\Users\w3h333\e-issuance\resources\views\identity-workflow\reception.blade.php            
+C:\Users\w3h333\e-issuance\resources\views\layouts\auth.blade.php                           
+C:\Users\w3h333\e-issuance\resources\views\layouts\public.blade.php                         
+C:\Users\w3h333\e-issuance\resources\views\operations\appointments.blade.php                
+C:\Users\w3h333\e-issuance\resources\views\operations\messages.blade.php                    
+C:\Users\w3h333\e-issuance\resources\views\operations\payments.blade.php                    
+C:\Users\w3h333\e-issuance\resources\views\operations\request.blade.php                     
+C:\Users\w3h333\e-issuance\resources\views\operations\slots.blade.php                       
+C:\Users\w3h333\e-issuance\resources\views\postal\collection.blade.php                      
+C:\Users\w3h333\e-issuance\resources\views\postal\home.blade.php                            
+C:\Users\w3h333\e-issuance\resources\views\postal\layout.blade.php                          
+C:\Users\w3h333\e-issuance\resources\views\postal\login.blade.php                           
+C:\Users\w3h333\e-issuance\resources\views\profile\edit.blade.php                           
+C:\Users\w3h333\e-issuance\resources\views\public\appointments.blade.php                    
+C:\Users\w3h333\e-issuance\resources\views\public\contact.blade.php                         
+C:\Users\w3h333\e-issuance\resources\views\public\home.blade.php                            
+C:\Users\w3h333\e-issuance\resources\views\public\inquiry.blade.php                         
+C:\Users\w3h333\e-issuance\resources\views\public\platform-info.blade.php                   
+C:\Users\w3h333\e-issuance\resources\views\public\birth-certificates\verify.blade.php       
+C:\Users\w3h333\e-issuance\resources\views\public\services\civil-registry-guide.blade.php   
+C:\Users\w3h333\e-issuance\resources\views\public\services\driving-licenses.blade.php       
+C:\Users\w3h333\e-issuance\resources\views\public\services\identity.blade.php               
+C:\Users\w3h333\e-issuance\resources\views\public\services\index.blade.php                  
+C:\Users\w3h333\e-issuance\resources\views\public\services\passports.blade.php              
+C:\Users\w3h333\e-issuance\resources\views\public\services\show.blade.php                   
+C:\Users\w3h333\e-issuance\resources\views\simulation\identity-attestations\index.blade.php 
+C:\Users\w3h333\e-issuance\resources\views\simulation\identity-attestations\show.blade.php  
+C:\Users\w3h333\e-issuance\resources\views\tracking\index.blade.php                         
+C:\Users\w3h333\e-issuance\resources\views\tracking\show.blade.php                          
+C:\Users\w3h333\e-issuance\resources\views\verifications\civil-registry-demo.blade.php      
+C:\Users\w3h333\e-issuance\resources\views\verifications\index.blade.php                    
+C:\Users\w3h333\e-issuance\resources\views\verifications\show.blade.php                     
+
+
+
+========== JS AND CSS ==========
+
+FullName                                                  
+--------                                                  
+C:\Users\w3h333\e-issuance\resources\css\admin.css        
+C:\Users\w3h333\e-issuance\resources\css\app.css          
+C:\Users\w3h333\e-issuance\resources\css\citizen.css      
+C:\Users\w3h333\e-issuance\resources\css\design-system.css
+C:\Users\w3h333\e-issuance\resources\css\employee.css     
+C:\Users\w3h333\e-issuance\resources\css\homepage-fix.css 
+C:\Users\w3h333\e-issuance\resources\css\portal-theme.css 
+C:\Users\w3h333\e-issuance\resources\css\public.css       
+C:\Users\w3h333\e-issuance\resources\js\app.js            
+C:\Users\w3h333\e-issuance\resources\js\bootstrap.js      
+C:\Users\w3h333\e-issuance\resources\js\homepage-fix.js   
+C:\Users\w3h333\e-issuance\resources\js\portal-theme.js   
+
+
+
+========== COMPOSER ==========
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "laravel/laravel",
+    "type": "project",
+    "description": "The skeleton application for the Laravel framework.",
+    "keywords": ["laravel", "framework"],
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "barryvdh/laravel-dompdf": "^3.1.2",
+        "endroid/qr-code": "^5.1",
+        "laravel/framework": "^12.0",
+        "laravel/tinker": "^2.10.1"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.23",
+        "laravel/pail": "^1.2.2",
+        "laravel/pint": "^1.24",
+        "laravel/sail": "^1.41",
+        "mockery/mockery": "^1.6",
+        "nunomaduro/collision": "^8.6",
+        "phpunit/phpunit": "^11.5.50"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "setup": [
+            "composer install",
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php artisan key:generate",
+            "@php artisan migrate --force",
+            "npm install",
+            "npm run build"
+        ],
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite --kill-others"
+        ],
+        "test": [
+            "@php artisan config:clear --ansi",
+            "@php artisan test"
+        ],
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi",
+            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
+            "@php artisan migrate --graceful --ansi"
+        ],
+        "pre-package-uninstall": [
+            "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
+========== NPM ==========
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.0.0",
+        "axios": "^1.11.0",
+        "concurrently": "^9.0.1",
+        "laravel-vite-plugin": "^2.0.0",
+        "tailwindcss": "^4.0.0",
+        "vite": "^7.0.7"
+    }
+}
+========== MIGRATION STATUS ==========
+
+  Migration name ................................................................................................................ Batch / Status  
+  0001_01_01_000000_create_users_table ................................................................................................. [1] Ran  
+  0001_01_01_000001_create_cache_table ................................................................................................. [1] Ran  
+  0001_01_01_000002_create_jobs_table .................................................................................................. [1] Ran  
+  2026_10_21_000001_complete_user_authentication_fields ................................................................................ [1] Ran  
+  2026_10_22_000001_create_citizen_records ............................................................................................. [2] Ran  
+  2026_10_23_000001_create_government_service_catalog .................................................................................. [3] Ran  
+  2026_10_23_000002_add_service_request_snapshot ....................................................................................... [4] Ran  
+  2026_10_24_000001_extend_service_request_submission .................................................................................. [5] Ran  
+  2026_10_25_000001_extend_service_requirements_validation ............................................................................. [6] Ran  
+  2026_10_25_000002_preserve_explicit_assessment_review_time ........................................................................... [7] Ran  
+  2026_10_26_000001_create_citizen_attachments ......................................................................................... [8] Ran  
+  2026_10_26_000002_ensure_attachment_context_index .................................................................................... [8] Ran  
+  2026_10_27_000001_create_request_operations .......................................................................................... [9] Ran  
+  2026_10_28_000001_add_application_review ............................................................................................ [10] Ran  
+  2026_10_28_000001_add_birth_certificate_number_to_users ............................................................................. [18] Ran  
+  2026_10_29_000001_add_document_issuance_and_delivery ................................................................................ [11] Ran  
+  2026_10_29_000001_create_identity_card_forms ........................................................................................ [19] Ran  
+  2026_10_29_000002_create_identity_card_attestations ................................................................................. [20] Ran  
+  2026_10_29_000003_complete_identity_trial_workflow .................................................................................. [21] Ran  
+  2026_10_30_000001_add_citizen_notifications ......................................................................................... [12] Ran  
+  2026_10_31_000001_add_electronic_integrations ....................................................................................... [13] Ran  
+  2026_11_01_000001_add_employee_oversight ............................................................................................ [14] Ran  
+  2026_11_02_000001_add_staged_registration ........................................................................................... [15] Ran  
+  2026_11_03_000001_add_citizen_account_activation .................................................................................... [16] Ran  
+  2026_11_04_000001_add_citizen_activation_requests ................................................................................... [17] Ran  
+  2026_11_05_000001_add_in_person_activation_checks ................................................................................... [22] Ran  
+  2026_11_06_000001_add_neighborhood_official_directory ............................................................................... [23] Ran  
+  2026_11_07_000001_add_birth_certificate_workflow .................................................................................... [25] Ran  
+  2026_11_07_000001_link_neighborhood_official_accounts ............................................................................... [26] Ran  
+  2026_11_08_000001_add_remote_account_activation ..................................................................................... [27] Ran  
+  2026_11_09_000001_add_linked_citizen_simulation ..................................................................................... [28] Ran  
+  2026_11_09_000002_add_private_audit_reason .......................................................................................... [29] Ran  
+  2026_11_10_000001_add_mock_witness_document_registry ................................................................................ [30] Ran  
+  2026_11_10_000001_add_witness_selfies ............................................................................................... [24] Ran  
+  2026_11_11_000001_create_demo_civil_registry ........................................................................................ [33] Ran  
+  2026_11_11_000002_create_postal_network_tables ...................................................................................... [31] Ran  
+  2026_11_12_000001_add_identity_journey .............................................................................................. [32] Ran  
+
+
+========== JS AND CSS ==========
+
+FullName                                                  
+--------                                                  
+C:\Users\w3h333\e-issuance\resources\css\admin.css        
+C:\Users\w3h333\e-issuance\resources\css\app.css          
+C:\Users\w3h333\e-issuance\resources\css\citizen.css      
+C:\Users\w3h333\e-issuance\resources\css\design-system.css
+C:\Users\w3h333\e-issuance\resources\css\employee.css     
+C:\Users\w3h333\e-issuance\resources\css\homepage-fix.css 
+C:\Users\w3h333\e-issuance\resources\css\portal-theme.css 
+C:\Users\w3h333\e-issuance\resources\css\public.css       
+C:\Users\w3h333\e-issuance\resources\js\app.js            
+C:\Users\w3h333\e-issuance\resources\js\bootstrap.js      
+C:\Users\w3h333\e-issuance\resources\js\homepage-fix.js   
+C:\Users\w3h333\e-issuance\resources\js\portal-theme.js   
+
+
+
+========== COMPOSER ==========
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "laravel/laravel",
+    "type": "project",
+    "description": "The skeleton application for the Laravel framework.",
+    "keywords": ["laravel", "framework"],
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "barryvdh/laravel-dompdf": "^3.1.2",
+        "endroid/qr-code": "^5.1",
+        "laravel/framework": "^12.0",
+        "laravel/tinker": "^2.10.1"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.23",
+        "laravel/pail": "^1.2.2",
+        "laravel/pint": "^1.24",
+        "laravel/sail": "^1.41",
+        "mockery/mockery": "^1.6",
+        "nunomaduro/collision": "^8.6",
+        "phpunit/phpunit": "^11.5.50"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "setup": [
+            "composer install",
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php artisan key:generate",
+            "@php artisan migrate --force",
+            "npm install",
+            "npm run build"
+        ],
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite --kill-others"
+        ],
+        "test": [
+            "@php artisan config:clear --ansi",
+            "@php artisan test"
+        ],
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi",
+            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
+            "@php artisan migrate --graceful --ansi"
+        ],
+        "pre-package-uninstall": [
+            "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

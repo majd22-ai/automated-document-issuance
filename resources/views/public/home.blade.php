@@ -62,11 +62,7 @@
           <h3>خدمات مصلحة الهجرة والجوازات والجنسية</h3>
           <p>إصدار جواز سفر لأول مرة وتجديد جواز السفر.</p>
         </a>
-        <a href="{{ url('/services/driving-licenses') }}" class="gov-service-card">
-          <div class="gov-service-icon" aria-hidden="true"><x-icon name="car" /></div>
-          <h3>خدمات الإدارة العامة للمرور</h3>
-          <p>إصدار رخصة قيادة لأول مرة وتجديد رخصة القيادة.</p>
-        </a>
+
         <a href="{{ route('appointments.book') }}" class="gov-service-card">
           <div class="gov-service-icon" aria-hidden="true"><x-icon name="calendar" /></div>
           <h3>خدمات المواعيد</h3>
