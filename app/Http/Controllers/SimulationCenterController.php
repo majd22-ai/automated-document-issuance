@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Schema;
 
 class SimulationCenterController extends Controller
 {
+    public const DEMO_TABLES = ['demo_civil_people', 'demo_civil_families', 'demo_civil_family_members', 'demo_civil_records', 'demo_civil_record_parties', 'demo_civil_documents', 'demo_civil_registry_audits'];
+
     public function index(Request $request)
     {
         $local = app()->environment(['local', 'testing']);
@@ -19,7 +21,7 @@ class SimulationCenterController extends Controller
                 'title' => 'السجل المدني التجريبي',
                 'description' => 'البحث وعرض السجلات الاصطناعية. تبقى نافذة السجل متاحة للموظف المخوّل أثناء مراجعة الطلب.',
                 'enabled' => $local && config('demo_civil_registry.enabled') === true,
-                'tables' => ['demo_civil_people', 'demo_civil_families', 'demo_civil_family_members', 'demo_civil_records', 'demo_civil_record_parties', 'demo_civil_documents', 'demo_civil_registry_audits'],
+                'tables' => self::DEMO_TABLES,
                 'route' => 'admin.demo-civil-registry.index',
             ],
             [

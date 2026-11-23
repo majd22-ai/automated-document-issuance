@@ -10,19 +10,15 @@
       ['الموظفون','admin.employees.index','admin.employees.*'],
       ['صلاحيات الخدمات','admin.review-permissions.index','admin.review-permissions.*'],
       ['الخدمات والمتطلبات','admin.services.index','admin.services.*'],
-      ['التكامل الإلكتروني','admin.integrations.index','admin.integrations.*'],
-      ['مركز أنظمة المحاكاة','admin.simulations.index','admin.simulations.*,admin.mock-systems.*,admin.demo-civil-registry.*,admin.postal-network.*'],
       ['التقارير والإحصاءات','admin.reports.index','admin.reports.*'],
       ['سجل العمليات','admin.audit-logs.index','admin.audit-logs.*'],
     ];
   } else {
-    $navigation = array_map(fn($item)=>[$item['label'],$item['route'],$item['pattern']], app(\App\Services\Workspace\EmployeeWorkspace::class)->modules($operator));
+    $navigation = array_map(fn($item)=>[$item['label'],$item['route'],$item['pattern']], array_filter(
+      app(\App\Services\Workspace\EmployeeWorkspace::class)->modules($operator),
+      fn ($item) => $item['key'] !== 'verification'
+    ));
   }
-  if ($adminWorkspace && $operator->is_active && \App\Services\Registration\MockCivilSystems::enabled()) {
-    $navigation[] = ['ملفات المواطنين التجريبية','admin.mock-civil-registry.index','admin.mock-civil-registry.*'];
-  }
-  if (!$adminWorkspace && \App\Services\FingerprintService::canUse($operator)) $navigation[] = ['استقبال المواطنين وتسجيل البصمة','identity-workflow.reception','identity-workflow.reception'];
-  if (!$adminWorkspace && \App\Services\FingerprintService::canUse($operator, 'can_approve')) $navigation[] = ['المراجعة الإدارية التجريبية','identity-workflow.administration.index','identity-workflow.administration.*'];
   if (\App\Models\NeighborhoodOfficial::residenceOnly($operator)) $navigation = array_values(array_filter($navigation, fn ($item) => in_array($item[1], ['employee.dashboard','employee.notifications.index','employee.neighborhood-attestations.index'], true)));
 @endphp
 <aside class="ops-sidebar" aria-label="التنقل داخل مساحة العمل">

@@ -1,26 +1,33 @@
 @php
-    $base = url('/employee/demo-civil-registry');
+    $inline = $inline ?? false;
+    $prefix = auth()->user()?->role === 'admin' ? 'admin' : 'employee';
     $personPlaceholder = '__DEMO_PERSON__';
     $sectionPlaceholder = '__DEMO_SECTION__';
-    $requestId = $application->id;
+    $requestId = $application->id ?? null;
 @endphp
+@unless($inline)
 @push('styles')<link rel="stylesheet" href="{{ asset('css/demo-civil-registry.css') }}?v={{ filemtime(public_path('css/demo-civil-registry.css')) }}">@endpush
+@endunless
 @push('scripts')<script src="{{ asset('js/demo-civil-registry-fields.js') }}?v={{ filemtime(public_path('js/demo-civil-registry-fields.js')) }}" defer></script><script src="{{ asset('js/demo-civil-registry.js') }}?v={{ filemtime(public_path('js/demo-civil-registry.js')) }}" defer></script>@endpush
+@unless($inline)
 <section class="demo-registry-launcher" dir="rtl" aria-label="السجل المدني التجريبي">
   <button type="button" class="btn btn-outline" data-demo-registry-open aria-haspopup="dialog" aria-controls="demo-civil-registry-window">فتح السجل المدني التجريبي</button>
   <span>قراءة فقط للمراجعة، ولا تغيّر حالة الطلب.</span>
 </section>
-<dialog id="demo-civil-registry-window" class="demo-registry-window" dir="rtl"
-  aria-labelledby="demo-registry-title" aria-describedby="demo-registry-warning"
-  data-search-url="{{ route('employee.demo-civil-registry.search') }}"
-  data-person-url="{{ route('employee.demo-civil-registry.people.show', $personPlaceholder) }}"
-  data-section-url="{{ route('employee.demo-civil-registry.people.section', [$personPlaceholder, $sectionPlaceholder]) }}"
+@endunless
+<{{ $inline ? 'div' : 'dialog' }} id="demo-civil-registry-window" class="{{ $inline ? 'demo-registry-inline' : 'demo-registry-window' }}" dir="rtl"
+  @unless($inline) aria-labelledby="demo-registry-title" @endunless aria-describedby="demo-registry-warning"
+  data-search-url="{{ route($prefix.'.demo-civil-registry.search') }}"
+  data-person-url="{{ route($prefix.'.demo-civil-registry.people.show', $personPlaceholder) }}"
+  data-section-url="{{ route($prefix.'.demo-civil-registry.people.section', [$personPlaceholder, $sectionPlaceholder]) }}"
   data-request-id="{{ $requestId }}"
   data-suggested-section="{{ $suggestedSection ?? '' }}">
+  @unless($inline)
   <header class="demo-registry-window-head" data-demo-registry-drag>
     <div><h2 id="demo-registry-title">السجل المدني التجريبي</h2><span class="demo-registry-badge">بيانات اصطناعية</span></div>
     <div class="demo-registry-window-actions"><button type="button" data-demo-registry-minimize aria-label="تصغير النافذة" title="تصغير">_</button><button type="button" data-demo-registry-close aria-label="إغلاق النافذة" title="إغلاق">×</button></div>
   </header>
+  @endunless
   <div class="demo-registry-window-content">
     <p id="demo-registry-warning" class="demo-registry-warning">هذا سجل مدني تجريبي لأغراض المحاكاة والمراجعة الداخلية، ولا يمثل سجلاً حكومياً معتمداً ولا يُستخدم لإثبات الهوية أو صحة الوقائع المدنية.</p>
     <form class="demo-registry-search" data-demo-registry-search novalidate>
@@ -37,4 +44,4 @@
       <div class="demo-registry-records" data-demo-registry-records aria-live="polite"></div>
     </div>
   </div>
-</dialog>
+</{{ $inline ? 'div' : 'dialog' }}>

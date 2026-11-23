@@ -127,6 +127,25 @@ class MockCivilRegistryTest extends TestCase
         }
     }
 
+    public function test_workspace_fragments_preserve_registry_permissions_and_omit_the_page_shell(): void
+    {
+        $person = $this->person('Workspace Record');
+        $headers = ['X-Operations-Tools' => 'registry'];
+        $urls = [
+            'directory' => route('admin.mock-civil-registry.index'),
+            'profile' => route('admin.mock-civil-registry.show', $person),
+        ];
+        $admin = User::factory()->create(['role' => 'admin']);
+        $employee = User::factory()->create(['role' => 'employee']);
+        foreach ($urls as $type => $url) {
+            $this->actingAs($admin)->get($url, $headers)
+                ->assertOk()->assertHeader('Vary', 'X-Operations-Tools')
+                ->assertSee('data-ops-fragment="'.$type.'"', false)
+                ->assertSee('Workspace Record')->assertDontSee('id="operations-tools"', false);
+            $this->actingAs($employee)->get($url, $headers)->assertForbidden();
+        }
+    }
+
     private function person(string $name, array $attributes = []): int
     {
         return DB::table('mock_civil_persons')->insertGetId($attributes + [

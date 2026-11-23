@@ -25,7 +25,7 @@ class MockCivilRegistryController extends Controller
         $people = $registry->people($filters);
         $audit->record('mock_civil_registry.list', 'mock_civil_person', null, $request->user());
 
-        return $this->page('admin.mock-civil-registry.index', compact('people', 'filters'));
+        return $this->page($request, 'admin.mock-civil-registry.index', compact('people', 'filters'));
     }
 
     public function show(Request $request, int $person, MockCivilRegistry $registry, AuditTrail $audit): Response
@@ -35,7 +35,7 @@ class MockCivilRegistryController extends Controller
         $profile = $registry->profile($person, $request->user());
         $audit->record('mock_civil_registry.view', 'mock_civil_person', $person, $request->user());
 
-        return $this->page('admin.mock-civil-registry.show', $profile);
+        return $this->page($request, 'admin.mock-civil-registry.show', $profile);
     }
 
     private function authorizeAccess(Request $request): void
@@ -46,10 +46,13 @@ class MockCivilRegistryController extends Controller
         }
     }
 
-    private function page(string $view, array $data): Response
+    private function page(Request $request, string $view, array $data): Response
     {
-        return response()->view($view, $data)
+        $toolsFragment = $request->header('X-Operations-Tools') === 'registry';
+
+        return response()->view($view, $data + compact('toolsFragment'))
             ->header('Cache-Control', 'no-store, private')
+            ->header('Vary', 'X-Operations-Tools')
             ->header('Referrer-Policy', 'no-referrer');
     }
 }

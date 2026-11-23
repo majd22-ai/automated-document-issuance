@@ -1,7 +1,7 @@
 @extends('layouts.public')
 @section('title','إعدادات التكامل الإلكتروني')
 @section('content')
-<div class="container" style="padding-block:1rem"><a class="btn btn-secondary" href="{{ route('admin.simulations.index') }}">مركز أنظمة المحاكاة</a><p>التجارب والأنظمة المحلية متاحة من مركز المحاكاة. هذه الصفحة لمراقبة التكامل والتحقق الإلكتروني.</p></div>
+<div class="container" style="padding-block:1rem"><button type="button" class="btn btn-secondary" data-ops-open="home" aria-controls="operations-tools">فتح لوحة المحاكاة</button><p>مراقبة التكامل والتحقق الإلكتروني.</p></div>
 <section class="ops-section"><div class="container"><div class="ops-page-head"><h1>التكامل والتحقق الإلكتروني</h1></div><p>تدار جهات الاتصال وأسرارها من إعدادات النشر بعد توفير وثائق API واعتماد المزود. لا تتيح هذه الصفحة إدخال عنوان خارجي أو تزوير نتيجة.</p>
 <h2>مزودو التحقق</h2><div class="ops-grid">@forelse($providers as $provider)<article class="card ops-card"><p>{{ $provider['label'] }} ({{ $provider['key'] }}) — {{ $provider['configured']?'المحول معتمد ومفعّل في الإعدادات؛ لا يعني ذلك نجاح الاتصال':'خدمة التحقق غير مهيأة' }}</p></article>@empty<p class="ops-empty">لا يوجد مزود خارجي معتمد مهيأ. لم ينفذ تحقق رسمي.</p>@endforelse</div>
 <p><a href="{{ route('admin.services.index') }}">تحديد متطلبات التحقق حسب الخدمة</a> — <a href="{{ route('admin.review-permissions.index') }}">منح صلاحية التحقق للموظف حسب الخدمة</a></p>

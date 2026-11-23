@@ -5,7 +5,7 @@
 <x-workspace-heading title="مرحبًا، {{ explode(' ', trim(auth()->user()->name))[0] }}" role-label="مساحة الموظف" description="تعرض هذه المساحة المهام والخدمات التي فوضك بها مدير النظام فقط." />
 @include('operations.messages')
 @if(count($modules) > 1)
-<x-workspace-quick-links title="أقسام عملي المتاحة" :items="array_values(array_filter($modules, fn ($module) => $module['key'] !== 'dashboard'))" />
+<x-workspace-quick-links title="أقسام عملي المتاحة" :items="array_values(array_filter($modules, fn ($module) => !in_array($module['key'], ['dashboard', 'verification'], true)))" />
 @endif
 @if(count($modules)===1)<div class="ops-empty"><h2>لا توجد مهام مفوضة حاليًا</h2><p>يحدد مدير النظام صلاحياتك قبل بدء العمل. يبقى ملفك الشخصي وإشعاراتك متاحين من الشريط العلوي.</p></div>@endif
 @if(\App\Models\NeighborhoodOfficial::authorized(auth()->user()))

@@ -1,11 +1,11 @@
-@extends('layouts.public')
+@extends(!empty($toolsFragment) ? 'layouts.operations-tool-fragment' : 'layouts.public')
 @section('title', 'ملف المواطن التجريبي')
 @section('content')
 @php
     $roles = ['father' => 'أب', 'mother' => 'أم', 'child' => 'ابن أو ابنة'];
     $civilStatuses = ['active' => 'سارية', 'expired' => 'منتهية', 'cancelled' => 'ملغاة', 'inactive' => 'غير سارية'];
 @endphp
-<section class="ops-section" aria-labelledby="profile-title">
+<section class="ops-section" aria-labelledby="profile-title" @if(!empty($toolsFragment)) data-ops-fragment="profile" @endif>
     <div class="container">
         <div class="ops-page-head">
             <a href="{{ route('admin.mock-civil-registry.index') }}">ملفات المواطنين التجريبية</a>
@@ -13,7 +13,7 @@
             <p>قيد مدني تجريبي · {{ $person->complete ? 'مكتمل' : 'يحتاج مراجعة' }}</p>
         </div>
         <div class="ops-grid">
-            <section class="card ops-card">
+            <section class="card ops-card" data-registry-topic="civil">
                 <h2>البيانات الشخصية والمدنية</h2>
                 <dl>
                     <dt>الرقم الوطني التجريبي</dt><dd><bdi>{{ $person->national_id ?? 'غير مسجل' }}</bdi></dd>
@@ -23,7 +23,7 @@
                     <dt>الأم</dt><dd>{{ $person->mother_name ?? 'غير مسجلة' }}</dd>
                 </dl>
             </section>
-            <section class="card ops-card">
+            <section class="card ops-card" data-registry-topic="family">
                 <h2>قيد الأسرة وأفرادها</h2>
                 @if($person->family_reference !== null)
                     <p>مرجع الأسرة <bdi>{{ $person->family_reference }}</bdi></p>
@@ -43,7 +43,7 @@
                     <p>لا يوجد قيد أسرة مرتبط.</p>
                 @endif
             </section>
-            <section class="card ops-card">
+            <section class="card ops-card" data-registry-topic="birth">
                 <h2>شهادة الميلاد التجريبية</h2>
                 @if($birth)
                     <p>رقم السجل <bdi>{{ $birth->number }}</bdi></p>
@@ -52,7 +52,7 @@
                     <p>لا توجد شهادة ميلاد مرتبطة.</p>
                 @endif
             </section>
-            <section class="card ops-card">
+            <section class="card ops-card" data-registry-topic="card">
                 <h2>البطاقة الشخصية التجريبية</h2>
                 @if($card)
                     <p>رقم البطاقة <bdi>{{ $card->number }}</bdi></p>
@@ -63,7 +63,7 @@
             </section>
         </div>
 
-        <section class="card ops-card">
+        <section class="card ops-card" data-registry-topic="documents">
             <h2>الوثائق المدنية التجريبية</h2>
             <p>المصدر سجل المحاكاة المدنية.</p>
             @forelse($civilDocuments as $document)
@@ -77,7 +77,7 @@
 
         @if($person->linked)
             <div class="ops-grid">
-                <section class="card ops-card">
+                <section class="card ops-card" data-registry-topic="requests">
                     <h2>طلبات الخدمات</h2>
                     <p>المصدر حساب المواطن في التطبيق.</p>
                     @forelse($requests as $application)
@@ -86,7 +86,7 @@
                         <p>لا توجد طلبات متاحة بصلاحياتك.</p>
                     @endforelse
                 </section>
-                <section class="card ops-card">
+                <section class="card ops-card" data-registry-topic="official">
                     <h2>الوثائق الرسمية الصادرة عبر التطبيق</h2>
                     <p>المصدر وثائق حساب المواطن في التطبيق.</p>
                     @forelse($officialDocuments as $document)
@@ -95,7 +95,7 @@
                         <p>لا توجد وثائق رسمية متاحة بصلاحياتك.</p>
                     @endforelse
                 </section>
-                <section class="card ops-card">
+                <section class="card ops-card" data-registry-topic="identity">
                     <h2>التحقق من الهوية والوجه</h2>
                     @if($identityStatus !== null)
                         <p>{{ $identityStatus }}</p>
@@ -106,7 +106,7 @@
                 </section>
             </div>
         @else
-            <p class="card ops-card">لا يوجد حساب مرتبط بهذا القيد المدني.</p>
+            <p class="card ops-card" data-registry-topic="identity">لا يوجد حساب مرتبط بهذا القيد المدني.</p>
         @endif
     </div>
 </section>

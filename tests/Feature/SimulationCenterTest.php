@@ -40,7 +40,7 @@ class SimulationCenterTest extends TestCase
             ->assertDontSee('href="'.route('admin.mock-civil-registry.index').'"', false);
     }
 
-    public function test_enabled_systems_link_to_existing_pages_and_sidebar_has_one_center_entry(): void
+    public function test_enabled_systems_link_to_existing_pages_and_admin_tools_use_the_left_panel(): void
     {
         config(['demo_civil_registry.enabled' => true, 'citizen_mock.enabled' => true, 'postal_network.enabled' => true]);
         $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/simulations')
@@ -50,9 +50,31 @@ class SimulationCenterTest extends TestCase
             ->assertSee('href="'.route('admin.demo-civil-registry.index').'"', false)
             ->assertSee('التحصيل غير متاح');
         $this->get('/admin/dashboard')->assertOk()
-            ->assertSee('href="'.route('admin.simulations.index').'"', false)
-            ->assertSee('href="'.route('admin.mock-civil-registry.index').'"', false)
+            ->assertSee('id="operations-tools"', false)
+            ->assertDontSee('id="sim-drawer-toggle"', false)
+            ->assertSee('data-ops-registry="'.route('admin.mock-civil-registry.index', [], false).'"', false)
+            ->assertSee('data-ops-section="documents"', false)
+            ->assertSee('href="'.route('admin.integrations.index').'"', false)
+            ->assertDontSee('href="'.route('admin.simulations.index').'"', false)
+            ->assertDontSee('href="'.route('admin.mock-civil-registry.index').'"', false)
             ->assertDontSee('href="'.route('admin.mock-systems.index').'"', false);
+    }
+
+    public function test_employee_panel_respects_registry_and_integration_permissions(): void
+    {
+        config(['demo_civil_registry.enabled' => true, 'citizen_mock.enabled' => true]);
+        $employee = User::factory()->create(['role' => 'employee']);
+        $this->actingAs($employee)->get('/employee/dashboard')->assertOk()
+            ->assertSee('id="operations-tools"', false)
+            ->assertDontSee('data-ops-registry=', false)
+            ->assertDontSee('data-ops-view="demo"', false)
+            ->assertDontSee('href="'.route('admin.integrations.index').'"', false);
+
+        $employee->forceFill(['can_access_demo_civil_registry' => true])->save();
+        $this->get('/employee/dashboard')->assertOk()
+            ->assertSee('data-ops-view="demo"', false)
+            ->assertSee(route('employee.demo-civil-registry.search'))
+            ->assertDontSee(route('admin.demo-civil-registry.search'));
     }
 
     public function test_missing_registry_tables_do_not_produce_broken_links(): void
@@ -75,10 +97,10 @@ class SimulationCenterTest extends TestCase
             ->assertSee('href="'.route('integrations.civil-registry-demo').'"', false);
     }
 
-    public function test_integration_monitoring_links_to_center(): void
+    public function test_integration_monitoring_opens_the_panel(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/integrations')
-            ->assertOk()->assertSee('href="'.route('admin.simulations.index').'"', false)
+            ->assertOk()->assertSee('فتح لوحة المحاكاة')
             ->assertSee('سجل العمليات المنقح');
     }
 }

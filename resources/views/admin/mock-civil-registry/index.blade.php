@@ -1,7 +1,7 @@
-@extends('layouts.public')
+@extends(!empty($toolsFragment) ? 'layouts.operations-tool-fragment' : 'layouts.public')
 @section('title', 'ملفات المواطنين التجريبية')
 @section('content')
-<section class="ops-section" aria-labelledby="registry-title">
+<section class="ops-section" aria-labelledby="registry-title" @if(!empty($toolsFragment)) data-ops-fragment="directory" @endif>
     <div class="container">
         <div class="ops-page-head">
             <h1 id="registry-title">ملفات المواطنين التجريبية</h1>

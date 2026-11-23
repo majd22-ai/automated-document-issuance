@@ -1,5 +1,5 @@
 ﻿@php
-  $operationsWorkspace = auth()->check() && in_array(auth()->user()->role, ['admin','employee'], true) && request()->routeIs('admin.*','employee.*','profile.*','integrations.civil-registry-demo*','identity-workflow.*');
+  $operationsWorkspace = auth()->check() && in_array(auth()->user()->role, ['admin','employee'], true) && request()->routeIs('admin.*','employee.*','profile.*','integrations.civil-registry-demo*','identity-workflow.*','simulation.identity-attestations.*');
 @endphp
  <!DOCTYPE html>
 <html lang="ar" dir="rtl" translate="no" class="notranslate">
@@ -41,6 +41,11 @@
   @stack('styles')
   @if($operationsWorkspace || request()->routeIs('citizen.dashboard'))
   <link rel="stylesheet" href="{{ asset('css/operations-workspace.css') }}?v={{ filemtime(public_path('css/operations-workspace.css')) }}">
+  @endif
+  @if($operationsWorkspace)
+    <link rel="stylesheet" href="{{ asset('css/operations-tools.css') }}?v={{ filemtime(public_path('css/operations-tools.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/demo-civil-registry.css') }}?v={{ filemtime(public_path('css/demo-civil-registry.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/identity-attestation.css') }}?v={{ filemtime(public_path('css/identity-attestation.css')) }}">
   @endif
   <link rel="stylesheet" href="{{ asset('css/service-banner.css') }}?v={{ filemtime(public_path('css/service-banner.css')) }}">
   <link rel="stylesheet" href="{{ asset('css/icons.css') }}?v={{ filemtime(public_path('css/icons.css')) }}">
@@ -113,6 +118,7 @@
     @if($operationsWorkspace)
     <div class="ops-shell">
       @include('components.operations-sidebar')
+      @include('components.operations-tools')
       <div class="ops-content">
         <div class="ops-location"><a href="{{ route(auth()->user()->role.'.dashboard') }}">{{ auth()->user()->role === 'admin' ? 'مساحة الإدارة' : 'مساحة الموظف' }}</a><span aria-hidden="true">/</span><span>@yield('title')</span></div>
         @yield('content')
@@ -125,7 +131,7 @@
 
   @include('components.public-footer')
 
-  @if(auth()->check() && \App\Services\IdentityAttestations::canUseSimulation(auth()->user()))
+  @if(!$operationsWorkspace && auth()->check() && \App\Services\IdentityAttestations::canUseSimulation(auth()->user()))
     <link rel="stylesheet" href="{{ asset('css/identity-attestation.css') }}?v={{ filemtime(public_path('css/identity-attestation.css')) }}">
     @include('components.mobile-attestation-simulator')
   @endif

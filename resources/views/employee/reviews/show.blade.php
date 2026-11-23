@@ -13,7 +13,7 @@
 @include('components.identity-journey')
 @endunless
 @can('viewAnyDemoCivilRegistry', \App\Models\User::class)
-	@include('components.demo-civil-registry-window', ['application' => $application, 'suggestedSection' => $registrySuggestedSection ?? null])
+    <button type="button" class="btn btn-outline" data-demo-registry-open data-ops-open="demo" aria-controls="operations-tools">فتح السجل المدني التجريبي</button>
 @endcan
 @if($application->identityCardForm)<p><a class="btn btn-outline" href="{{ route('employee.identity-card.show', $application->identityCardForm) }}">فتح استمارة البطاقة والصورة وبيانات الشاهدين</a></p>@endif
 @include('components.citizen-details',['citizen'=>$application->citizen,'missing'=>$application->citizen->missingCitizenFields()])

@@ -3,7 +3,9 @@
 
   const dialog = document.querySelector('#demo-civil-registry-window');
   const trigger = document.querySelector('[data-demo-registry-open]');
-  if (!dialog || !trigger) return;
+  if (!dialog) return;
+  const standalone = dialog.matches('dialog');
+  if (standalone && !trigger) return;
 
   const form = dialog.querySelector('[data-demo-registry-search]');
   const status = dialog.querySelector('[data-demo-registry-status]');
@@ -50,43 +52,45 @@
     return payload;
   }
 
-  trigger.addEventListener('click', () => {
-    if (!dialog.open) dialog.show();
-    if (minimized) {
-      minimized = false;
-      dialog.classList.remove('is-minimized');
-      const minimizeButton = dialog.querySelector('[data-demo-registry-minimize]');
-      minimizeButton.setAttribute('aria-label', 'تصغير النافذة');
-      minimizeButton.title = 'تصغير';
-    }
-    dialog.querySelector('[name=q]').focus();
-  });
-  dialog.querySelector('[data-demo-registry-close]').addEventListener('click', () => dialog.close());
-  dialog.addEventListener('close', () => trigger.focus());
-  // Non-modal dialogs need an explicit Escape handler in browsers without close requests.
-  dialog.addEventListener('keydown', event => {
-    if (event.key === 'Escape') {
+  if (standalone) {
+    trigger.addEventListener('click', () => {
+      if (!dialog.open) dialog.show();
+      if (minimized) {
+        minimized = false;
+        dialog.classList.remove('is-minimized');
+        const minimizeButton = dialog.querySelector('[data-demo-registry-minimize]');
+        minimizeButton.setAttribute('aria-label', 'تصغير النافذة');
+        minimizeButton.title = 'تصغير';
+      }
+      dialog.querySelector('[name=q]').focus();
+    });
+    dialog.querySelector('[data-demo-registry-close]').addEventListener('click', () => dialog.close());
+    dialog.addEventListener('close', () => trigger.focus());
+    // Non-modal dialogs need an explicit Escape handler in browsers without close requests.
+    dialog.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        dialog.close();
+      }
+    });
+    dialog.querySelector('[data-demo-registry-minimize]').addEventListener('click', event => {
+      minimized = !minimized;
+      dialog.classList.toggle('is-minimized', minimized);
+      event.currentTarget.setAttribute('aria-label', minimized ? 'استعادة النافذة' : 'تصغير النافذة');
+      event.currentTarget.title = minimized ? 'استعادة' : 'تصغير';
+      if (!minimized) dialog.querySelector('[data-demo-registry-search] input').focus();
+    });
+    dialog.addEventListener('cancel', event => {
       event.preventDefault();
       dialog.close();
-    }
-  });
-  dialog.querySelector('[data-demo-registry-minimize]').addEventListener('click', event => {
-    minimized = !minimized;
-    dialog.classList.toggle('is-minimized', minimized);
-    event.currentTarget.setAttribute('aria-label', minimized ? 'استعادة النافذة' : 'تصغير النافذة');
-    event.currentTarget.title = minimized ? 'استعادة' : 'تصغير';
-    if (!minimized) dialog.querySelector('[data-demo-registry-search] input').focus();
-  });
+    });
+  }
   dialog.querySelector('[data-demo-registry-back]').addEventListener('click', () => {
     profileVersion += 1;
     sectionVersion += 1;
     profile.hidden = true;
     results.hidden = false;
     dialog.querySelector('[data-demo-registry-search] input').focus();
-  });
-  dialog.addEventListener('cancel', event => {
-    event.preventDefault();
-    dialog.close();
   });
 
   form.addEventListener('submit', async event => {
@@ -271,6 +275,7 @@
   }
 
   const dragHandle = dialog.querySelector('[data-demo-registry-drag]');
+  if (!dragHandle) return;
   let drag = null;
   dragHandle.addEventListener('pointerdown', event => {
     if (event.button !== 0 || event.target.closest('button,input,select,textarea,a,[data-no-drag]')) return;
