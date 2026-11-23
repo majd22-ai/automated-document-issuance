@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Services\MockCivilRegistry;
 use App\Services\Oversight\AuditTrail;
 use App\Services\Registration\MockCivilSystems;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Schema;
 
 class MockCivilRegistryController extends Controller
 {
-    public function index(Request $request, MockCivilRegistry $registry, AuditTrail $audit): Response
+    public function index(Request $request, MockCivilRegistry $registry, AuditTrail $audit): Response|JsonResponse
     {
         $this->authorizeAccess($request);
 
@@ -22,6 +23,14 @@ class MockCivilRegistryController extends Controller
             'page' => ['sometimes', 'integer', 'min:1'],
         ]);
         unset($filters['page']);
+        if ($request->header('X-Operations-Tools') === 'registry-suggestions') {
+            $matches = $registry->nameSuggestions($filters);
+            $audit->record('mock_civil_registry.list', 'mock_civil_person', null, $request->user());
+
+            return response()->json($matches)
+                ->header('Cache-Control', 'no-store, private')
+                ->header('Vary', 'X-Operations-Tools');
+        }
         $people = $registry->people($filters);
         $audit->record('mock_civil_registry.list', 'mock_civil_person', null, $request->user());
 

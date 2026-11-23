@@ -50,7 +50,7 @@
             <h3>أنظمة المحاكاة</h3>
             <div class="operations-tools-grid">
                 @if($demoRegistry || $mockRegistry)
-                    <button type="button" data-ops-view-button="{{ $mockRegistry ? 'mock' : 'demo' }}">محاكاة أنظمة السجل المدني</button>
+                    <button type="button" data-ops-view-button="{{ $mockRegistry ? 'mock' : 'demo' }}">محاكاة أنظمة الأحوال المدنية</button>
                 @endif
                 @if($demoRegistry && $mockRegistry)
                     <button type="button" data-ops-view-button="demo">السجل المدني التجريبي المستقل</button>
@@ -87,7 +87,7 @@
         </div>
         @if($mockRegistry)
             <section data-ops-view="mock" data-ops-registry="{{ route('admin.mock-civil-registry.index', [], false) }}" hidden>
-                <h3>محاكاة أنظمة السجل المدني</h3>
+                <h3>محاكاة أنظمة الأحوال المدنية</h3>
                 <div class="operations-tools-grid" aria-label="أنظمة السجل المدني الثمانية">
                     @foreach($mockSections as $key => $title)
                         <button type="button" data-ops-section="{{ $key }}" aria-pressed="false">{{ $title }}</button>

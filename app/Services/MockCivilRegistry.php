@@ -7,6 +7,7 @@ use App\Models\CitizenServiceRequest;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
@@ -18,17 +19,59 @@ class MockCivilRegistry
         'citizen_service_requests', 'citizen_documents', 'mock_face_attempts',
     ];
 
+    private const NAME_REPLACEMENTS = [
+        'أ' => 'ا', 'إ' => 'ا', 'آ' => 'ا', 'ٱ' => 'ا', 'ى' => 'ي',
+        'َ' => '', 'ً' => '', 'ُ' => '', 'ٌ' => '', 'ِ' => '', 'ٍ' => '', 'ّ' => '', 'ْ' => '', 'ـ' => '',
+        'ٔ' => '', 'ٕ' => '',
+    ];
+
     public function people(array $filters): LengthAwarePaginator
     {
-        $query = $this->peopleQuery();
+        $query = $this->filteredPeople($filters);
         if (isset($filters['q'])) {
-            $term = strtr($filters['q'], ['!' => '!!', '%' => '!%', '_' => '!_']);
-            $query->where(function (Builder $query) use ($term, $filters) {
-                $query->whereRaw("person.name LIKE ? ESCAPE '!'", ['%'.$term.'%'])
+            $query->where(function (Builder $query) use ($filters) {
+                $this->matchName($query, $filters['q'])
                     ->orWhere('person.national_id', $filters['q'])
                     ->orWhere('family.reference', $filters['q']);
             });
         }
+        return $query->orderBy('person.id')->paginate(20)->appends($filters);
+    }
+
+    public function nameSuggestions(array $filters): Collection
+    {
+        $name = strtr($filters['q'] ?? '', self::NAME_REPLACEMENTS);
+        if (mb_strlen($name) < 2) {
+            return collect();
+        }
+
+        return $this->matchName($this->filteredPeople($filters), $name)
+            ->select('person.id', 'person.name')
+            ->orderBy('person.name')->orderBy('person.id')->get();
+    }
+
+    private function matchName(Builder $query, string $name): Builder
+    {
+        $name = strtr($name, self::NAME_REPLACEMENTS);
+        if ($name === '') {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $column = 'person.name';
+        $bindings = [];
+        foreach (self::NAME_REPLACEMENTS as $from => $to) {
+            $column = "REPLACE($column, ?, ?)";
+            array_push($bindings, $from, $to);
+        }
+        $literal = strtr($name, ['!' => '!!', '%' => '!%', '_' => '!_']);
+        $bindings[] = '%'.$literal.'%';
+
+        return $query->whereRaw("$column LIKE ? ESCAPE '!'", $bindings);
+    }
+
+    private function filteredPeople(array $filters): Builder
+    {
+        $query = $this->peopleQuery();
         match ($filters['account'] ?? null) {
             'linked' => $query->whereNotNull('account.id'),
             'unlinked' => $query->whereNull('account.id'),
@@ -38,7 +81,7 @@ class MockCivilRegistry
             $query->where('person.complete', $filters['record'] === 'complete');
         }
 
-        return $query->orderBy('person.id')->paginate(20)->appends($filters);
+        return $query;
     }
 
     public function profile(int $id, User $actor): array

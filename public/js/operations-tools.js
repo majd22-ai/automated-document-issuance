@@ -97,6 +97,59 @@
   const buttons = [...registry.querySelectorAll('[data-ops-section]')];
   const notifications = registry.querySelector('[data-ops-notifications]');
   const base = new URL(registry.dataset.opsRegistry, location.origin);
+  let suggestionTimer;
+  let suggestionRequest;
+
+  function clearSuggestions() {
+    clearTimeout(suggestionTimer);
+    suggestionRequest?.abort();
+    suggestionRequest = null;
+    const list = content.querySelector('[data-ops-suggestions]');
+    if (list) {
+      list.hidden = true;
+      list.replaceChildren();
+      content.querySelector('[data-ops-suggestion-status]').textContent = '';
+    }
+  }
+
+  function suggestNames(form) {
+    clearSuggestions();
+    const name = form.elements.q.value.trim();
+    if (name.length < 2) return;
+    suggestionTimer = setTimeout(async () => {
+      const controller = new AbortController();
+      suggestionRequest = controller;
+      const target = new URL(base);
+      target.search = new URLSearchParams(new FormData(form)).toString();
+      const list = form.querySelector('[data-ops-suggestions]');
+      const message = form.querySelector('[data-ops-suggestion-status]');
+      try {
+        const response = await fetch(target, {
+          headers: { 'X-Operations-Tools': 'registry-suggestions', Accept: 'application/json' },
+          cache: 'no-store', redirect: 'error', signal: controller.signal,
+        });
+        if (!response.ok) throw new Error('Suggestions unavailable');
+        const matches = await response.json();
+        if (suggestionRequest !== controller || !form.isConnected) return;
+        for (const person of matches) {
+          const item = document.createElement('li');
+          const link = document.createElement('a');
+          const profile = new URL(base);
+          profile.pathname += '/' + encodeURIComponent(person.id);
+          link.href = profile;
+          link.textContent = person.name;
+          item.append(link);
+          list.append(item);
+        }
+        list.hidden = matches.length === 0;
+        message.textContent = matches.length ? 'الأسماء المقترحة: ' + matches.length : 'لا توجد أسماء مطابقة لما كتبته.';
+      } catch (error) {
+        if (suggestionRequest === controller && error.name !== 'AbortError') {
+          message.textContent = 'تعذر تحميل الاقتراحات. يمكنك استخدام زر البحث.';
+        }
+      }
+    }, 250);
+  }
 
   function updateTopic() {
     buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.opsSection === topic)));
@@ -111,6 +164,7 @@
   }
 
   async function loadRegistry(url, focus = false) {
+    clearSuggestions();
     pending?.abort();
     const controller = new AbortController();
     pending = controller;
@@ -151,13 +205,26 @@
   }
 
   buttons.forEach(button => button.addEventListener('click', () => {
+    clearSuggestions();
     topic = button.dataset.opsSection;
     status.textContent = '';
     updateTopic();
-    if (topic !== 'notifications' && (!content.firstElementChild || (topic === 'directory' && content.firstElementChild.dataset.opsFragment !== 'directory'))) {
+    if (topic !== 'notifications' && (!content.firstElementChild || (['directory', 'civil'].includes(topic) && content.firstElementChild.dataset.opsFragment !== 'directory'))) {
       loadRegistry(base);
     }
+    if (topic === 'civil' && content.querySelector('[name=q]')) {
+      content.querySelector('[name=q]').focus();
+    }
   }));
+  content.addEventListener('input', event => {
+    if (event.target.matches('input[name=q]') && !event.isComposing) suggestNames(event.target.form);
+  });
+  content.addEventListener('compositionend', event => {
+    if (event.target.matches('input[name=q]')) suggestNames(event.target.form);
+  });
+  content.addEventListener('change', event => {
+    if (event.target.matches('select')) suggestNames(event.target.form);
+  });
   content.addEventListener('click', event => {
     const link = event.target.closest('a[href]');
     if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;

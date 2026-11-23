@@ -8,7 +8,7 @@
 <section class="ops-section" aria-labelledby="profile-title" @if(!empty($toolsFragment)) data-ops-fragment="profile" @endif>
     <div class="container">
         <div class="ops-page-head">
-            <a href="{{ route('admin.mock-civil-registry.index') }}">ملفات المواطنين التجريبية</a>
+            <a href="{{ route('admin.mock-civil-registry.index', [], false) }}">ملفات المواطنين التجريبية</a>
             <h1 id="profile-title">{{ $person->name }}</h1>
             <p>قيد مدني تجريبي · {{ $person->complete ? 'مكتمل' : 'يحتاج مراجعة' }}</p>
         </div>
@@ -33,7 +33,7 @@
                                 @if($person->id === $member->id)
                                     <strong>{{ $member->name }}</strong>
                                 @else
-                                    <a href="{{ route('admin.mock-civil-registry.show', $member->id) }}">{{ $member->name }}</a>
+                                    <a href="{{ route('admin.mock-civil-registry.show', $member->id, false) }}">{{ $member->name }}</a>
                                 @endif
                                 · {{ $roles[$member->family_role] ?? 'فرد في الأسرة' }}
                             </li>

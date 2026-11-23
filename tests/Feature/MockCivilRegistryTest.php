@@ -146,6 +146,26 @@ class MockCivilRegistryTest extends TestCase
         }
     }
 
+    public function test_panel_suggests_all_normalized_name_matches_using_existing_permissions_and_filters(): void
+    {
+        $person = $this->person('أحمد علي');
+        $this->person('أحمد خالد', ['complete' => false]);
+        $second = $this->person('محمد أَحْمَد');
+        for ($index = 1; $index <= 8; $index++) {
+            $this->person('أحمد اختبار '.$index);
+        }
+        $url = route('admin.mock-civil-registry.index', ['q' => 'احمد', 'record' => 'complete']);
+        $headers = ['X-Operations-Tools' => 'registry-suggestions'];
+        $this->actingAs(User::factory()->create(['role' => 'admin']))->getJson($url, $headers)
+            ->assertOk()->assertJsonCount(10)
+            ->assertJsonFragment(['id' => $person, 'name' => 'أحمد علي'])
+            ->assertJsonFragment(['id' => $second, 'name' => 'محمد أَحْمَد'])
+            ->assertJsonMissing(['name' => 'أحمد خالد']);
+        $this->get($url)->assertOk()->assertSee('أحمد علي')->assertSee('محمد أَحْمَد')->assertDontSee('أحمد خالد');
+        $this->actingAs(User::factory()->create(['role' => 'employee']))->getJson($url, $headers)
+            ->assertForbidden();
+    }
+
     private function person(string $name, array $attributes = []): int
     {
         return DB::table('mock_civil_persons')->insertGetId($attributes + [

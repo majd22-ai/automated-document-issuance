@@ -12,6 +12,19 @@
 .operations-tools .attestation-in-tools>button{width:100%;min-height:44px;border-radius:.65rem;text-align:start}
 .operations-tools [data-ops-registry-content]>.ops-section{padding:0}
 .operations-tools [data-ops-registry-content] .ops-page-head{margin-top:1rem}
+.operations-tools .registry-search{padding:clamp(.85rem,2vw,1.25rem);margin-block:.9rem}
+.operations-tools .registry-search .ops-grid{margin:0;align-items:end;grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr));gap:.75rem}
+.operations-tools .registry-search-query{grid-column:1/-1}
+.operations-tools .registry-search label{display:block;margin:0;font-size:.9rem;font-weight:650}
+.operations-tools .registry-search .form-control{display:block;box-sizing:border-box;width:100%;margin:.3rem 0 0;min-height:44px}
+.operations-tools .registry-search-actions{display:flex;flex-wrap:wrap;gap:.4rem}
+.operations-tools .registry-search-actions .btn{padding:.5rem .85rem;min-height:44px;white-space:nowrap}
+.operations-tools .registry-search .form-control:focus-visible{outline:2px solid #176b70;outline-offset:1px;box-shadow:none}
+.operations-tools-suggestions{list-style:none;margin:.25rem 0 0;padding:.25rem;border:1px solid #bfd3cd;border-radius:.65rem;background:#fff;max-height:15rem;overflow:auto}
+.operations-tools-suggestions a{display:block;padding:.5rem .7rem;border-radius:.4rem;color:#174448;text-decoration:none}
+.operations-tools-suggestions a:hover,.operations-tools-suggestions a:focus-visible{background:#e5f2ee}
+.operations-tools [data-ops-suggestion-status]{margin:.25rem 0;font-size:.85rem}
+.operations-tools [data-ops-suggestion-status]:empty{display:none}
 .operations-tools-resize{position:absolute;right:0;top:0;bottom:0;width:12px;cursor:ew-resize;touch-action:none;z-index:1}
 .operations-tools-resize::after{content:"";position:absolute;right:3px;top:45%;width:3px;height:10%;border-radius:4px;background:#498780}
 .operations-tools :focus-visible,.operations-tools-launcher:focus-visible{outline:3px solid #176b70;outline-offset:2px}
