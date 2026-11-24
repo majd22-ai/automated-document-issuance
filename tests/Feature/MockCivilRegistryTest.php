@@ -166,6 +166,25 @@ class MockCivilRegistryTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_panel_displays_only_available_synthetic_portraits_for_admin(): void
+    {
+        $disk = \Illuminate\Support\Facades\Storage::fake('attachments');
+        $image = \Illuminate\Http\UploadedFile::fake()->image('portrait.png', 600, 600);
+        $disk->put('mock-registry/portrait.png', file_get_contents($image->getPathname()));
+        $person = $this->person('Portrait Record', ['reference_photo' => 'mock-registry/portrait.png']);
+        $missing = $this->person('Missing Portrait', ['reference_photo' => 'mock-registry/missing.png']);
+        $headers = ['X-Operations-Tools' => 'registry'];
+
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->get(route('admin.mock-civil-registry.show', $person), $headers)
+            ->assertOk()->assertSee('عرض الصورة')
+            ->assertSee(route('admin.mock-systems.portrait', $person, false))
+            ->assertDontSee('mock-registry/portrait.png');
+        $this->get(route('admin.mock-civil-registry.show', $missing), $headers)->assertOk()->assertDontSee('عرض الصورة');
+        $this->actingAs(User::factory()->create(['role' => 'employee']))
+            ->get(route('admin.mock-systems.portrait', $person))->assertForbidden();
+    }
+
     private function person(string $name, array $attributes = []): int
     {
         return DB::table('mock_civil_persons')->insertGetId($attributes + [

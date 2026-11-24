@@ -11,6 +11,13 @@
             <a href="{{ route('admin.mock-civil-registry.index', [], false) }}">ملفات المواطنين التجريبية</a>
             <h1 id="profile-title">{{ $person->name }}</h1>
             <p>قيد مدني تجريبي · {{ $person->complete ? 'مكتمل' : 'يحتاج مراجعة' }}</p>
+            @if(!empty($portraitAvailable))
+                <details>
+                    <summary class="btn btn-outline">عرض الصورة</summary>
+                    <img src="{{ route('admin.mock-systems.portrait', $person->id, false) }}" alt="الصورة التجريبية لـ {{ $person->name }}"
+                         loading="lazy" style="display:block;width:min(100%, 20rem);height:auto;margin-block:.75rem">
+                </details>
+            @endif
         </div>
         <div class="ops-grid">
             <section class="card ops-card" data-registry-topic="civil">

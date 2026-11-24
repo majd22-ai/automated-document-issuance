@@ -7,6 +7,14 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## مزامنة قاعدة المحاكاة للمتعاونين
+
+اضبط `.env` محليًا على `APP_ENV=local` وقاعدة MySQL محلية فارغة أو قائمة، أو SQLite محلي. للتثبيت الأول، ثبّت اعتماديات Composer وأنشئ مفتاح التطبيق إذا كان ملف البيئة جديدًا، ثم نفّذ `php artisan demo:sync-db`.
+
+لتشغيل المزامنة بعد `git pull` على هذه النسخة من المستودع، فعّل خطافات المشروع مرة واحدة بالأمر `git config --local core.hooksPath .githooks`. على Linux وmacOS اجعل الملفين قابلين للتنفيذ باستخدام `chmod +x .githooks/post-merge .githooks/post-rewrite` إذا وصلا دون إذن التنفيذ. يعمل الخطاف بعد الدمج أو إعادة الأساس، ويستخدم إعدادات قاعدة البيانات المحلية. يمكن تشغيل `php artisan demo:sync-db` مباشرة بعد السحب أيضًا.
+
+تطبّق ترحيلات Laravel بناء الجداول، ويستعيد الترحيل المحلي بيانات السجل التجريبي المشتركة من `database/fixtures` عند تشغيله لأول مرة. الربط يعتمد على معرّف القيد التجريبي ومرجع الأسرة، وتحافظ الاستعادة على السجلات المحلية القائمة. تحتوي النسخة على 34 قيدًا تجريبيًا و5 أسر و24 بطاقة و30 سجل ميلاد و56 وثيقة تجريبية. الحسابات وكلمات المرور والطلبات والوثائق الصادرة وإعدادات الخدمة المحلية والملفات والصور الخاصة تُجهّز بشكل مستقل لكل متعاون.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

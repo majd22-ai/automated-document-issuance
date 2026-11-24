@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Services\MockCivilRegistry;
 use App\Services\Oversight\AuditTrail;
 use App\Services\Registration\MockCivilSystems;
+use App\Services\Registration\MockPortraits;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class MockCivilRegistryController extends Controller
@@ -37,11 +39,13 @@ class MockCivilRegistryController extends Controller
         return $this->page($request, 'admin.mock-civil-registry.index', compact('people', 'filters'));
     }
 
-    public function show(Request $request, int $person, MockCivilRegistry $registry, AuditTrail $audit): Response
+    public function show(Request $request, int $person, MockCivilRegistry $registry, AuditTrail $audit, MockPortraits $portraits): Response
     {
         $this->authorizeAccess($request);
 
         $profile = $registry->profile($person, $request->user());
+        $record = DB::table('mock_civil_persons')->where('id', $person)->first(['fixture_key', 'reference_photo']);
+        $profile['portraitAvailable'] = $record && $portraits->viewableImage($record) !== null;
         $audit->record('mock_civil_registry.view', 'mock_civil_person', $person, $request->user());
 
         return $this->page($request, 'admin.mock-civil-registry.show', $profile);

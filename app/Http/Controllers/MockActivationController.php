@@ -119,13 +119,9 @@ class MockActivationController extends Controller
         abort_unless(MockCivilSystems::enabled() && $request->user()->is_active && $request->user()->role === 'admin', 403);
         $record = DB::table('mock_civil_persons')->find($person);
         abort_unless($record, 404);
-        $path = app(\App\Services\Registration\MockPortraits::class)->path($record);
-        abort_unless($path, 404);
-        abort_unless(str_starts_with($path, 'mock-registry/') && ! str_contains($path, '..') && Storage::disk('attachments')->exists($path), 404);
-        $absolute = Storage::disk('attachments')->path($path);
-        $size = @getimagesize($absolute);
-        abort_unless($size && $size[0] >= 600 && $size[1] >= 600 && in_array($size['mime'], ['image/png', 'image/jpeg'], true)
-            && filesize($absolute) <= 2 * 1024 * 1024, 404);
-        return response()->file($absolute, ['Content-Type' => $size['mime'], 'Cache-Control' => 'no-store, private', 'X-Content-Type-Options' => 'nosniff']);
+        $image = app(\App\Services\Registration\MockPortraits::class)->viewableImage($record);
+        abort_unless($image, 404);
+
+        return response()->file($image['path'], ['Content-Type' => $image['mime'], 'Cache-Control' => 'no-store, private', 'X-Content-Type-Options' => 'nosniff']);
     }
 }

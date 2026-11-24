@@ -1,0 +1,4 @@
+#!/bin/sh
+if [ "$1" = rebase ]; then
+    exec sh .githooks/post-merge
+fi
