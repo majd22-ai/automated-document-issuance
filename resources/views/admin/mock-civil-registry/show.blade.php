@@ -2,7 +2,7 @@
 @section('title', 'ملف المواطن التجريبي')
 @section('content')
 @php
-    $roles = ['father' => 'أب', 'mother' => 'أم', 'child' => 'ابن أو ابنة'];
+    $roles = ['father' => 'أب', 'mother' => 'أم', 'son' => 'ابن', 'daughter' => 'ابنة', 'child' => 'ابن أو ابنة'];
     $civilStatuses = ['active' => 'سارية', 'expired' => 'منتهية', 'cancelled' => 'ملغاة', 'inactive' => 'غير سارية'];
 @endphp
 <section class="ops-section" aria-labelledby="profile-title" @if(!empty($toolsFragment)) data-ops-fragment="profile" @endif>

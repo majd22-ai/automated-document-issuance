@@ -21,7 +21,8 @@
 <p><a class="btn btn-outline" href="{{ route('employee.applications.operations',$application->id) }}">تحديد موعد الحضور أو إعادة جدولته</a></p>
 @endif
 @if($journeyStaff && $application->status==='accepted' && $journeyPaid)
-<p><a class="btn btn-outline" href="{{ route('identity-workflow.reception',['reference'=>$application->reference]) }}">الاستقبال وتسجيل الحضور</a></p>
+<p><a class="btn btn-outline" href="{{ route('identity-workflow.reception',['reference'=>$application->reference]) }}"
+    @if(\App\Services\FingerprintService::canUse(auth()->user())) data-ops-open="fingerprint" data-ops-fingerprint-reference="{{ $application->reference }}" aria-controls="operations-tools" @endif>الاستقبال وتسجيل الحضور</a></p>
 @endif
 <p>الحضور: {{ $journeyForm->arrived_at?->format('Y-m-d H:i') ?? 'لم يُسجل' }}</p>
 <h3>أدلة الزيارة</h3>

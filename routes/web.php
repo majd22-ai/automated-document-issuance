@@ -391,6 +391,7 @@ Route::middleware(['auth', 'role:employee'])
         Route::get('/accounts/{citizen}', [CitizenAccountController::class, 'show'])->name('accounts.show');
         Route::post('/accounts/{citizen}/review', [\App\Http\Controllers\RemoteActivationController::class, 'review'])->middleware('throttle:10,1')->name('accounts.review');
         Route::post('/accounts/{citizen}/mock-review', [\App\Http\Controllers\MockActivationController::class, 'review'])->middleware('throttle:10,1')->name('accounts.mock-review');
+        Route::post('/accounts/{citizen}/mock-registry-check', [\App\Http\Controllers\MockActivationController::class, 'checkRegistry'])->middleware('throttle:20,1')->name('accounts.mock-registry-check');
         Route::get('/notifications', [EmployeeNotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/read-all', [EmployeeNotificationController::class, 'readAll'])->name('notifications.read-all');
         Route::post('/notifications/{id}/read', [EmployeeNotificationController::class, 'read'])->whereUuid('id')->name('notifications.read');

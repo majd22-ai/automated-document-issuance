@@ -32,15 +32,15 @@ class LinkedRegistrationTest extends TestCase
 
     private function data(array $extra = []): array
     {
-        return $extra + ['identity_path' => 'has_identity', 'name' => 'خالد محمد أحمد الجيفي', 'national_id' => '99010000001', 'email' => 'mock@example.test', 'phone' => '777123456', 'terms' => '1'];
+        return $extra + ['identity_path' => 'has_identity', 'name' => 'خالد أحمد عبد الله العمري', 'national_id' => '99010000001', 'email' => 'mock@example.test', 'phone' => '777123456', 'terms' => '1'];
     }
 
     public function test_mock_portrait_button_and_private_image_require_admin_and_preserve_no_photo_scenario(): void
     {
         $person = DB::table('mock_civil_persons')->where('fixture_key', 'match')->first();
-        $this->assertSame('خالد محمد أحمد الجيفي', $person->name);
+        $this->assertSame('خالد أحمد عبد الله العمري', $person->name);
         $admin = User::factory()->create(['role' => 'admin']);
-        $this->actingAs($admin)->get(route('admin.mock-systems.index'))->assertOk()->assertSee('عرض الصورة')->assertSee('خالد محمد أحمد الجيفي');
+        $this->actingAs($admin)->get(route('admin.mock-civil-registry.show', $person->id))->assertOk()->assertSee('عرض الصورة')->assertSee('خالد أحمد عبد الله العمري');
         $this->get(route('admin.mock-systems.portrait', $person->id))->assertOk()->assertHeader('Content-Type', 'image/png');
         $missing = DB::table('mock_civil_persons')->where('fixture_key', 'no-photo')->first();
         $this->assertNull($missing->reference_photo);
@@ -82,7 +82,7 @@ class LinkedRegistrationTest extends TestCase
 
     public function test_no_identity_registration_requires_father_and_mother_national_id(): void
     {
-        $this->post('/register', $this->data(['identity_path' => 'no_identity', 'national_id' => null, 'name' => 'سالم عبد الله سالم باحاج', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أحمد عبد الله ناصر العمري', 'mother_name' => 'سعاد علي صالح الحداد']))
+        $this->post('/register', $this->data(['identity_path' => 'no_identity', 'national_id' => null, 'name' => 'سالم أحمد عبد الله العمري', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أحمد عبد الله ناصر العمري', 'mother_name' => 'سعاد علي صالح الحداد']))
             ->assertSessionHasErrors(['father_national_id', 'mother_national_id']);
     }
 
@@ -105,7 +105,7 @@ class LinkedRegistrationTest extends TestCase
 
     public function test_birth_and_family_lookup_is_linked_and_not_name_only(): void
     {
-        $data = ['identity_path' => 'no_identity', 'name' => 'سالم عبد الله سالم باحاج', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أحمد عبد الله ناصر العمري', 'mother_name' => 'سعاد علي صالح الحداد'];
+        $data = ['identity_path' => 'no_identity', 'name' => 'سالم أحمد عبد الله العمري', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أحمد عبد الله ناصر العمري', 'mother_name' => 'سعاد علي صالح الحداد'];
         $this->assertSame('MATCH', app(MockCivilSystems::class)->lookup($data)['registry_result']);
         $this->assertSame('NOT_FOUND', app(MockCivilSystems::class)->lookup(array_replace($data, ['birth_date' => '2000-01-01']))['registry_result']);
         $this->assertSame('REVIEW', app(MockCivilSystems::class)->lookup($data + ['father_national_id' => '00000'])['registry_result']);
@@ -245,7 +245,7 @@ class LinkedRegistrationTest extends TestCase
 
     public function test_no_card_linked_family_retains_first_issuance_constraints(): void
     {
-        $this->post('/register', $this->data(['identity_path' => 'no_identity', 'national_id' => null, 'name' => 'سالم عبد الله سالم باحاج', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أحمد عبد الله ناصر العمري', 'mother_name' => 'سعاد علي صالح الحداد', 'father_national_id' => '99010000901', 'mother_national_id' => '99010000902']))->assertRedirect();
+        $this->post('/register', $this->data(['identity_path' => 'no_identity', 'national_id' => null, 'name' => 'سالم أحمد عبد الله العمري', 'birth_date' => '2005-02-03', 'birth_place' => 'منطقة اختبار', 'father_name' => 'أحمد عبد الله ناصر العمري', 'mother_name' => 'سعاد علي صالح الحداد', 'father_national_id' => '99010000901', 'mother_national_id' => '99010000902']))->assertRedirect();
         $code = Crypt::decryptString(session('mock_registration_code'));
         $this->post('/register/password', ['password' => 'StrongPass123!', 'password_confirmation' => 'StrongPass123!'])->assertForbidden();
         $this->post('/register/verify', ['code' => $code])->assertRedirect();
@@ -298,10 +298,11 @@ class LinkedRegistrationTest extends TestCase
         $this->assertSame(6, DB::table('mock_face_attempts')->where('user_id', $u->id)->count());
     }
 
-    public function test_mock_system_dialogs_are_admin_only_and_disabled_outside_local_testing(): void
+    public function test_old_mock_systems_redirect_to_the_panel_and_are_disabled_outside_local_testing(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        $this->actingAs($admin)->get(route('admin.mock-systems.index'))->assertOk()->assertSee('mock-system-0')->assertSee('mock-system-6');
+        $this->actingAs($admin)->get(route('admin.mock-systems.index'))
+            ->assertRedirect(route('admin.dashboard', ['tools' => 'mock']));
         $this->app['env'] = 'production';
         $this->get(route('admin.mock-systems.index'))->assertForbidden();
         $this->assertFalse(MockCivilSystems::enabled());
@@ -324,5 +325,56 @@ class LinkedRegistrationTest extends TestCase
         $this->assertSame(2, AuditEvent::where('event', 'citizen_account.mock_review')->count());
         $this->assertSame(2, AuditEvent::where('event', 'citizen_account.mock_review')->whereNotNull('private_reason')->count());
         $this->assertFalse($u->fresh()->hasActivatedIdentity());
+    }
+
+    public function test_activation_staff_can_check_birth_and_family_without_linking_the_account(): void
+    {
+        $person = DB::table('mock_civil_persons')->where('fixture_key', 'child')->first();
+        $birthNumber = DB::table('mock_birth_records')->where('person_id', $person->id)->value('number');
+        $citizen = User::factory()->create([
+            'identity_path' => 'no_identity', 'activation_source' => 'linked_local_mock', 'registration_status' => 'under_review',
+        ]);
+        $activation = app(MockIdentityVerification::class)->queue($citizen, 'NOT_FOUND', 'قيد يحتاج مطابقة', [
+            'registration' => [
+                'name' => $person->name.' ت', 'birth_date' => $person->birth_date, 'birth_place' => $person->birth_place,
+                'father_name' => $person->father_name, 'mother_name' => $person->mother_name,
+                'father_national_id' => '99010000901', 'mother_national_id' => '99010000902',
+            ],
+        ]);
+        $staff = User::factory()->create(['role' => 'employee']);
+        $url = route('employee.accounts.mock-registry-check', $citizen);
+        $this->actingAs($staff)->postJson($url, ['birth_number' => $birthNumber])->assertForbidden();
+        (new ServiceReviewPermission)->forceFill([
+            'user_id' => $staff->id, 'government_service_id' => GovernmentService::where('code', 'identity-first-issue')->value('id'),
+            'can_activate' => true, 'granted_by' => User::factory()->create(['role' => 'admin'])->id,
+        ])->save();
+        $this->get(route('employee.accounts.show', $citizen))->assertOk()
+            ->assertSee('data-ops-view="activation-registry"', false)->assertSee('بحث ومقارنة');
+        $this->postJson($url)->assertOk()->assertExactJson(['status' => 'ambiguous']);
+        $this->postJson($url, ['birth_number' => $birthNumber])->assertOk()->assertExactJson(['status' => 'review', 'name' => $person->name]);
+        $this->postJson($url, ['name' => 'سالم'])->assertOk()
+            ->assertJsonPath('status', 'results')->assertJsonCount(1, 'records')
+            ->assertJsonPath('records.0.birth_number', $birthNumber)
+            ->assertJsonPath('records.0.fields.name.registry', $person->name)
+            ->assertJsonPath('records.0.fields.name.submitted', $person->name.' ت')
+            ->assertJsonPath('records.0.fields.father_national_id.registry', '99010000901')
+            ->assertJsonPath('records.0.fields.mother_national_id.registry', '99010000902')
+            ->assertJsonPath('records.0.matches_request', false);
+        $this->assertNull($citizen->fresh()->mock_person_id);
+        $this->assertSame('pending', $activation->fresh()->status);
+        $decision = ['revision' => $activation->revision, 'decision' => 'approved', 'reason' => 'تمت مراجعة المقارنة'];
+        $approval = route('employee.accounts.mock-review', $citizen);
+        $accountPage = route('employee.accounts.show', $citizen);
+        $this->post($approval, $decision)->assertRedirect($accountPage)->assertSessionHasErrors('decision');
+        $this->get($accountPage)->assertOk()->assertSee('الحساب غير مرتبط بقيد')->assertSee('value="approved" disabled', false);
+        $this->assertSame('pending', $activation->fresh()->status);
+        $citizen->forceFill(['mock_person_id' => $person->id])->save();
+        $this->postJson($approval, $decision)->assertUnprocessable()->assertJsonValidationErrors('decision');
+        $evidence = $activation->evidence;
+        $evidence['registration']['name'] = $person->name;
+        $activation->forceFill(['evidence' => $evidence])->save();
+        $this->postJson($url, ['name' => 'سالم'])->assertOk()->assertJsonPath('records.0.matches_request', true);
+        $this->post($approval, $decision)->assertRedirect();
+        $this->assertSame('initial_account', $citizen->fresh()->registration_status);
     }
 }

@@ -26,7 +26,7 @@ class SimulationCenterTest extends TestCase
             $this->actingAs(User::factory()->create(['role' => $role]))->get('/admin/simulations')->assertForbidden();
         }
         $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/simulations')
-            ->assertOk()->assertSee('مركز أنظمة المحاكاة')->assertSee('محاكاة تعليمية');
+            ->assertRedirect(route('admin.dashboard', ['tools' => 'home']));
     }
 
     public function test_disabled_systems_have_explanation_without_access_links(): void
@@ -34,8 +34,8 @@ class SimulationCenterTest extends TestCase
         config(['demo_civil_registry.enabled' => false, 'citizen_mock.enabled' => false,
             'postal_network.enabled' => false, 'identity_card.fingerprint.simulation_enabled' => false,
             'civil_registry_demo.enabled' => false]);
-        $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/simulations')
-            ->assertOk()->assertSee('غير مفعّل')
+        $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/dashboard?tools=home')
+            ->assertOk()->assertDontSee('data-ops-view-button="civil-check"', false)
             ->assertDontSee('href="'.route('admin.postal-network.index').'"', false)
             ->assertDontSee('href="'.route('admin.mock-civil-registry.index').'"', false);
     }
@@ -43,13 +43,9 @@ class SimulationCenterTest extends TestCase
     public function test_enabled_systems_link_to_existing_pages_and_admin_tools_use_the_left_panel(): void
     {
         config(['demo_civil_registry.enabled' => true, 'citizen_mock.enabled' => true, 'postal_network.enabled' => true]);
-        $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/simulations')
-            ->assertOk()->assertSee('href="'.route('admin.postal-network.index').'"', false)
-            ->assertSee('href="'.route('admin.mock-civil-registry.index').'"', false)
-            ->assertDontSee('href="'.route('admin.mock-systems.index').'"', false)
+        $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/dashboard')->assertOk()
+            ->assertSee('href="'.route('admin.postal-network.index').'"', false)
             ->assertSee('href="'.route('admin.demo-civil-registry.index').'"', false)
-            ->assertSee('التحصيل غير متاح');
-        $this->get('/admin/dashboard')->assertOk()
             ->assertSee('id="operations-tools"', false)
             ->assertDontSee('id="sim-drawer-toggle"', false)
             ->assertSee('data-ops-registry="'.route('admin.mock-civil-registry.index', [], false).'"', false)
@@ -82,8 +78,8 @@ class SimulationCenterTest extends TestCase
         config(['demo_civil_registry.enabled' => true]);
         DB::statement('DROP TABLE demo_civil_record_parties');
         // A partially prepared system must not be advertised as ready.
-        $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/simulations')
-            ->assertOk()->assertSee('تحتاج تهيئة')
+        $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/dashboard')
+            ->assertOk()->assertDontSee('data-ops-view="demo"', false)
             ->assertDontSee('href="'.route('admin.demo-civil-registry.index').'"', false);
     }
 
@@ -91,10 +87,11 @@ class SimulationCenterTest extends TestCase
     {
         $this->app['env'] = 'local';
         config(['identity_card.fingerprint.simulation_enabled' => true, 'civil_registry_demo.enabled' => true]);
-        $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/simulations')
-            ->assertOk()->assertSee('href="'.route('identity-workflow.reception').'"', false)
+        $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/dashboard')
+            ->assertOk()->assertSee('data-ops-view-button="fingerprint"', false)
             ->assertSee('href="'.route('identity-workflow.administration.index').'"', false)
-            ->assertSee('href="'.route('integrations.civil-registry-demo').'"', false);
+            ->assertSee('data-ops-view="civil-check"', false)
+            ->assertDontSee('id="sim-civil-modal"', false);
     }
 
     public function test_integration_monitoring_opens_the_panel(): void

@@ -97,9 +97,11 @@ class LinkedCivilSystemsExpansionSeeder extends Seeder
 
                     $fixtureKey = 'exp-'.$familyData['code'].'-'.$key;
 
-                    $role = in_array($key, ['father', 'mother'], true)
-                        ? $key
-                        : 'child';
+                    $role = match ($key) {
+                        'father', 'mother' => $key,
+                        'child2' => 'daughter',
+                        default => 'son',
+                    };
 
                     $referencePhoto = $scenario === 'NO_REFERENCE_IMAGE'
                         ? null
@@ -118,8 +120,8 @@ class LinkedCivilSystemsExpansionSeeder extends Seeder
                             'birth_place' => $familyData['place'],
                             'family_id' => $familyId,
                             'family_role' => $role,
-                            'father_name' => $familyData['father'],
-                            'mother_name' => $familyData['mother'],
+                            'father_name' => in_array($role, ['son', 'daughter'], true) ? $familyData['father'] : null,
+                            'mother_name' => in_array($role, ['son', 'daughter'], true) ? $familyData['mother'] : null,
                             'reference_photo' => $referencePhoto,
                             'face_scenario' => $scenario,
                             'liveness_pass' => $live,

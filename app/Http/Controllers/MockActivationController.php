@@ -75,11 +75,33 @@ class MockActivationController extends Controller
         return redirect()->route('citizen.account.status')->with('status', $message.' أُضيف إشعار بحالة الحساب إلى إشعاراتك داخل المنصة.');
     }
 
+    public function checkRegistry(Request $request, User $citizen, MockCivilSystems $registry)
+    {
+        abort_unless(MockCivilSystems::enabled(), 404);
+        Gate::authorize('activateCitizen', $citizen);
+        $activation = $citizen->activationRequest;
+        $registration = data_get($activation?->evidence, 'registration');
+        abort_unless($citizen->identity_path === 'no_identity' && $activation?->workflow === 'linked_mock'
+            && is_array($registration), 404);
+        $data = $request->validate([
+            'birth_number' => ['nullable', 'string', 'max:100'],
+            'name' => ['nullable', 'string', 'min:2', 'max:100'],
+        ]);
+        $result = $registry->reviewBirthEvidence($registration, $data['birth_number'] ?? null, $data['name'] ?? null);
+        app(AuditTrail::class)->record('citizen_account.mock_registry_checked', 'activation_request', $activation->id, $request->user(), changes: ['status' => $result['status']]);
+
+        return response()->json($result)->header('Cache-Control', 'no-store, private');
+    }
+
     public function review(Request $r, User $citizen, MockIdentityVerification $flow)
     {
         Gate::authorize('activateCitizen', $citizen);
         $data = $r->validate(['decision' => 'required|in:approved,rejected,retake_photo,requires_correction,referred', 'reason' => 'required|string|min:5|max:1500', 'revision' => 'required|integer|min:1']);
-        $flow->review($r->user(), $citizen, $data);
+        try {
+            $flow->review($r->user(), $citizen, $data);
+        } catch (ValidationException $error) {
+            throw $error->redirectTo(route('employee.accounts.show', $citizen));
+        }
 
         return back()->with('status', 'حُفظ القرار وأُشعر المواطن.');
     }
@@ -105,13 +127,9 @@ class MockActivationController extends Controller
 
     public function systems(Request $r)
     {
-        abort_unless(MockCivilSystems::enabled() && $r->user()->role === 'admin', 403);
-        $people = DB::table('mock_civil_persons')->leftJoin('mock_civil_families', 'family_id', '=', 'mock_civil_families.id')->leftJoin('mock_identity_cards', 'mock_identity_cards.person_id', '=', 'mock_civil_persons.id')->leftJoin('mock_birth_records', 'mock_birth_records.person_id', '=', 'mock_civil_persons.id')->select('mock_civil_persons.*', 'mock_civil_families.reference as family_reference', 'mock_identity_cards.number as card_number', 'mock_birth_records.number as birth_number')->orderBy('mock_civil_persons.id')->paginate(20);
+        abort_unless(MockCivilSystems::enabled() && $r->user()->is_active && $r->user()->role === 'admin', 403);
 
-        foreach ($people as $person) {
-            $person->display_photo = app(\App\Services\Registration\MockPortraits::class)->path($person);
-        }
-        return response()->view('admin.mock-systems', compact('people'))->header('Cache-Control', 'no-store, private');
+        return redirect()->route('admin.dashboard', ['tools' => 'mock']);
     }
 
     public function registryPortrait(Request $request, int $person)

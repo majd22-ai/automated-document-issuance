@@ -1,6 +1,7 @@
 @php
  $birthLocations = \App\Models\ResidenceGovernorate::with('districts')->orderBy('name')->get()->map(fn($g)=>['name'=>$g->name,'districts'=>$g->districts->sortBy('name')->pluck('name')->values()]);
  $birthValues = fn($key)=>old('data.'.$key,data_get($form->data,$key));
+ $selectedCountry = $birthValues('birth_country') ?: 'اليمن';
  $hijriMonths = [1=>'محرم',2=>'صفر',3=>'ربيع الأول',4=>'ربيع الآخر',5=>'جمادى الأولى',6=>'جمادى الآخرة',7=>'رجب',8=>'شعبان',9=>'رمضان',10=>'شوال',11=>'ذو القعدة',12=>'ذو الحجة'];
 @endphp
 <div class="birth-details identity-field-grid" data-birth-details>
@@ -19,7 +20,9 @@
  @foreach(['day'=>'اليوم','month'=>'الشهر','year'=>'السنة'] as $part=>$partLabel)
  <label>{{ $partLabel }}<select name="birth_dates[{{ $dateKey }}][{{ $part }}]" aria-label="{{ $partLabel }} — {{ $dateLabel }}">
  <option value="">{{ $partLabel }}</option>
- @php($selectedPart = old('birth_dates.'.$dateKey.'.'.$part,$parsedDate ? (int)$dateParts[['year'=>1,'month'=>2,'day'=>3][$part]] : null))
+ @php
+  $selectedPart = old('birth_dates.'.$dateKey.'.'.$part, $parsedDate ? (int) $dateParts[['year' => 1, 'month' => 2, 'day' => 3][$part]] : null);
+ @endphp
  @if($part === 'year' && $dateYear && ($dateYear < $yearStart || $dateYear > $yearEnd))<option selected value="{{ $dateYear }}">{{ $dateYear }}</option>@endif
  @foreach($part === 'year' ? range($yearEnd,$yearStart) : range(1,$part === 'month' ? 12 : 31) as $number)<option value="{{ $number }}" @selected((string)$selectedPart === (string)$number)>{{ $dateKey === 'birth_hijri' && $part === 'month' ? $hijriMonths[$number] : $number }}</option>@endforeach
  </select></label>
@@ -32,7 +35,6 @@
  {{-- birth_country as a real select --}}
  <div class="identity-field"><label for="field-birth_country">دولة الميلاد *</label>
  <select id="field-birth_country" name="data[birth_country]" required @error('data.birth_country') aria-invalid="true" aria-describedby="error-birth_country" @enderror>
- @php $selectedCountry = $birthValues('birth_country') ?: 'اليمن'; @endphp
  @foreach(['اليمن','السعودية','عُمان','الإمارات العربية المتحدة','مصر','الأردن','الصومال','جيبوتي','أخرى'] as $country)
  <option value="{{ $country }}" {{ $selectedCountry === $country ? 'selected' : '' }}>{{ $country }}</option>
  @endforeach

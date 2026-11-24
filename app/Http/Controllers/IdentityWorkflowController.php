@@ -14,20 +14,32 @@ class IdentityWorkflowController extends Controller
     public function reception(Request $request, FingerprintService $service)
     {
         abort_unless(FingerprintService::enabled(), 404);
-        $input = $request->validate(['reference' => ['nullable', 'string', 'max:100']]);
+        $input = $request->validate(['reference' => ['nullable', 'string', 'max:100'], 'page' => ['sometimes', 'integer', 'min:1']]);
         $query = $service->scopedForms($request->user());
-        $form = empty($input['reference']) ? null : (clone $query)->where(fn ($q) => $q->where('reference', $input['reference'])->orWhereHas('application', fn ($application) => $application->where('reference', $input['reference'])))->first();
-        $forms = $query->with(['application', 'citizen'])->latest('id')->paginate(15)->withQueryString();
+        if ($request->header('X-Operations-Tools') !== 'fingerprint-reception') {
+            return redirect()->route($request->user()->role.'.dashboard', [
+                'tools' => 'fingerprint', 'fingerprint_reference' => $input['reference'] ?? null, 'fingerprint_page' => $input['page'] ?? null,
+            ])->header('Cache-Control', 'no-store, private');
+        }
+        $form = empty($input['reference']) ? null : (clone $query)->where(fn ($q) => $q->where('reference', $input['reference'])->orWhereHas('application', fn ($application) => $application->where('reference', $input['reference'])))->with(['application', 'citizen', 'attestation'])->first();
+        $forms = $query->with(['application', 'citizen'])->latest('id')->paginate(15)
+            ->withPath(route('identity-workflow.reception', [], false))->appends(['reference' => $input['reference'] ?? null]);
         $reasons = $form ? $service->prerequisiteReasons($form) : [];
         $fingerprintReasons = $form ? $service->prerequisiteReasons($form, true) : [];
         $canRecord = $form && $request->user()->can('recordFingerprint', $form);
 
-        return response()->view('identity-workflow.reception', compact('forms', 'form', 'reasons', 'fingerprintReasons', 'canRecord'))->header('Cache-Control', 'no-store, private');
+        $reference = $input['reference'] ?? '';
+
+        return response()->view('identity-workflow.reception', compact('forms', 'form', 'reasons', 'fingerprintReasons', 'canRecord', 'reference'))
+            ->header('Cache-Control', 'no-store, private')->header('Vary', 'X-Operations-Tools');
     }
 
     public function arrival(IdentityWorkflowAction $request, IdentityCardForm $form, FingerprintService $service)
     {
         $service->arrive($request->user(), $form, $request->validated());
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'تم تسجيل الحضور وفحص الوثائق إداريًا. يمكنك متابعة إجراء البصمة.']);
+        }
 
         return redirect()->route('identity-workflow.device', $form)->with('status', 'تم تسجيل الحضور وفحص الوثائق إداريًا؛ لم تُسجل بصمة حيوية.');
     }
@@ -35,6 +47,9 @@ class IdentityWorkflowController extends Controller
     public function security(IdentityWorkflowAction $request, IdentityCardForm $form, FingerprintService $service)
     {
         $service->securityPaper($request->user(), $form, $request->validated());
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'تم حفظ مرجع الإجراء الأمني.']);
+        }
 
         return redirect()->route('identity-workflow.reception', ['reference' => $form->application->reference])->with('status', 'تم حفظ مرجع الإجراء الورقي بواسطة الموظف؛ ليس ختمًا أو تحققًا آليًا.');
     }
@@ -96,6 +111,9 @@ class IdentityWorkflowController extends Controller
     public function requeue(IdentityWorkflowAction $request, IdentityCardForm $form, FingerprintService $service)
     {
         $service->requeue($request->user(), $form, $request->validated());
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'أُعيد الطلب إلى قائمة المراجعة الإدارية.']);
+        }
 
         return redirect()->route('identity-workflow.reception', ['reference' => $form->application->reference])->with('status', 'أُعيد الطلب إلى قائمة المراجعة الإدارية.');
     }

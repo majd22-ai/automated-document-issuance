@@ -101,11 +101,22 @@ class MockIdentityVerification
             $decision = $data['decision'];
             if ($decision === 'approved') {
                 $person = DB::table('mock_civil_persons')->find($user->mock_person_id);
-                abort_unless($person, 422, 'لا يوجد قيد مرتبط؛ يلزم إحالة إلى الجهة المختصة.');
+                if (! $person) {
+                    throw ValidationException::withMessages(['decision' => $user->identity_path === 'no_identity'
+                        ? 'الحساب غير مرتبط بقيد. اختر «طلب استكمال البيانات» ليصحح المواطن بياناته ويعيد إرسال الطلب، أو أحل الطلب إذا تعذر العثور على القيد.'
+                        : 'الحساب غير مرتبط بقيد. أحل الطلب إلى الجهة المختصة.']);
+                }
                 if ($user->identity_path === 'has_identity') {
-                    abort_unless($person->national_id === $user->national_id && DB::table('mock_identity_cards')->where('person_id', $person->id)->where('status', 'active')->exists() && DB::table('mock_face_attempts')->where('user_id', $user->id)->exists(), 422);
+                    if ($person->national_id !== $user->national_id || ! DB::table('mock_identity_cards')->where('person_id', $person->id)->where('status', 'active')->exists()
+                        || ! DB::table('mock_face_attempts')->where('user_id', $user->id)->exists()) {
+                        throw ValidationException::withMessages(['decision' => 'يلزم تطابق رقم الهوية مع بطاقة سارية ووجود محاولة تحقق من الوجه قبل الاعتماد.']);
+                    }
                     $user->forceFill(['registration_status' => 'active', 'account_activated_at' => now(), 'identity_verified_at' => now(), 'activation_source' => 'employee_local_mock']);
                 } else {
+                    $registration = data_get($row->evidence, 'registration');
+                    if (! is_array($registration) || app(MockCivilSystems::class)->confirmedBirthRecord($registration) !== (int) $person->id) {
+                        throw ValidationException::withMessages(['decision' => 'بيانات الأسرة والميلاد غير مكتملة أو لا تطابق القيد المرتبط. اختر «طلب استكمال البيانات».']);
+                    }
                     // Civil record review never fabricates a national ID or bypasses official first issuance.
                     $user->forceFill(['registration_status' => 'initial_account']);
                 }

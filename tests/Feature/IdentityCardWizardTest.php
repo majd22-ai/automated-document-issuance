@@ -74,6 +74,8 @@ class IdentityCardWizardTest extends TestCase
         }
         $this->get('/citizen/identity-card/'.$form->id.'?step=3')->assertOk()
             ->assertSee('data-residence-cascade', false)
+            ->assertDontSee('data-country-code="IL"', false)
+            ->assertSee('data-country-code="PS"', false)
             ->assertSeeInOrder(['دولة الإقامة', 'محافظة الإقامة / المنطقة', 'مديرية الإقامة / التقسيم الإداري']);
         $data = array_replace($this->data(3), ['residence_country' => 'السعودية', 'residence_governorate' => 'تعز', 'residence_district' => 'المعافر']);
         $this->save($form, 3, ['data' => $data])->assertSessionHasErrors('data.residence_governorate');

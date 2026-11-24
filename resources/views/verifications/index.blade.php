@@ -5,15 +5,6 @@
 @endpush
 
 @section('content')
-@if(\App\Services\Integrations\LocalCivilRegistryProvider::enabled())
-  <div class="container" style="padding-block:1rem">
-    <a class="sim-btn sim-btn-outline" href="{{ route('integrations.civil-registry-demo') }}">
-      <span aria-hidden="true">🔍</span>
-      محاكاة خدمة السجل المدني
-    </a>
-  </div>
-@endif
-
 <section class="section"><div class="container">
   <div class="ops-page-head">
     <h1>التحقق الإلكتروني</h1>

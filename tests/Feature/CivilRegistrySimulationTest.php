@@ -62,8 +62,13 @@ class CivilRegistrySimulationTest extends TestCase
 
     public function test_staff_can_preview_and_result_is_private(): void
     {
-        $this->actingAs($this->staff('employee'))->get('/integrations/civil-registry-demo')->assertOk()->assertHeader('Cache-Control', 'no-store, private');
-        $this->post('/integrations/civil-registry-demo', ['national_id' => '99000000001', 'name' => config('civil_registry_demo.records.99000000001.name')])->assertOk()->assertViewHas('outcome', 'match')->assertHeader('Cache-Control', 'no-store, private');
+        $url = '/integrations/civil-registry-demo';
+        $this->actingAs($this->staff('employee'))->get($url)
+            ->assertRedirect(route('employee.dashboard', ['tools' => 'civil-check']))->assertHeader('Cache-Control', 'no-store, private');
+        $this->get(route('employee.dashboard', ['tools' => 'civil-check']))->assertOk()
+            ->assertSee('data-ops-view="civil-check"', false)->assertDontSee('id="sim-civil-modal"', false);
+        $this->postJson($url, ['national_id' => '99000000001', 'name' => config('civil_registry_demo.records.99000000001.name')])
+            ->assertOk()->assertExactJson(['outcome' => 'match'])->assertHeader('Cache-Control', 'no-store, private');
         $this->assertDatabaseCount('integration_attempts', 0);
     }
 
@@ -72,6 +77,35 @@ class CivilRegistrySimulationTest extends TestCase
         $this->get('/integrations/civil-registry-demo')->assertRedirect('/login');
         $this->actingAs($this->staff('citizen'))->get('/integrations/civil-registry-demo')->assertForbidden();
         $this->post('/integrations/civil-registry-demo', ['national_id' => '99000000001', 'name' => 'test'])->assertForbidden();
+    }
+
+    public function test_single_field_returns_civil_records_by_number_or_name_and_suggests_names(): void
+    {
+        config(['citizen_mock.enabled' => true]);
+        $person = DB::table('mock_civil_persons')->insertGetId([
+            'fixture_key' => 'lookup-fixture', 'name' => 'أحمد علي سالم العمري', 'national_id' => '99010000901',
+            'birth_date' => '2000-01-02', 'birth_place' => 'منطقة اختبار', 'family_role' => 'son',
+            'reference_photo' => 'private-not-for-lookup.jpg',
+        ]);
+        DB::table('mock_birth_records')->insert(['person_id' => $person, 'number' => 'MOCK-BIRTH-TEST']);
+        $employee = $this->staff('employee');
+        User::factory()->create(['mock_person_id' => $person]);
+        $url = '/integrations/civil-registry-demo';
+        $this->actingAs($employee)->get('/employee/dashboard')->assertOk()
+            ->assertSee('name="query"', false)->assertSee('data-civil-suggestions', false);
+        $this->postJson($url, ['query' => 'احمد', 'suggest' => true])
+            ->assertOk()->assertExactJson(['suggestions' => ['أحمد علي سالم العمري']]);
+        foreach (['احمد علي سالم العمري', '٩٩٠١٠٠٠٠٩٠١'] as $query) {
+            $this->postJson($url, ['query' => $query])->assertOk()
+                ->assertJsonPath('outcome', 'match')
+                ->assertJsonPath('civil_records.0.birth.number', 'MOCK-BIRTH-TEST')
+                ->assertJsonPath('civil_records.0.person.national_id', '99010000901')
+                ->assertJsonMissingPath('civil_records.0.person.linked')
+                ->assertJsonMissingPath('civil_records.0.requests')
+                ->assertDontSee('private-not-for-lookup.jpg');
+        }
+        $this->actingAs(User::factory()->create(['role' => 'employee']))
+            ->postJson($url, ['query' => '99010000901'])->assertForbidden();
     }
 
     public function test_production_refuses_even_when_flag_enabled(): void

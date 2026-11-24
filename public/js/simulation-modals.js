@@ -92,86 +92,6 @@
   }
 
   /* ─────────────────────────────────────────────
-     1. محاكاة السجل المدني
-        trigger: [data-civil-demo-open]
-        modal:   #sim-civil-modal
-  ───────────────────────────────────────────── */
-  function initCivilDemo() {
-    const modal = $('#sim-civil-modal');
-    const trigger = $('[data-civil-demo-open]');
-    const form  = $('#sim-civil-form');
-    const bodyEl = modal ? $('.sim-modal-body', modal) : null;
-    const resultZone = modal ? $('#sim-civil-result', modal) : null;
-    if (!modal || !trigger || !form) return;
-
-    // فتح
-    trigger.addEventListener('click', () => {
-      // مسح أي نتيجة سابقة
-      if (resultZone) clear(resultZone);
-      // إعادة تفعيل النموذج إن كان مخفياً
-      form.style.display = '';
-      openModal(modal);
-    });
-
-    // إغلاق
-    $$('[data-sim-close]', modal).forEach(btn => btn.addEventListener('click', () => closeModal(modal)));
-
-    // إرسال
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = form.querySelector('[type="submit"]');
-      btn.disabled = true;
-
-      if (resultZone) {
-        showLoading(resultZone, 'جارٍ الاستعلام عن السجل المدني...');
-      }
-
-      const formData = new FormData(form);
-      const url = form.action;
-
-      try {
-        const { ok, json } = await postForm(url, formData);
-        if (!ok) {
-          const errMsg = extractErrors(json);
-          if (resultZone) showFailure(resultZone, 'فشل الاستعلام', errMsg);
-          // عرض أخطاء الحقول
-          showCivilFieldErrors(modal, json.errors || {});
-        } else {
-          // النجاح: عرض نتيجة المحاكاة
-          const outcome = json.outcome || json.result || 'unknown';
-          const outcomeLabel = {
-            match:       '✓ تطابقت البيانات مع سجلات قاعدة البيانات التجريبية.',
-            mismatch:    '✗ البيانات المُدخلة لا تطابق ما في السجل.',
-            not_found:   '⚠ لم يُعثر على رقم هوية بهذا الرقم.',
-            unavailable: '⚠ خدمة السجل المدني غير متاحة حالياً.',
-          }[outcome] || '— نتيجة غير معروفة.';
-
-          const isGood = outcome === 'match';
-          if (resultZone) {
-            if (isGood) showSuccess(resultZone, 'تمّ التحقق بنجاح', outcomeLabel);
-            else showFailure(resultZone, 'نتيجة التحقق', outcomeLabel);
-          }
-        }
-      } catch {
-        if (resultZone) showFailure(resultZone, 'خطأ في الاتصال', 'لم يتمكن النظام من الوصول إلى الخادم. تحقق من الاتصال وأعد المحاولة.');
-      } finally {
-        btn.disabled = false;
-      }
-    });
-  }
-
-  function showCivilFieldErrors(modal, errors) {
-    // مسح الأخطاء القديمة
-    $$('.sim-field-error', modal).forEach(e => e.remove());
-    Object.entries(errors).forEach(([field, msgs]) => {
-      const input = $(`[name="${field}"]`, modal);
-      if (!input) return;
-      const errEl = el('p', { class: 'sim-field-error', role: 'alert' }, Array.isArray(msgs) ? msgs[0] : msgs);
-      input.insertAdjacentElement('afterend', errEl);
-    });
-  }
-
-  /* ─────────────────────────────────────────────
      2. بدء التحقق الإلكتروني
         trigger: [data-verify-open="{kind}"]
         modal:   #sim-verify-modal-{kind}
@@ -312,125 +232,6 @@
   }
 
   /* ─────────────────────────────────────────────
-     4. استقبال طلب بصمة (الحضور + الأمني)
-        trigger: [data-arrival-open]
-        modal:   #sim-arrival-modal
-        + trigger: [data-security-open]
-        + modal:   #sim-security-modal
-  ───────────────────────────────────────────── */
-  function initArrivalModals() {
-    // --- نافذة تسجيل الحضور ---
-    const arrModal   = $('#sim-arrival-modal');
-    const arrTrigger = $('[data-arrival-open]');
-    if (arrModal && arrTrigger) {
-      arrTrigger.addEventListener('click', () => openModal(arrModal));
-      $$('[data-sim-close]', arrModal).forEach(btn => btn.addEventListener('click', () => closeModal(arrModal)));
-
-      const arrForm = $('form[data-arrival-form]', arrModal);
-      if (arrForm) {
-        arrForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const stateZone = $('#sim-arrival-state', arrModal);
-          const submitBtn = arrForm.querySelector('[type="submit"]');
-          submitBtn.disabled = true;
-          if (stateZone) showLoading(stateZone, 'جارٍ تسجيل حضور المواطن...');
-
-          try {
-            const { ok, json } = await postForm(arrForm.action, new FormData(arrForm));
-            if (!ok) {
-              const errMsg = extractErrors(json);
-              if (stateZone) showFailure(stateZone, 'فشل تسجيل الحضور', errMsg);
-              submitBtn.disabled = false;
-            } else {
-              if (stateZone) showSuccess(stateZone, 'تمّ تسجيل الحضور بنجاح', 'يمكن الآن توجيه المواطن إلى جهاز أخذ البصمة.');
-              arrForm.style.display = 'none';
-              const closeBtn = el('button', { class: 'sim-btn sim-btn-outline', type: 'button' }, 'إغلاق وتحديث الصفحة');
-              closeBtn.addEventListener('click', () => { closeModal(arrModal); window.location.reload(); });
-              arrModal.querySelector('.sim-modal-body').append(closeBtn);
-            }
-          } catch {
-            if (stateZone) showFailure(stateZone, 'خطأ في الاتصال', 'تعذّر الوصول إلى الخادم.');
-            submitBtn.disabled = false;
-          }
-        });
-      }
-    }
-
-    // --- نافذة الإجراء الأمني ---
-    const secModal   = $('#sim-security-modal');
-    const secTrigger = $('[data-security-open]');
-    if (secModal && secTrigger) {
-      secTrigger.addEventListener('click', () => openModal(secModal));
-      $$('[data-sim-close]', secModal).forEach(btn => btn.addEventListener('click', () => closeModal(secModal)));
-
-      const secForm = $('form[data-security-form]', secModal);
-      if (secForm) {
-        secForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const stateZone = $('#sim-security-state', secModal);
-          const submitBtn = secForm.querySelector('[type="submit"]');
-          submitBtn.disabled = true;
-          if (stateZone) showLoading(stateZone, 'جارٍ تسجيل الإجراء الأمني...');
-
-          try {
-            const { ok, json } = await postForm(secForm.action, new FormData(secForm));
-            if (!ok) {
-              const errMsg = extractErrors(json);
-              if (stateZone) showFailure(stateZone, 'فشل تسجيل الإجراء', errMsg);
-              submitBtn.disabled = false;
-            } else {
-              if (stateZone) showSuccess(stateZone, 'تمّ تسجيل الإجراء الأمني', 'يمكن الآن متابعة إجراءات الإصدار.');
-              secForm.style.display = 'none';
-              const closeBtn = el('button', { class: 'sim-btn sim-btn-outline', type: 'button' }, 'إغلاق وتحديث الصفحة');
-              closeBtn.addEventListener('click', () => { closeModal(secModal); window.location.reload(); });
-              secModal.querySelector('.sim-modal-body').append(closeBtn);
-            }
-          } catch {
-            if (stateZone) showFailure(stateZone, 'خطأ في الاتصال', 'تعذّر الوصول إلى الخادم.');
-            submitBtn.disabled = false;
-          }
-        });
-      }
-    }
-
-    // --- نافذة إعادة الإدراج في القائمة ---
-    const requeueModal   = $('#sim-requeue-modal');
-    const requeueTrigger = $('[data-requeue-open]');
-    if (requeueModal && requeueTrigger) {
-      requeueTrigger.addEventListener('click', () => openModal(requeueModal));
-      $$('[data-sim-close]', requeueModal).forEach(btn => btn.addEventListener('click', () => closeModal(requeueModal)));
-
-      const requeueForm = $('form[data-requeue-form]', requeueModal);
-      if (requeueForm) {
-        requeueForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const stateZone = $('#sim-requeue-state', requeueModal);
-          const submitBtn = requeueForm.querySelector('[type="submit"]');
-          submitBtn.disabled = true;
-          if (stateZone) showLoading(stateZone, 'جارٍ إعادة الطلب إلى قائمة الانتظار...');
-
-          try {
-            const { ok, json } = await postForm(requeueForm.action, new FormData(requeueForm));
-            if (!ok) {
-              if (stateZone) showFailure(stateZone, 'فشلت العملية', extractErrors(json));
-              submitBtn.disabled = false;
-            } else {
-              if (stateZone) showSuccess(stateZone, 'تمّت إعادة الطلب بنجاح');
-              requeueForm.style.display = 'none';
-              const closeBtn = el('button', { class: 'sim-btn sim-btn-outline', type: 'button' }, 'إغلاق وتحديث');
-              closeBtn.addEventListener('click', () => { closeModal(requeueModal); window.location.reload(); });
-              requeueModal.querySelector('.sim-modal-body').append(closeBtn);
-            }
-          } catch {
-            if (stateZone) showFailure(stateZone, 'خطأ في الاتصال', 'تعذّر الوصول إلى الخادم.');
-            submitBtn.disabled = false;
-          }
-        });
-      }
-    }
-  }
-
-  /* ─────────────────────────────────────────────
      5. مصادقة الهوية (قبول / رفض)
         trigger: [data-attest-approve-open] / [data-attest-reject-open]
         modal:   #sim-attest-approve-modal / #sim-attest-reject-modal
@@ -555,10 +356,8 @@
      تهيئة الكل عند جاهزية DOM
   ───────────────────────────────────────────── */
   document.addEventListener('DOMContentLoaded', () => {
-    initCivilDemo();
     initElectronicVerification();
     initFingerprintModal();
-    initArrivalModals();
     initAttestationModals();
     initSingleAttestationModals();
   });

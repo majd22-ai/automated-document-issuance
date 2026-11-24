@@ -1,6 +1,6 @@
 @php
     $residenceLocations = app(\App\Services\ResidenceLocations::class);
-    $residenceCountries = array_filter($residenceLocations->countries(), fn ($country) => array_key_exists($country['code'], config('residence_phones')));
+    $residenceCountries = array_filter($residenceLocations->countries(), fn ($country) => $country['code'] !== 'IL' && array_key_exists($country['code'], config('residence_phones')));
     $residenceCountry = old('data.residence_country', data_get($form->data, 'residence_country', ''));
     $residenceCountry = is_string($residenceCountry) ? $residenceCountry : '';
     $residenceCode = $residenceLocations->countryCode($residenceCountry);
@@ -12,7 +12,7 @@
 <div class="identity-field"><label for="field-residence_country">دولة الإقامة *</label>
 <select id="field-residence_country" name="data[residence_country]" data-residence-country required @error('data.residence_country') aria-invalid="true" @enderror>
 <option value="">اختر دولة الإقامة أولًا</option>
-@if($residenceCountry && !array_key_exists($residenceCode ?? '', config('residence_phones')))<option value="{{ $residenceCountry }}" data-country-code="{{ $residenceCode }}" selected>{{ $residenceCountry }} — قيمة محفوظة</option>@endif
+@if($residenceCountry && $residenceCode !== 'IL' && !array_key_exists($residenceCode ?? '', config('residence_phones')))<option value="{{ $residenceCountry }}" data-country-code="{{ $residenceCode }}" selected>{{ $residenceCountry }} — قيمة محفوظة</option>@endif
 @foreach($residenceCountries as $country)<option value="{{ $country['name'] }}" data-country-code="{{ $country['code'] }}" @selected($residenceCode === $country['code'])>{{ $country['name'] }}</option>@endforeach
 </select>@error('data.residence_country')<p class="identity-field-error">{{ $message }}</p>@enderror</div>
 <div class="identity-field"><label for="field-residence_governorate-manual">محافظة الإقامة / المنطقة *</label>

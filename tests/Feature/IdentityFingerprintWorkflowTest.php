@@ -148,8 +148,18 @@ class IdentityFingerprintWorkflowTest extends TestCase
         DB::table('identity_card_forms')->where('id', $form->id)->update(['status' => 'pending_administrative_review']);
         (require database_path('migrations/2026_10_29_000003_complete_identity_trial_workflow.php'))->up();
         $this->assertSame('pending_fingerprint_attendance', $form->fresh()->status);
-        $this->actingAs($this->employee)->get('/identity-workflow/reception?reference='.$form->application->reference)->assertOk()->assertSee('اختبار محلي');
-        $this->arrive($form);
+        $reception = route('identity-workflow.reception', ['reference' => $form->application->reference]);
+        $this->actingAs($this->employee)->get($reception)->assertRedirect(route('employee.dashboard', [
+            'tools' => 'fingerprint', 'fingerprint_reference' => $form->application->reference,
+        ]));
+        $headers = ['X-Operations-Tools' => 'fingerprint-reception'];
+        $this->get($reception, $headers)->assertOk()->assertHeader('Vary', 'X-Operations-Tools')
+            ->assertSee('data-ops-fingerprint-fragment', false)->assertSee('اختبار محلي')->assertSee('تسجيل حضور المواطن');
+        $this->postJson(route('identity-workflow.arrival', $form), [
+            'version' => $form->fresh()->version, 'identity_checked' => '1', 'documents_checked' => '1',
+            'evidence_reference' => 'TEST arrival record',
+        ])->assertOk()->assertJsonStructure(['message']);
+        $this->get($reception, $headers)->assertOk()->assertSee('TEST arrival record');
         $this->get('/identity-workflow/'.$form->id.'/fingerprint')->assertOk()->assertSee('جهاز بصمة الأصابع');
         $this->capture($form)->assertOk()->assertJson(['result' => 'success']);
         $operation = $form->operations()->firstOrFail();

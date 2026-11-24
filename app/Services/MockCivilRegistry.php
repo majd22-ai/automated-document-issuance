@@ -14,9 +14,12 @@ use Illuminate\Support\Facades\Gate;
 class MockCivilRegistry
 {
     public const TABLES = [
-        'mock_civil_persons', 'mock_civil_families', 'mock_identity_cards',
-        'mock_birth_records', 'mock_civil_documents', 'users',
+        ...self::CIVIL_TABLES, 'users',
         'citizen_service_requests', 'citizen_documents', 'mock_face_attempts',
+    ];
+
+    public const CIVIL_TABLES = [
+        'mock_civil_persons', 'mock_civil_families', 'mock_identity_cards', 'mock_birth_records', 'mock_civil_documents',
     ];
 
     private const NAME_REPLACEMENTS = [
@@ -50,7 +53,25 @@ class MockCivilRegistry
             ->orderBy('person.name')->orderBy('person.id')->get();
     }
 
-    private function matchName(Builder $query, string $name): Builder
+    public function simulationRecords(string $term, bool $byNumber): Collection
+    {
+        $query = $this->civilPeopleQuery();
+        if ($byNumber) {
+            $query->where('person.national_id', $term);
+        } else {
+            $this->matchName($query, $term, exact: true);
+        }
+
+        return $query->orderBy('person.id')->get()->map(fn ($person) => $this->civilProfile($person));
+    }
+
+    public function simulationNames(string $term): Collection
+    {
+        return $this->matchName($this->civilPeopleQuery(), $term)
+            ->select('person.name')->distinct()->orderBy('person.name')->pluck('person.name');
+    }
+
+    private function matchName(Builder $query, string $name, bool $exact = false): Builder
     {
         $name = strtr($name, self::NAME_REPLACEMENTS);
         if ($name === '') {
@@ -64,7 +85,7 @@ class MockCivilRegistry
             array_push($bindings, $from, $to);
         }
         $literal = strtr($name, ['!' => '!!', '%' => '!%', '_' => '!_']);
-        $bindings[] = '%'.$literal.'%';
+        $bindings[] = $exact ? $literal : '%'.$literal.'%';
 
         return $query->whereRaw("$column LIKE ? ESCAPE '!'", $bindings);
     }
@@ -88,13 +109,6 @@ class MockCivilRegistry
     {
         $person = $this->peopleQuery()->where('person.id', $id)->first();
         abort_unless($person, 404);
-
-        $members = $person->family_id === null ? collect() : DB::table('mock_civil_persons')
-            ->where('family_id', $person->family_id)->orderBy('id')->get(['id', 'name', 'family_role']);
-        $card = DB::table('mock_identity_cards')->where('person_id', $id)->first(['number', 'status']);
-        $birth = DB::table('mock_birth_records')->where('person_id', $id)->first(['number']);
-        $civilDocuments = DB::table('mock_civil_documents')->where('person_id', $id)->orderByDesc('id')
-            ->get(['document_type', 'document_number', 'status', 'issued_place', 'issued_at']);
 
         $requests = collect();
         $officialDocuments = collect();
@@ -128,17 +142,34 @@ class MockCivilRegistry
             }
         }
 
-        return compact('person', 'members', 'card', 'birth', 'civilDocuments', 'requests', 'officialDocuments', 'identityStatus', 'faceStatus');
+        return $this->civilProfile($person) + compact('requests', 'officialDocuments', 'identityStatus', 'faceStatus');
+    }
+
+    private function civilProfile(object $person): array
+    {
+        $members = $person->family_id === null ? collect() : DB::table('mock_civil_persons')
+            ->where('family_id', $person->family_id)->orderBy('id')->get(['id', 'name', 'family_role']);
+        $card = DB::table('mock_identity_cards')->where('person_id', $person->id)->first(['number', 'status']);
+        $birth = DB::table('mock_birth_records')->where('person_id', $person->id)->first(['number']);
+        $civilDocuments = DB::table('mock_civil_documents')->where('person_id', $person->id)->orderByDesc('id')
+            ->get(['document_type', 'document_number', 'status', 'issued_place', 'issued_at']);
+
+        return compact('person', 'members', 'card', 'birth', 'civilDocuments');
     }
 
     private function peopleQuery(): Builder
     {
+        return $this->civilPeopleQuery()
+            ->leftJoin('users as account', 'account.mock_person_id', '=', 'person.id')
+            ->selectRaw('CASE WHEN account.id IS NULL THEN 0 ELSE 1 END AS linked');
+    }
+
+    private function civilPeopleQuery(): Builder
+    {
         return DB::table('mock_civil_persons as person')
             ->leftJoin('mock_civil_families as family', 'family.id', '=', 'person.family_id')
-            ->leftJoin('users as account', 'account.mock_person_id', '=', 'person.id')
             ->select('person.id', 'person.name', 'person.national_id', 'person.birth_date', 'person.birth_place',
                 'person.family_id', 'person.family_role', 'person.father_name', 'person.mother_name', 'person.complete',
-                'family.reference as family_reference')
-            ->selectRaw('CASE WHEN account.id IS NULL THEN 0 ELSE 1 END AS linked');
+                'family.reference as family_reference');
     }
 }

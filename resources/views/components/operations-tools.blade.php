@@ -14,11 +14,11 @@
         $postal = $postal && !array_diff(['postal_offices', 'postal_collectors'], $tables);
         $fingerprint = $fingerprint && !array_diff(['identity_card_forms', 'identity_fingerprint_operations'], $tables);
     }
-    $simulation = false;
-    if (!$restricted && \App\Services\Integrations\LocalCivilRegistryProvider::enabled()) {
-        $service = \App\Models\GovernmentService::where('code', 'identity-first-issue')->value('id');
-        $simulation = $adminTools || $operator->canReviewService($service, 'can_verify') || $operator->canReviewService($service, 'can_activate');
-    }
+    $simulation = \App\Services\Integrations\LocalCivilRegistryProvider::canSimulate($operator);
+    $activationRegistry = !$restricted && request()->routeIs('employee.accounts.show')
+        && \App\Services\Registration\MockCivilSystems::enabled()
+        && ($citizen->identity_path ?? null) === 'no_identity' && ($visit->workflow ?? null) === 'linked_mock'
+        && is_array(data_get($visit->evidence, 'registration'));
     $verify = !$adminTools && !$restricted && app(\App\Services\Workspace\EmployeeWorkspace::class)->serviceIds($operator, ['can_verify']) !== [];
     $attestations = !$restricted && \App\Services\IdentityAttestations::canUseSimulation($operator);
     $review = request()->routeIs('employee.applications.review') ? ($application ?? null) : null;
@@ -59,16 +59,19 @@
                     <a href="{{ route('admin.postal-network.index') }}" target="_blank" rel="noopener noreferrer">شبكة البريد التجريبية</a>
                 @endif
                 @if($fingerprint)
-                    <a href="{{ route('identity-workflow.reception') }}" target="_blank" rel="noopener noreferrer">محاكاة البصمة وإجراءات البطاقة</a>
+                    <button type="button" data-ops-view-button="fingerprint">محاكاة البصمة وإجراءات البطاقة</button>
                     @if(\App\Services\FingerprintService::canUse($operator, 'can_approve'))
                         <a href="{{ route('identity-workflow.administration.index') }}" target="_blank" rel="noopener noreferrer">المراجعة الإدارية التجريبية</a>
                     @endif
                 @endif
                 @if($simulation)
-                    <a href="{{ route('integrations.civil-registry-demo') }}" target="_blank" rel="noopener noreferrer">تجربة التحقق من السجل المدني</a>
+                    <button type="button" data-ops-view-button="civil-check">محاكاة التحقق من السجل المدني</button>
+                @endif
+                @if($activationRegistry)
+                    <button type="button" data-ops-view-button="activation-registry">مطابقة الأسرة وسجل الميلاد للطلب</button>
                 @endif
                 @if($attestations)
-                    @include('components.mobile-attestation-simulator', ['inTools' => true])
+                    <button type="button" data-ops-view-button="attestations">محاكاة إشعارات الجوال <span data-attestation-count aria-label="إشعارات غير مقروءة">0</span></button>
                 @endif
             </div>
             @if($adminTools || $verify)
@@ -81,7 +84,7 @@
                     @endif
                 </div>
             @endif
-            @if(!$adminTools && !$verify && !$demoRegistry && !$fingerprint && !$simulation && !$attestations)
+            @if(!$adminTools && !$verify && !$demoRegistry && !$fingerprint && !$simulation && !$attestations && !$activationRegistry)
                 <p>لا توجد أدوات محاكاة أو تكامل متاحة بصلاحياتك الحالية.</p>
             @endif
         </div>
@@ -98,7 +101,7 @@
                 <div data-ops-notifications hidden>
                     <p>رموز التسجيل تُعالج داخل مسار التسجيل. سجل المواطن لا يعرض رموز التحقق أو حالة محاولة التسجيل الفردية.</p>
                     @if($attestations)
-                        <p><a href="{{ route('simulation.identity-attestations.index') }}" target="_blank" rel="noopener noreferrer">عرض حالة إشعارات المصادقة التجريبية</a></p>
+                        <button type="button" class="btn btn-outline" data-ops-view-button="attestations">عرض إشعارات المصادقة التجريبية</button>
                     @endif
                 </div>
             </section>
@@ -110,6 +113,35 @@
                     <p><a href="{{ route('admin.demo-civil-registry.index') }}" target="_blank" rel="noopener noreferrer">إدارة السجل المستقل</a></p>
                 @endif
                 @include('components.demo-civil-registry-window', ['inline' => true, 'application' => $review, 'suggestedSection' => $registrySuggestedSection ?? null])
+            </section>
+        @endif
+        @if($simulation)
+            @include('components.civil-registry-simulation')
+        @endif
+        @if($fingerprint)
+            <section data-ops-view="fingerprint" data-ops-fingerprint="{{ route('identity-workflow.reception', [], false) }}" hidden>
+                <h3>استقبال طلبات بصمة الأصابع</h3>
+                <p data-ops-fingerprint-status role="status"></p>
+                <div data-ops-fingerprint-content></div>
+            </section>
+        @endif
+        @if($attestations)
+            @include('components.mobile-attestation-simulator')
+        @endif
+        @if($activationRegistry)
+            <section data-ops-view="activation-registry" hidden>
+                <h3>مطابقة الأسرة وسجل الميلاد</h3>
+                <p>ابحث بالاسم داخل الأسرة المرتبطة بأرقام الوالدين المقدمة، ثم قارن بيانات السجل ببيانات طلب التفعيل.</p>
+                <form class="card ops-card" method="post" action="{{ route('employee.accounts.mock-registry-check', $citizen, false) }}" data-ops-activation-check>
+                    @csrf
+                    <label for="ops-activation-name">اسم المواطن في السجل التجريبي
+                        <input class="form-control" id="ops-activation-name" name="name" type="search" minlength="2" maxlength="100" autocomplete="off"
+                               value="{{ \Illuminate\Support\Str::before(trim(data_get($visit->evidence, 'registration.name', '')), ' ') }}" required>
+                    </label>
+                    <p><button class="btn btn-primary" type="submit">بحث ومقارنة</button></p>
+                    <p data-ops-civil-outcome role="status"></p>
+                </form>
+                <div data-ops-activation-results></div>
             </section>
         @endif
     </div>

@@ -1,5 +1,5 @@
 ﻿@php
-  $operationsWorkspace = auth()->check() && in_array(auth()->user()->role, ['admin','employee'], true) && request()->routeIs('admin.*','employee.*','profile.*','integrations.civil-registry-demo*','identity-workflow.*','simulation.identity-attestations.*');
+  $operationsWorkspace = auth()->check() && in_array(auth()->user()->role, ['admin','employee'], true) && request()->routeIs('admin.*','employee.*','profile.*','identity-workflow.*','simulation.identity-attestations.*');
 @endphp
  <!DOCTYPE html>
 <html lang="ar" dir="rtl" translate="no" class="notranslate">
@@ -44,6 +44,7 @@
   @endif
   @if($operationsWorkspace)
     <link rel="stylesheet" href="{{ asset('css/operations-tools.css') }}?v={{ filemtime(public_path('css/operations-tools.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/identity-workflow.css') }}?v={{ filemtime(public_path('css/identity-workflow.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/demo-civil-registry.css') }}?v={{ filemtime(public_path('css/demo-civil-registry.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/identity-attestation.css') }}?v={{ filemtime(public_path('css/identity-attestation.css')) }}">
   @endif
@@ -130,11 +131,6 @@
   </main>
 
   @include('components.public-footer')
-
-  @if(!$operationsWorkspace && auth()->check() && \App\Services\IdentityAttestations::canUseSimulation(auth()->user()))
-    <link rel="stylesheet" href="{{ asset('css/identity-attestation.css') }}?v={{ filemtime(public_path('css/identity-attestation.css')) }}">
-    @include('components.mobile-attestation-simulator')
-  @endif
 
   @stack('scripts')
   @if($operationsWorkspace)<script src="{{ asset('js/operations-workspace.js') }}?v={{ filemtime(public_path('js/operations-workspace.js')) }}" defer></script>@endif

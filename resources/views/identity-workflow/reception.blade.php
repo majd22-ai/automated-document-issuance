@@ -1,319 +1,108 @@
-@extends('layouts.public')
-@section('title', 'استقبال طلبات بصمة الأصابع')
-@push('styles')
-<link rel="stylesheet" href="{{ asset('css/identity-workflow.css') }}">
-<link rel="stylesheet" href="{{ asset('css/simulation-modals.css') }}?v={{ filemtime(public_path('css/simulation-modals.css')) }}">
-@endpush
-@push('scripts')
-<script src="{{ asset('js/simulation-modals.js') }}?v={{ filemtime(public_path('js/simulation-modals.js')) }}" defer></script>
-@endpush
-
-@section('content')
-<section class="section"><div class="container identity-workflow">
-  <h1>استقبال طلبات بصمة الأصابع</h1>
-  <p class="workflow-warning">
-    نافذة استقبال المواطنين لإجراءات بصمة الأصابع.
-    ابحث عن الطلب بالمرجع لعرض التفاصيل وتسجيل الحضور وتوجيه المواطن لجهاز القياس.
-  </p>
-
-  @if(session('status'))
-    <div class="sim-alert sim-alert-success" role="status" style="margin-bottom:1rem">
-      <span class="sim-alert-icon" aria-hidden="true">✓</span>
-      <div>{{ session('status') }}</div>
-    </div>
-  @endif
-  @if($errors->any())
-    <div class="sim-alert sim-alert-error" role="alert" style="margin-bottom:1rem">
-      <span class="sim-alert-icon" aria-hidden="true">✗</span>
-      <ul style="margin:0;padding-inline-start:1.2rem">
-        @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
-      </ul>
-    </div>
-  @endif
-
-  {{-- ─── نموذج البحث ─── --}}
-  <form method="GET" action="{{ route('identity-workflow.reception') }}" class="workflow-panel">
-    <label for="reference" style="font-weight:700;display:block;margin-bottom:.5rem">
-      ابحث عن طلب بمرجعه
-    </label>
-    <div class="workflow-actions">
-      <input id="reference" name="reference" value="{{ request('reference') }}"
-             placeholder="مثال: APP-2026-XXXXX" style="flex:1">
-      <button class="btn btn-primary">بحث</button>
-    </div>
-  </form>
-
-  {{-- ─── تفاصيل الطلب المُختار ─── --}}
-  @if($form)
-    <section class="workflow-panel">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem">
-        <div>
-          <h2 style="margin:0 0 4px">{{ data_get($form->data, 'applicant_name') }}</h2>
-          <p dir="ltr" style="margin:0;font-size:.88rem;color:var(--text-secondary)">{{ $form->application?->reference ?? $form->reference }}</p>
-          <p style="margin:4px 0 0">
-            <span class="sim-status-badge pending">{{ $form->statusLabel() }}</span>
-          </p>
+<section class="identity-workflow" data-ops-fingerprint-fragment>
+    <p class="workflow-warning">ابحث برقم الطلب أو مرجع الاستمارة. راجع الشروط الظاهرة قبل تسجيل الحضور وفتح جهاز البصمة التجريبي.</p>
+    @include('operations.messages')
+    <form method="get" action="{{ route('identity-workflow.reception', [], false) }}" class="workflow-panel" data-fingerprint-search>
+        <label for="fingerprint-reference">مرجع الطلب أو الاستمارة</label>
+        <div class="workflow-actions">
+            <input id="fingerprint-reference" name="reference" maxlength="100" value="{{ $reference }}" placeholder="APP-2026-XXXXX">
+            <button class="btn btn-primary" type="submit">بحث</button>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          @if($canRecord)
-            <a class="sim-btn sim-btn-secondary" href="{{ route('identity-workflow.device', $form) }}">
-              <span aria-hidden="true">👆</span> الانتقال لجهاز البصمة
-            </a>
-          @endif
-          @can('administer', $form)
-            <a class="sim-btn sim-btn-outline" href="{{ route('identity-workflow.administration.show', $form) }}">
-              إدارة الطلب
-            </a>
-          @endcan
-        </div>
-      </div>
+    </form>
 
-      @if(count($reasons))
-        <div class="sim-alert sim-alert-warning" role="alert">
-          <span class="sim-alert-icon" aria-hidden="true">⚠</span>
-          <ul style="margin:0;padding-inline-start:1.2rem">
-            @foreach($reasons as $reason)<li>{{ $reason }}</li>@endforeach
-          </ul>
-        </div>
-      @endif
+    @if($form)
+        <section class="workflow-panel">
+            <h4>{{ data_get($form->data, 'applicant_name') ?? $form->citizen?->name }}</h4>
+            <p><bdi>{{ $form->application?->reference ?? $form->reference }}</bdi> · {{ $form->statusLabel() }}</p>
+            @if($reasons)
+                <ul class="workflow-warning" role="status">
+                    @foreach($reasons as $reason)<li>{{ $reason }}</li>@endforeach
+                </ul>
+            @endif
+            @if($form->arrived_at)
+                <p>سُجّل الحضور في <bdi>{{ $form->arrived_at->format('Y-m-d H:i') }}</bdi> بمرجع <bdi>{{ $form->arrival_reference }}</bdi>.</p>
+            @endif
+            <div class="workflow-actions">
+                @if($canRecord)
+                    <a class="btn btn-outline" href="{{ route('identity-workflow.device', $form) }}" target="_blank" rel="noopener">الانتقال لجهاز البصمة</a>
+                @endif
+                @can('administer', $form)
+                    <a class="btn btn-outline" href="{{ route('identity-workflow.administration.show', $form) }}" target="_blank" rel="noopener">إدارة الطلب</a>
+                @endcan
+            </div>
 
-      @if($form->arrived_at)
-        <div class="sim-alert sim-alert-success" role="status">
-          <span class="sim-alert-icon" aria-hidden="true">✓</span>
-          <div>
-            تمّ تسجيل الحضور:
-            <strong dir="ltr">{{ $form->arrived_at->format('Y-m-d H:i') }}</strong>
-            · مرجع: <strong>{{ $form->arrival_reference }}</strong>
-          </div>
-        </div>
-      @endif
+            @if(!$form->arrived_at && in_array($form->status, ['pending_fingerprint_attendance', 'fingerprint_failed'], true))
+                <details>
+                    <summary>تسجيل حضور المواطن</summary>
+                    <form method="post" action="{{ route('identity-workflow.arrival', $form, false) }}" data-fingerprint-action>
+                        @csrf
+                        <input type="hidden" name="version" value="{{ $form->version }}">
+                        <p><label><input type="checkbox" name="identity_checked" value="1" required> تحققت من هوية المواطن وتطابق بياناته مع الطلب</label></p>
+                        <p><label><input type="checkbox" name="documents_checked" value="1" required> تحققت من اكتمال المستندات المطلوبة وصلاحيتها</label></p>
+                        <label for="arrival-evidence">رقم وثيقة الإثبات أو وصل الحضور</label>
+                        <input id="arrival-evidence" name="evidence_reference" maxlength="150" required>
+                        <p><button class="btn btn-primary" type="submit" @disabled(count($reasons))>تأكيد تسجيل الحضور</button></p>
+                        <p data-fingerprint-action-status role="status"></p>
+                    </form>
+                </details>
+            @endif
 
-      {{-- ─── زر تسجيل الحضور ─── --}}
-      @if(!$form->arrived_at && in_array($form->status, ['pending_fingerprint_attendance','fingerprint_failed'], true))
-        <div style="margin-top:1rem">
-          <button class="sim-trigger-btn" type="button"
-                  data-arrival-open
-                  @disabled(count($reasons))
-                  aria-haspopup="dialog" aria-controls="sim-arrival-modal">
-            <span aria-hidden="true">📋</span>
-            تسجيل حضور المواطن
-          </button>
-        </div>
-      @endif
+            @if($form->attestation?->status === 'approved' && $form->attestation?->authority_type === 'neighborhood' && $form->attestation?->security_required && $form->attestation?->security_status !== 'recorded_manually')
+                <details>
+                    <summary>تسجيل الإجراء الأمني</summary>
+                    @if($fingerprintReasons)
+                        <ul class="workflow-warning">
+                            @foreach($fingerprintReasons as $reason)<li>{{ $reason }}</li>@endforeach
+                        </ul>
+                    @endif
+                    <form method="post" action="{{ route('identity-workflow.security', $form, false) }}" data-fingerprint-action>
+                        @csrf
+                        <input type="hidden" name="version" value="{{ $form->version }}">
+                        <p><label><input type="checkbox" name="paper_checked" value="1" required> تحققت من الوثيقة الأمنية وصلاحيتها وتوقيعاتها</label></p>
+                        <label for="security-evidence">رقم مرجع الوثيقة الأمنية</label>
+                        <input id="security-evidence" name="evidence_reference" maxlength="150" required>
+                        <p><button class="btn btn-primary" type="submit">حفظ الإجراء الأمني</button></p>
+                        <p data-fingerprint-action-status role="status"></p>
+                    </form>
+                </details>
+            @endif
 
-      {{-- ─── إجراء أمني ─── --}}
-      @if($form->attestation?->status === 'approved' && $form->attestation?->authority_type === 'neighborhood' && $form->attestation?->security_required && $form->attestation?->security_status !== 'recorded_manually')
-        @if(count($fingerprintReasons))
-          <div class="sim-alert sim-alert-warning" role="alert" style="margin-top:1rem">
-            <span class="sim-alert-icon" aria-hidden="true">⚠</span>
-            <ul style="margin:0;padding-inline-start:1.2rem">
-              @foreach($fingerprintReasons as $reason)<li>{{ $reason }}</li>@endforeach
-            </ul>
-          </div>
-        @endif
-        <div style="margin-top:1rem">
-          <button class="sim-trigger-btn" type="button"
-                  data-security-open
-                  aria-haspopup="dialog" aria-controls="sim-security-modal">
-            <span aria-hidden="true">🔒</span>
-            تسجيل الإجراء الأمني
-          </button>
-        </div>
-      @endif
-
-      {{-- ─── إعادة الإدراج في القائمة (returned_to_staff) ─── --}}
-      @if($form->status === 'returned_to_staff')
-        <div style="margin-top:1rem">
-          <button class="sim-trigger-btn" type="button"
-                  data-requeue-open
-                  aria-haspopup="dialog" aria-controls="sim-requeue-modal">
-            <span aria-hidden="true">🔄</span>
-            إعادة الطلب إلى قائمة الانتظار
-          </button>
-        </div>
-      @endif
-    </section>
-
-    @if(request('reference') && !$form)
-      <p role="status">لم يُعثر على طلب بهذا المرجع.</p>
+            @if($form->status === 'returned_to_staff')
+                <details>
+                    <summary>إعادة الطلب إلى قائمة الانتظار</summary>
+                    <form method="post" action="{{ route('identity-workflow.administration.requeue', $form, false) }}" data-fingerprint-action>
+                        @csrf
+                        <input type="hidden" name="version" value="{{ $form->version }}">
+                        <label for="requeue-note">ملاحظات إعادة الإدراج</label>
+                        <textarea id="requeue-note" name="note" maxlength="1500" required></textarea>
+                        <p><button class="btn btn-primary" type="submit">إعادة الطلب</button></p>
+                        <p data-fingerprint-action-status role="status"></p>
+                    </form>
+                </details>
+            @endif
+        </section>
+    @elseif($reference !== '')
+        <p class="workflow-warning" role="status">لم يُعثر على طلب بهذا المرجع ضمن صلاحياتك.</p>
     @endif
-  @endif
 
-  {{-- ─── قائمة الطلبات الحالية ─── --}}
-  <section class="workflow-panel">
-    <h2>الطلبات الحالية</h2>
-    <div class="sim-table-wrap">
-      <table class="sim-table">
-        <thead>
-          <tr>
-            <th>المرجع</th>
-            <th>اسم مقدّم الطلب</th>
-            <th>الحالة</th>
-            <th>إجراء</th>
-          </tr>
-        </thead>
-        <tbody>
-          @forelse($forms as $item)
-            <tr>
-              <td dir="ltr">{{ $item->application?->reference ?? $item->reference }}</td>
-              <td>{{ data_get($item->data, 'applicant_name') }}</td>
-              <td>
-                <span class="sim-status-badge pending">{{ $item->statusLabel() }}</span>
-              </td>
-              <td>
-                <a class="sim-btn sim-btn-outline" style="font-size:.8rem;padding:6px 12px"
-                   href="{{ route('identity-workflow.reception', ['reference' => $item->reference]) }}">
-                  عرض
-                </a>
-              </td>
-            </tr>
-          @empty
-            <tr><td colspan="4" style="text-align:center;color:var(--text-secondary);padding:2rem">لا توجد طلبات حالية.</td></tr>
-          @endforelse
-        </tbody>
-      </table>
-    </div>
-    {{ $forms->links() }}
-  </section>
-</div></section>
-
-{{-- ═══════════════════════════════════════════
-     نافذة تسجيل الحضور
-══════════════════════════════════════════ --}}
-@if($form && !$form->arrived_at && in_array($form->status, ['pending_fingerprint_attendance','fingerprint_failed'], true))
-  <dialog id="sim-arrival-modal" class="sim-modal-dialog" aria-labelledby="arrival-modal-title">
-    <div class="sim-modal-head">
-      <h2 id="arrival-modal-title" class="sim-modal-title">
-        <span class="sim-icon" aria-hidden="true">📋</span>
-        تسجيل حضور المواطن
-      </h2>
-      <button class="sim-modal-close" type="button" data-sim-close aria-label="إغلاق النافذة">✕</button>
-    </div>
-    <div class="sim-modal-body">
-      <div class="sim-details">
-        <div class="sim-detail-group">
-          <dt>رقم الطلب</dt>
-          <dd dir="ltr">{{ $form->application?->reference ?? $form->reference }}</dd>
+    <section class="workflow-panel">
+        <h4>الطلبات الحالية</h4>
+        <div class="ops-table-wrap">
+            <table class="table" aria-label="طلبات استقبال البصمة">
+                <thead><tr><th scope="col">المرجع</th><th scope="col">مقدّم الطلب</th><th scope="col">الحالة</th><th scope="col">الإجراء</th></tr></thead>
+                <tbody>
+                    @forelse($forms as $item)
+                        <tr>
+                            <td><bdi>{{ $item->application?->reference ?? $item->reference }}</bdi></td>
+                            <td>{{ data_get($item->data, 'applicant_name') ?? $item->citizen?->name }}</td>
+                            <td>{{ $item->statusLabel() }}</td>
+                            <td><a href="{{ route('identity-workflow.reception', ['reference' => $item->reference], false) }}" aria-label="عرض الطلب {{ $item->reference }}">عرض</a></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="4">لا توجد طلبات حالية.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
-        <div class="sim-detail-group">
-          <dt>مقدّم الطلب</dt>
-          <dd>{{ data_get($form->data, 'applicant_name') ?? 'غير محدد' }}</dd>
-        </div>
-      </div>
-
-      <div id="sim-arrival-state" aria-live="polite"></div>
-
-      <form method="POST" action="{{ route('identity-workflow.arrival', $form) }}" data-arrival-form novalidate>
-        @csrf
-        <input type="hidden" name="version" value="{{ $form->version }}">
-
-        <label class="sim-check">
-          <input type="checkbox" name="identity_checked" value="1" required @checked(old('identity_checked'))>
-          <span>تحققت من هوية المواطن وتطابق بياناته مع الطلب</span>
-        </label>
-
-        <label class="sim-check">
-          <input type="checkbox" name="documents_checked" value="1" required @checked(old('documents_checked'))>
-          <span>تحققت من اكتمال المستندات المطلوبة وصلاحيتها</span>
-        </label>
-
-        <div class="sim-field">
-          <label for="arrival-evidence">رقم مرجع وثيقة الإثبات / وصل الحضور</label>
-          <input type="text" id="arrival-evidence" name="evidence_reference"
-                 required value="{{ old('evidence_reference') }}"
-                 placeholder="رقم وصل الحضور أو المرجع">
-        </div>
-
-        <div class="sim-actions">
-          <button class="sim-btn sim-btn-primary" type="submit" @disabled(count($reasons))>
-            <span aria-hidden="true">✓</span> تأكيد تسجيل الحضور
-          </button>
-          <button type="button" class="sim-btn sim-btn-outline" data-sim-close>إلغاء</button>
-        </div>
-      </form>
-    </div>
-  </dialog>
-@endif
-
-{{-- ═══════════════════════════════════════════
-     نافذة الإجراء الأمني
-══════════════════════════════════════════ --}}
-@if($form && $form->attestation?->status === 'approved' && $form->attestation?->security_required && $form->attestation?->security_status !== 'recorded_manually')
-  <dialog id="sim-security-modal" class="sim-modal-dialog" aria-labelledby="security-modal-title">
-    <div class="sim-modal-head">
-      <h2 id="security-modal-title" class="sim-modal-title">
-        <span class="sim-icon" aria-hidden="true">🔒</span>
-        تسجيل الإجراء الأمني
-      </h2>
-      <button class="sim-modal-close" type="button" data-sim-close aria-label="إغلاق النافذة">✕</button>
-    </div>
-    <div class="sim-modal-body">
-      <div class="sim-alert sim-alert-info" role="note">
-        <span class="sim-alert-icon" aria-hidden="true">ℹ</span>
-        <div>هذا الطلب يستوجب إجراء أمنياً إضافياً قبل أخذ البصمة. تحقق من الورقة الأمنية ثم سجّل المرجع.</div>
-      </div>
-
-      <div id="sim-security-state" aria-live="polite"></div>
-
-      <form method="POST" action="{{ route('identity-workflow.security', $form) }}" data-security-form novalidate>
-        @csrf
-        <input type="hidden" name="version" value="{{ $form->version }}">
-
-        <label class="sim-check">
-          <input type="checkbox" name="paper_checked" value="1" required>
-          <span>تحققت من الوثيقة الأمنية وصلاحيتها وتوقيعاتها</span>
-        </label>
-
-        <div class="sim-field">
-          <label for="security-evidence">رقم مرجع الوثيقة الأمنية</label>
-          <input type="text" id="security-evidence" name="evidence_reference"
-                 required value="{{ old('evidence_reference') }}"
-                 placeholder="رقم الوثيقة الأمنية">
-        </div>
-
-        <div class="sim-actions">
-          <button class="sim-btn sim-btn-primary" type="submit">
-            <span aria-hidden="true">✓</span> تسجيل الإجراء الأمني
-          </button>
-          <button type="button" class="sim-btn sim-btn-outline" data-sim-close>إلغاء</button>
-        </div>
-      </form>
-    </div>
-  </dialog>
-@endif
-
-{{-- ═══════════════════════════════════════════
-     نافذة إعادة الإدراج في القائمة
-══════════════════════════════════════════ --}}
-@if($form && $form->status === 'returned_to_staff')
-  <dialog id="sim-requeue-modal" class="sim-modal-dialog" aria-labelledby="requeue-modal-title">
-    <div class="sim-modal-head">
-      <h2 id="requeue-modal-title" class="sim-modal-title">
-        <span class="sim-icon" aria-hidden="true">🔄</span>
-        إعادة الطلب إلى قائمة الانتظار
-      </h2>
-      <button class="sim-modal-close" type="button" data-sim-close aria-label="إغلاق النافذة">✕</button>
-    </div>
-    <div class="sim-modal-body">
-      <div id="sim-requeue-state" aria-live="polite"></div>
-
-      <form method="POST" action="{{ route('identity-workflow.administration.requeue', $form) }}" data-requeue-form novalidate>
-        @csrf
-        <input type="hidden" name="version" value="{{ $form->version }}">
-
-        <div class="sim-field">
-          <label for="requeue-note">ملاحظات إعادة الإدراج (موجبات الإعادة)</label>
-          <textarea id="requeue-note" name="note" required></textarea>
-        </div>
-
-        <div class="sim-actions">
-          <button class="sim-btn sim-btn-primary" type="submit">
-            <span aria-hidden="true">↩</span> إعادة الطلب للانتظار
-          </button>
-          <button type="button" class="sim-btn sim-btn-outline" data-sim-close>إلغاء</button>
-        </div>
-      </form>
-    </div>
-  </dialog>
-@endif
-@endsection
+        {{ $forms->links() }}
+    </section>
+</section>
