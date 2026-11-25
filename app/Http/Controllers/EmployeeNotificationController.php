@@ -27,6 +27,13 @@ class EmployeeNotificationController extends Controller
     {
         $notification = $request->user()->notifications()->findOrFail($id);
         $kind = $notification->data['kind'] ?? null;
+        if ($kind === 'lost_card_report') {
+            abort_unless(app(\App\Services\LostCardWorkflow::class)->canOperate($request->user()), 403);
+            $case = \App\Models\LostCardCase::findOrFail($notification->data['lost_card_case_id'] ?? 0);
+            $notification->markAsRead();
+
+            return redirect()->route('employee.lost-cards.show', $case);
+        }
         if ($kind === 'neighborhood_attestation') {
             $attestation = IdentityCardAttestation::findOrFail($notification->data['attestation_id'] ?? 0);
             if (! app(IdentityAttestations::class)->canAttest($request->user()->fresh(), $attestation)) {

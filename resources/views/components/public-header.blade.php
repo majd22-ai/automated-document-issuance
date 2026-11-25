@@ -7,6 +7,7 @@
       'items' => [
         ['جميع الخدمات الحكومية', route('services.index'), ''],
         ['خدمات بطاقة الهوية', route('services.identity'), ''],
+        ...(\App\Services\LostCardWorkflow::enabled() ? [['فقدت بطاقتي', route('citizen.lost-cards.index'), '']] : []),
         ['خدمات جواز السفر', route('services.passports'), ''],
         ['خدمات رخصة القيادة', route('services.driving-licenses'), ''],
         ['خدمة حجز المواعيد', route('appointments.book'), ''],

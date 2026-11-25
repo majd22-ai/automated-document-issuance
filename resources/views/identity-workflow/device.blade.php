@@ -1,5 +1,6 @@
-@extends('layouts.public')
+@extends(!empty($toolsFragment) ? 'layouts.operations-tool-fragment' : 'layouts.public')
 @section('title', 'جهاز بصمة الأصابع — ' . $form->application?->reference ?? $form->reference)
+@if(empty($toolsFragment))
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/identity-workflow.css') }}">
 <link rel="stylesheet" href="{{ asset('css/simulation-modals.css') }}?v={{ filemtime(public_path('css/simulation-modals.css')) }}">
@@ -7,10 +8,14 @@
 @push('scripts')
 <script src="{{ asset('js/simulation-modals.js') }}?v={{ filemtime(public_path('js/simulation-modals.js')) }}" defer></script>
 @endpush
+@endif
 
 @section('content')
+@if(empty($toolsFragment))
 @include('components.identity-journey', ['application' => $form->application])
-<section class="section"><div class="container identity-workflow">
+@endif
+<section @if(!empty($toolsFragment)) data-ops-fingerprint-fragment @endif class="{{ empty($toolsFragment) ? 'section' : '' }}">
+<div class="{{ empty($toolsFragment) ? 'container ' : '' }}identity-workflow">
   <h1>جهاز بصمة الأصابع</h1>
   <p class="workflow-warning">
     محاكاة جهاز القياس الحيومتري داخل بيئة الاختبار.
@@ -18,10 +23,17 @@
     هذه المحاكاة لأغراض التطوير والاختبار فحسب.
   </p>
 
+  @if(!empty($toolsFragment))
+  <button type="button" class="sim-btn sim-btn-outline" data-ops-fingerprint-back
+          style="display:inline-flex;margin-bottom:1.25rem">
+    ← العودة إلى الاستقبال
+  </button>
+  @else
   <a href="{{ route('identity-workflow.reception', ['reference' => $form->application?->reference]) }}"
      class="sim-btn sim-btn-outline" style="display:inline-flex;margin-bottom:1.25rem">
     ← العودة إلى الاستقبال
   </a>
+  @endif
 
   {{-- معلومات الطلب --}}
   <div class="workflow-panel">
@@ -114,7 +126,8 @@
 
       <div id="sim-fp-result" aria-live="polite"></div>
 
-      <form method="POST" action="{{ route('identity-workflow.capture', $form) }}" data-fp-form novalidate>
+      <form method="POST" action="{{ route('identity-workflow.capture', $form) }}"
+            data-fp-form @if(!empty($toolsFragment)) data-fingerprint-action @endif novalidate>
         @csrf
         <input type="hidden" name="version" value="{{ $form->version }}">
         <input type="hidden" name="operation_token" value="{{ $operationToken }}">
@@ -130,10 +143,16 @@
                   data-fp-start>
             <span aria-hidden="true">▶</span> بدء تسجيل البصمة
           </button>
+          @if(empty($toolsFragment))
           <a class="sim-btn sim-btn-outline"
              href="{{ route('identity-workflow.device', $form) }}">
             تحديث / إعادة التهيئة
           </a>
+          @else
+          <button type="button" class="sim-btn sim-btn-outline" data-ops-load-device="{{ route('identity-workflow.device', $form, false) }}">
+            تحديث / إعادة التهيئة
+          </button>
+          @endif
         </div>
       </form>
     </div>
@@ -216,5 +235,6 @@
       </table>
     </div>
   </div>
-</div></section>
+</div>
+</section>
 @endsection

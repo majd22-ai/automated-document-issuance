@@ -66,7 +66,16 @@ class IdentityWorkflowController extends Controller
         $operations = $form->operations()->with('operator')->get();
         $latestSuccess = $service->successfulOperation($form);
 
-        return response()->view('identity-workflow.device', compact('form', 'reasons', 'operationToken', 'operations', 'latestSuccess'))->header('Cache-Control', 'no-store, private');
+        $toolsFragment = $request->header('X-Operations-Tools') === 'fingerprint-device';
+
+        // الصفحة المستقلة محذوفة — الوصول المباشر يُعاد توجيهه للاستقبال
+        if (!$toolsFragment) {
+            return redirect()->route('identity-workflow.reception', [
+                'reference' => $form->application?->reference,
+            ]);
+        }
+
+        return response()->view('identity-workflow.device', compact('form', 'reasons', 'operationToken', 'operations', 'latestSuccess', 'toolsFragment'))->header('Cache-Control', 'no-store, private');
     }
 
     public function capture(IdentityWorkflowAction $request, IdentityCardForm $form, FingerprintService $service)

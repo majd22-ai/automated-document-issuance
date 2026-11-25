@@ -85,6 +85,12 @@ class ServiceRequestSubmission
 
                     return $existing;
                 }
+                if ($service->code === LostCardWorkflow::SERVICE && LostCardWorkflow::enabled()) {
+                    $case = \App\Models\LostCardCase::where('user_id', $citizen->id)->where('submission_token', $token)->first();
+                    if (! $case?->ready()) {
+                        throw ValidationException::withMessages(['service' => 'يلزم استكمال بلاغ الشرطة والنشر عبر خدمة «فقدت بطاقتي».']);
+                    }
+                }
                 $this->assertCurrentPreview($citizen, $service, $preview);
                 $report = $this->assertEligible($citizen, $service);
                 $payload = Validator::make($preview['payload'], PreviewServiceRequest::payloadRules($service))->validate();

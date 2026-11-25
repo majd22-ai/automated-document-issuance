@@ -216,6 +216,18 @@ class CitizenServiceRequest extends Model
                 $request->service_currency = $service->currency;
                 $request->service_rules_version = $service->rules_version;
                 $request->service_snapshot = $service->only(['code', 'name', 'document_type', 'operation', 'description', 'conditions', 'required_documents', 'required_fields', 'application_fields', 'verification_rules', 'workflow_rules', 'integration_rules', 'require_separate_approver', 'source_reference', 'fee', 'currency', 'estimated_duration', 'rules_version', 'minimum_age', 'renewal_statuses', 'renewal_window_days', 'requires_driving_clearance', 'terminal_request_statuses']);
+                if ($service->code === \App\Services\LostCardWorkflow::SERVICE && \App\Services\LostCardWorkflow::enabled() && filled(data_get($request->request_data, 'loss_reference'))) {
+                    $snapshot = $request->service_snapshot;
+                    $fields = array_column($snapshot['application_fields'] ?? [], null, 'key');
+                    foreach (\App\Services\LostCardWorkflow::EDITABLE_FIELDS as $key => $label) {
+                        $fields[$key] ??= [
+                            'key' => $key, 'label' => $label, 'required' => true, 'max_length' => 150,
+                            'type' => $key === 'previous_issued_on' ? 'date' : 'text',
+                        ];
+                    }
+                    $snapshot['application_fields'] = array_values($fields);
+                    $request->service_snapshot = $snapshot;
+                }
             }
         });
         static::updating(function (self $request) {

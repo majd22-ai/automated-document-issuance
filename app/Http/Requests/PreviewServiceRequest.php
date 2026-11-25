@@ -30,6 +30,20 @@ class PreviewServiceRequest extends FormRequest
             // Versioned renewal forms enforce selection themselves; historical generic requests remain valid.
             $fields[] = ['key' => 'previous_document_id', 'type' => 'integer', 'required' => false];
         }
+        if ($service->code === 'identity-lost' && \App\Services\LostCardWorkflow::enabled()) {
+            $existing = array_column($fields, 'key');
+            foreach (['given_name', 'father_name', 'grandfather_name', 'family_name', 'issuing_governorate',
+                'issuing_center', 'signature', 'national_id', 'lost_card_number', 'loss_reference',
+                'police_reference', 'notice_reference', 'notice_issue', 'notice_page', 'notice_published_on', 'previous_issued_on'] as $key) {
+                if (! in_array($key, $existing, true)) {
+                    $fields[] = ['key' => $key, 'type' => match ($key) {
+                        'notice_page' => 'integer',
+                        'notice_published_on', 'previous_issued_on' => 'date',
+                        default => 'text',
+                    }, 'required' => false, 'max_length' => 200];
+                }
+            }
+        }
         $rules = ['data' => ['sometimes', 'array', $fields ? 'array:'.implode(',', array_column($fields, 'key')) : 'size:0'], 'notes' => ['nullable', 'string', 'max:2000']];
         foreach ($fields as $field) {
             $rules['data.'.$field['key']] = [($field['required'] ?? false) ? 'required' : 'nullable', ...match ($field['type']) {

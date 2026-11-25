@@ -80,6 +80,9 @@ class EmployeeWorkspace
 
     public function allowsRoute(User $user, string $route): bool
     {
+        if (str_starts_with($route, 'employee.lost-cards.')) {
+            return app(\App\Services\LostCardWorkflow::class)->canOperate($user);
+        }
         if (str_starts_with($route, 'employee.demo-civil-registry.')) {
             return $user->canAccessDemoCivilRegistry();
         }

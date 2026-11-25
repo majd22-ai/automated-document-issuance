@@ -35,3 +35,17 @@
     <button type="submit" class="btn btn-outline">إعادة التحقق من المتطلبات الحالية</button>
   </form>
 @endif
+@if($application->service_code === \App\Services\LostCardWorkflow::SERVICE && \App\Services\LostCardWorkflow::enabled())
+    @php($loss = \App\Models\LostCardCase::where('application_id', $application->id)->with('police', 'notice')->first())
+    @if($loss)
+        <section>
+            <h3>أدلة الفقد والنشر التجريبية</h3>
+            <p>مرجع المتابعة <bdi>{{ $loss->reference }}</bdi> · البطاقة <bdi>{{ $loss->card_number }}</bdi></p>
+            <p>بلاغ الشرطة <bdi>{{ $loss->police?->reference }}</bdi> · إعلان النشر <bdi>{{ $loss->notice?->reference }}</bdi></p>
+            <p>العدد {{ $loss->notice?->issue_number }} · الصفحة {{ $loss->notice?->page_number }} · <bdi>{{ $loss->notice?->published_on }}</bdi></p>
+            @if(app(\App\Services\LostCardWorkflow::class)->canOperate(auth()->user()))
+                <a href="{{ route(auth()->user()->role.'.lost-cards.show', ['case' => $loss, 'tools' => 'lost-cards']) }}">فتح ملف البلاغ والنشر</a>
+            @endif
+        </section>
+    @endif
+@endif

@@ -15,6 +15,7 @@
         $fingerprint = $fingerprint && !array_diff(['identity_card_forms', 'identity_fingerprint_operations'], $tables);
     }
     $simulation = \App\Services\Integrations\LocalCivilRegistryProvider::canSimulate($operator);
+    $lostCardAccess = !$restricted && app(\App\Services\LostCardWorkflow::class)->canOperate($operator);
     $activationRegistry = !$restricted && request()->routeIs('employee.accounts.show')
         && \App\Services\Registration\MockCivilSystems::enabled()
         && ($citizen->identity_path ?? null) === 'no_identity' && ($visit->workflow ?? null) === 'linked_mock'
@@ -32,6 +33,14 @@
 @push('scripts')
 <script src="{{ asset('js/operations-tools.js') }}?v={{ filemtime(public_path('js/operations-tools.js')) }}" defer></script>
 @endpush
+@if($fingerprint)
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/simulation-modals.css') }}?v={{ filemtime(public_path('css/simulation-modals.css')) }}">
+@endpush
+@push('scripts')
+<script src="{{ asset('js/simulation-modals.js') }}?v={{ filemtime(public_path('js/simulation-modals.js')) }}" defer></script>
+@endpush
+@endif
 <button type="button" class="operations-tools-launcher" data-ops-open="home" aria-controls="operations-tools" aria-expanded="false">
     المحاكاة والأنظمة المتكاملة
 </button>
@@ -67,6 +76,13 @@
                 @if($simulation)
                     <button type="button" data-ops-view-button="civil-check">محاكاة التحقق من السجل المدني</button>
                 @endif
+                @if($lostCardAccess)
+                    @if(!empty($lostCardCase))
+                        <button type="button" data-ops-view-button="lost-cards">محاكاة الشرطة وصحيفة الثورة</button>
+                    @else
+                        <a href="{{ route($operator->role.'.lost-cards.index') }}">محاكاة الشرطة وصحيفة الثورة · بلاغات الفقد</a>
+                    @endif
+                @endif
                 @if($activationRegistry)
                     <button type="button" data-ops-view-button="activation-registry">مطابقة الأسرة وسجل الميلاد للطلب</button>
                 @endif
@@ -84,7 +100,7 @@
                     @endif
                 </div>
             @endif
-            @if(!$adminTools && !$verify && !$demoRegistry && !$fingerprint && !$simulation && !$attestations && !$activationRegistry)
+            @if(!$adminTools && !$verify && !$demoRegistry && !$fingerprint && !$simulation && !$attestations && !$activationRegistry && !$lostCardAccess)
                 <p>لا توجد أدوات محاكاة أو تكامل متاحة بصلاحياتك الحالية.</p>
             @endif
         </div>
@@ -117,6 +133,9 @@
         @endif
         @if($simulation)
             @include('components.civil-registry-simulation')
+        @endif
+        @if($lostCardAccess && !empty($lostCardCase))
+            @include('lost-cards.panel')
         @endif
         @if($fingerprint)
             <section data-ops-view="fingerprint" data-ops-fingerprint="{{ route('identity-workflow.reception', [], false) }}" hidden>

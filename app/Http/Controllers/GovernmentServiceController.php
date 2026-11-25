@@ -57,6 +57,9 @@ class GovernmentServiceController extends Controller
 
     public function start(Request $request, GovernmentService $service, ServiceEligibility $eligibility): Response|\Illuminate\Http\RedirectResponse
     {
+        if ($service->code === 'identity-lost' && \App\Services\LostCardWorkflow::enabled()) {
+            return redirect()->route('citizen.lost-cards.index');
+        }
         $report = $eligibility->evaluate($request->user(), $service);
         $reasons = $report->reasons();
         if ($service->code === 'identity-renewal' && ! $reasons) {

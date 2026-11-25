@@ -125,6 +125,7 @@
   }
 
   async function loadFingerprint(url, message = '') {
+    receptionUrl = url;
     fingerprintLoad?.abort();
     const controller = new AbortController();
     fingerprintLoad = controller;
@@ -152,8 +153,54 @@
     }
   }
 
+  async function loadFingerprintDevice(url) {
+    fingerprintLoad?.abort();
+    const controller = new AbortController();
+    fingerprintLoad = controller;
+    fingerprintUrl = url;
+    fingerprintContent.setAttribute('aria-busy', 'true');
+    fingerprintStatus.textContent = 'جارٍ تحميل جهاز البصمة…';
+    try {
+      const response = await fetch(url, {
+        headers: { 'X-Operations-Tools': 'fingerprint-device' },
+        redirect: 'error', cache: 'no-store', signal: controller.signal,
+      });
+      if (!response.ok) throw new Error('Unable to load device');
+      const fragment = new DOMParser().parseFromString(await response.text(), 'text/html')
+        .querySelector('[data-ops-fingerprint-fragment]');
+      if (!fragment) throw new Error('Invalid device fragment');
+      if (fingerprintLoad !== controller) return;
+      fingerprintContent.replaceChildren(fragment);
+      fingerprintStatus.textContent = '';
+      // تفعيل simulation-modals لعناصر الـ dialog الجديدة داخل اللوحة
+      if (typeof window.initSimModals === 'function') window.initSimModals(fingerprintContent);
+    } catch (error) {
+      if (fingerprintLoad === controller && error.name !== 'AbortError') {
+        fingerprintStatus.textContent = 'تعذر تحميل جهاز البصمة.';
+      }
+    } finally {
+      if (fingerprintLoad === controller) fingerprintContent.removeAttribute('aria-busy');
+    }
+  }
+
   if (fingerprintContent) {
+    let receptionUrl;
+
     fingerprintContent.addEventListener('click', event => {
+      // زر "الانتقال لجهاز البصمة"
+      const deviceBtn = event.target.closest('[data-ops-load-device]');
+      if (deviceBtn) {
+        event.preventDefault();
+        loadFingerprintDevice(new URL(deviceBtn.dataset.opsLoadDevice, location.origin));
+        return;
+      }
+      // زر "العودة إلى الاستقبال" من صفحة الجهاز
+      const backBtn = event.target.closest('[data-ops-fingerprint-back]');
+      if (backBtn) {
+        event.preventDefault();
+        if (receptionUrl) loadFingerprint(receptionUrl);
+        return;
+      }
       const link = event.target.closest('a[href]');
       if (!link || link.target || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
       const url = new URL(link.href, location.origin);

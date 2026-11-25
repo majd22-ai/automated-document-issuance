@@ -23,7 +23,7 @@
             @endif
             <div class="workflow-actions">
                 @if($canRecord)
-                    <a class="btn btn-outline" href="{{ route('identity-workflow.device', $form) }}" target="_blank" rel="noopener">الانتقال لجهاز البصمة</a>
+                    <button type="button" class="btn btn-outline" data-ops-load-device="{{ route('identity-workflow.device', $form, false) }}">الانتقال لجهاز البصمة</button>
                 @endif
                 @can('administer', $form)
                     <a class="btn btn-outline" href="{{ route('identity-workflow.administration.show', $form) }}" target="_blank" rel="noopener">إدارة الطلب</a>

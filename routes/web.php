@@ -276,12 +276,20 @@ Route::middleware('auth')->prefix('simulation/identity-attestations')->name('sim
     Route::post('/{attestation}/decision', [IdentityAttestationController::class, 'decide'])->middleware('throttle:20,1')->name('decide');
 });
 
+Route::get('/citizen/lost-cards', [\App\Http\Controllers\LostCardController::class, 'index'])
+    ->middleware('auth')->name('citizen.lost-cards.index');
+
 Route::middleware(['auth', 'role:citizen'])
     ->prefix('citizen')
     ->name('citizen.')
     ->group(function () {
 
         Route::get('/identity-renewal/start', [\App\Http\Controllers\IdentityRenewalController::class, 'start'])->name('identity-renewal.start');
+        Route::post('/lost-cards', [\App\Http\Controllers\LostCardController::class, 'report'])->middleware('throttle:10,1')->name('lost-cards.report');
+        Route::get('/lost-cards/{case}', [\App\Http\Controllers\LostCardController::class, 'show'])->name('lost-cards.show');
+        Route::get('/lost-cards/{case}/replacement', [\App\Http\Controllers\LostCardController::class, 'form'])->name('lost-cards.form');
+        Route::post('/lost-cards/{case}/replacement', [\App\Http\Controllers\LostCardController::class, 'submit'])->middleware('throttle:10,1')->name('lost-cards.submit');
+        Route::get('/lost-cards/{case}/verify/{agency}', [\App\Http\Controllers\LostCardController::class, 'verify'])->whereIn('agency', ['police', 'newspaper'])->middleware('throttle:30,1')->name('lost-cards.verify');
         Route::get('/identity-renewal/{form}', [\App\Http\Controllers\IdentityRenewalController::class, 'show'])->name('identity-renewal.show');
         Route::post('/identity-renewal/{form}', [\App\Http\Controllers\IdentityRenewalController::class, 'save'])->middleware('throttle:30,1')->name('identity-renewal.save');
         Route::get('/identity-card', [IdentityCardFormController::class, 'index'])->name('identity-card.index');
@@ -469,5 +477,17 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/audit-logs/export', [OperationalReportController::class, 'exportAudit'])->middleware('throttle:6,1')->name('audit-logs.export');
 
     });
+
+foreach (['admin', 'employee'] as $staffRole) {
+    Route::middleware(['auth', 'role:'.$staffRole])->prefix($staffRole.'/lost-cards')->name($staffRole.'.lost-cards.')
+        ->controller(\App\Http\Controllers\LostCardController::class)->group(function () {
+            Route::get('/', 'staff')->name('index');
+            Route::get('/{case}', 'staff')->name('show');
+            Route::post('/{case}/police', 'police')->middleware('throttle:20,1')->name('police');
+            Route::post('/{case}/notice', 'notice')->middleware('throttle:20,1')->name('notice');
+            Route::post('/{case}/publish', 'publish')->middleware('throttle:20,1')->name('publish');
+            Route::get('/{case}/verify/{agency}', 'verify')->whereIn('agency', ['police', 'newspaper'])->middleware('throttle:30,1')->name('verify');
+        });
+}
 
 // نهاية الملف — لا تضف وسم إغلاق PHP

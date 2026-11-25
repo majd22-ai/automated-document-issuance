@@ -173,6 +173,23 @@ class ServiceEligibility
             $report->add($check);
         }
         if ($request) {
+            if ($service->code === LostCardWorkflow::SERVICE && LostCardWorkflow::enabled()) {
+                $loss = \App\Models\LostCardCase::where('application_id', $request->id)->first();
+                if ($loss) {
+                    $data = $request->request_data ?? [];
+                    $matches = $loss->ready()
+                        && LostCardWorkflow::holderName($data) === \Illuminate\Support\Str::squish($loss->holder_name)
+                        && ($data['national_id'] ?? null) === $loss->national_id
+                        && ($data['lost_card_number'] ?? null) === $loss->card_number
+                        && ($data['police_reference'] ?? null) === $loss->police->reference
+                        && ($data['notice_reference'] ?? null) === $loss->notice->reference
+                        && (! $loss->previous_issued_on || ($data['previous_issued_on'] ?? null) === $loss->previous_issued_on)
+                        && ! empty($data['previous_issued_on']) && $data['previous_issued_on'] <= $loss->lost_on;
+                    $report->add(new RequirementResult('lost_card_evidence', 'بلاغ الفقد وإعلان النشر',
+                        $matches ? State::Met : State::Unmet,
+                        $matches ? 'بلاغ الشرطة وإعلان النشر ساريان ومتطابقان مع بيانات الطلب.' : 'أدلة الفقد أو بيانات البطاقة لا تطابق الطلب.'));
+                }
+            }
             foreach (app(\App\Services\Identity\InitialIdentityReview::class)->requirements($request, $target) as $check) {
                 $report->add($check);
             }

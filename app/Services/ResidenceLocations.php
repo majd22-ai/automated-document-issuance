@@ -36,7 +36,21 @@ class ResidenceLocations
                 ->map(fn ($row) => ['id' => (string) $row->id, 'name' => $row->name,
                     'districts' => $row->districts->map(fn ($district) => ['id' => (string) $district->id, 'name' => $district->name])->all()])->all();
         }
-        return json_decode(file_get_contents(database_path('data/residence-divisions/'.$country.'.json')), true, flags: JSON_THROW_ON_ERROR);
+        $governorates = json_decode(file_get_contents(database_path('data/residence-divisions/'.$country.'.json')), true, flags: JSON_THROW_ON_ERROR);
+        if ($country === 'SA') {
+            $labels = [
+                'SA.02' => 'الباحة', 'SA.05' => 'المدينة المنورة', 'SA.06' => 'المنطقة الشرقية',
+                'SA.08' => 'القصيم', 'SA.10' => 'الرياض', 'SA.11' => 'عسير',
+                'SA.13' => 'حائل', 'SA.14' => 'مكة المكرمة', 'SA.15' => 'الحدود الشمالية',
+                'SA.16' => 'نجران', 'SA.17' => 'جازان', 'SA.19' => 'تبوك', 'SA.20' => 'الجوف',
+            ];
+            foreach ($governorates as &$governorate) {
+                $governorate['label'] = $labels[$governorate['id']] ?? $governorate['name'];
+            }
+            unset($governorate);
+        }
+
+        return $governorates;
     }
 
     public function errors(array $data): array

@@ -33,6 +33,12 @@ class CitizenNotificationController extends Controller
     public function open(Request $request, string $id)
     {
         $notification = $request->user()->notifications()->findOrFail($id);
+        if (($notification->data['kind'] ?? null) === 'lost_card_ready') {
+            $case = \App\Models\LostCardCase::where('user_id', $request->user()->id)->findOrFail($notification->data['lost_card_case_id'] ?? 0);
+            $notification->markAsRead();
+
+            return redirect()->route('citizen.lost-cards.show', $case);
+        }
         if (($notification->data['kind'] ?? '') === 'request_activity' && isset($notification->data['identity_form_id'])) {
             $form = $request->user()->identityCardForms()->findOrFail($notification->data['identity_form_id']);
             abort_if($notification->request_id && $form->citizen_service_request_id !== $notification->request_id, 404);

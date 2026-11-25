@@ -1,0 +1,50 @@
+.lost-card-page {
+    max-width: 66rem;
+    overflow-wrap: anywhere;
+}
+
+.lost-card-form,
+.lost-card-steps {
+    padding: clamp(1rem, 3vw, 1.75rem);
+    margin-block: 1rem;
+}
+
+.lost-card-form fieldset {
+    min-inline-size: 0;
+    margin: 0 0 1rem;
+    padding: 1rem;
+    border: 1px solid #d6dfe3;
+    border-radius: .6rem;
+}
+
+.lost-card-form legend {
+    padding-inline: .45rem;
+    font-weight: 700;
+    color: #164a57;
+}
+
+.lost-card-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: .8rem;
+}
+
+.lost-card-form label,
+.lost-card-form .form-control {
+    display: block;
+}
+
+.lost-card-form .form-control {
+    width: 100%;
+    margin-block-start: .25rem;
+}
+
+.lost-card-steps ol {
+    margin: 0 0 1rem;
+    padding-inline-start: 1.5rem;
+}
+
+.lost-card-steps li {
+    padding-block: .65rem;
+    border-block-end: 1px solid #e6edef;
+}

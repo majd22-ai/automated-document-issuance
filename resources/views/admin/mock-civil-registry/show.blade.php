@@ -14,8 +14,23 @@
             @if(!empty($portraitAvailable))
                 <details>
                     <summary class="btn btn-outline">عرض الصورة</summary>
-                    <img src="{{ route('admin.mock-systems.portrait', $person->id, false) }}" alt="الصورة التجريبية لـ {{ $person->name }}"
-                         loading="lazy" style="display:block;width:min(100%, 20rem);height:auto;margin-block:.75rem">
+                    <div style="display:flex;align-items:flex-start;gap:.75rem;margin-block:.75rem;flex-wrap:wrap">
+                        <img src="{{ route('admin.mock-systems.portrait', $person->id, false) }}"
+                             alt="الصورة التجريبية لـ {{ $person->name }}"
+                             id="portrait-img-{{ $person->id }}"
+                             loading="lazy"
+                             style="display:block;width:min(100%, 20rem);height:auto">
+                        <button type="button"
+                                class="btn btn-outline portrait-copy-button"
+                                data-copy-portrait="{{ route('admin.mock-systems.portrait', $person->id, false) }}">
+                            <span aria-live="polite">نسخ الصورة</span>
+                        </button>
+                        <button type="button" class="btn btn-outline portrait-copy-button"
+                                data-download-portrait="{{ route('admin.mock-systems.portrait', $person->id, false) }}"
+                                data-filename="portrait-{{ $person->id }}.png">
+                            <span aria-live="polite">تنزيل الصورة</span>
+                        </button>
+                    </div>
                 </details>
             @endif
         </div>

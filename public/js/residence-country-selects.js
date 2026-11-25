@@ -21,7 +21,7 @@
             item.select.hidden = false;
             item.select.disabled = !rows.length;
             item.select.name = item.name;
-            item.select.replaceChildren(new Option(placeholder, ''), ...rows.map(row => new Option(row.name, row.name)));
+            item.select.replaceChildren(new Option(placeholder, ''), ...rows.map(row => new Option(row.label ?? row.name, row.name)));
             if (selected && !rows.some(row => row.name === selected)) {
                 item.select.add(new Option(selected + ' — قيمة محفوظة؛ راجع الاختيار', selected));
             }
@@ -68,7 +68,7 @@
             status.textContent = 'جارٍ تحميل تقسيمات دولة الإقامة…';
             try {
                 if (!cache.has(code)) {
-                    cache.set(code, fetch(root.dataset.residenceUrl.replace(/ZZ$/, code), {headers: {'Accept': 'application/json'}})
+                    cache.set(code, fetch(root.dataset.residenceUrl.replace(/ZZ$/, code), {cache: 'no-cache', headers: {'Accept': 'application/json'}})
                         .then(response => { if (!response.ok) throw new Error('locations'); return response.json(); })
                         .catch(error => { cache.delete(code); throw error; }));
                 }

@@ -12,6 +12,8 @@
 .operations-tools [data-attestation-count]{margin-inline-start:.4rem;padding-inline:.45rem;border-radius:1rem;background:#e5f2ee}
 .operations-tools [data-ops-registry-content]>.ops-section{padding:0}
 .operations-tools [data-ops-registry-content] .ops-page-head{margin-top:1rem}
+.ops-content .portrait-copy-button,.operations-tools .portrait-copy-button{align-self:flex-start;min-height:32px;padding:.25rem .65rem;font-size:.8rem;line-height:1.35;white-space:nowrap}
+.ops-content .portrait-copy-button[data-copy-state="success"],.operations-tools .portrait-copy-button[data-copy-state="success"]{color:#166534;border-color:#479266;background:#eef8f0}
 .operations-tools .registry-search{padding:clamp(.85rem,2vw,1.25rem);margin-block:.9rem}
 .operations-tools .registry-search .ops-grid{margin:0;align-items:end;grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr));gap:.75rem}
 .operations-tools .registry-search-query{grid-column:1/-1}

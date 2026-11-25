@@ -362,4 +362,84 @@
     initSingleAttestationModals();
   });
 
+  /**
+   * initSimModals — تُصدَّر للنافذة لتفعيل البصمة بعد حقن الـ fragment ديناميكياً
+   * @param {Element} ctx — الحاوية التي تحتوي على #sim-fp-modal و [data-fp-open]
+   */
+  window.initSimModals = function initSimModals(ctx) {
+    const modal   = ctx.querySelector('#sim-fp-modal');
+    const trigger = ctx.querySelector('[data-fp-open]');
+    if (!modal || !trigger) return;
+
+    const fpSvg      = modal.querySelector('.sim-fingerprint-svg');
+    const fpState    = modal.querySelector('#sim-fp-state');
+    const fpProgress = modal.querySelector('#sim-fp-progress');
+    const fpResult   = modal.querySelector('#sim-fp-result');
+    const fpForm     = modal.querySelector('form[data-fp-form]');
+    const startBtn   = modal.querySelector('[data-fp-start]');
+    let running = false;
+
+    trigger.addEventListener('click', () => openModal(modal));
+    modal.querySelectorAll('[data-sim-close]').forEach(btn => btn.addEventListener('click', () => {
+      if (!running) closeModal(modal);
+    }));
+
+    if (!fpForm) return;
+
+    fpForm.addEventListener('submit', async (e) => {
+      // منع التعامل من operations-tools.js (data-fingerprint-action) لأن simulation-modals.js يتولى العرض
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      if (running || startBtn?.disabled) return;
+      running = true;
+      if (startBtn) startBtn.disabled = true;
+      if (fpSvg)     { fpSvg.classList.remove('is-success','is-failure'); fpSvg.classList.add('is-running'); }
+      if (fpState)   fpState.textContent = 'جارٍ تشغيل جهاز بصمة الأصابع...';
+      if (fpProgress) fpProgress.value = 25;
+      if (fpResult)  fpResult.replaceChildren();
+
+      const formData = new FormData(fpForm);
+      let completed = false;
+
+      try {
+        const { ok, json } = await postForm(fpForm.action, formData);
+        if (!ok) {
+          const msg = extractErrors(json);
+          if (fpSvg)   { fpSvg.classList.remove('is-running'); fpSvg.classList.add('is-failure'); }
+          if (fpState) fpState.textContent = 'فشلت عملية البصمة.';
+          if (fpResult) showFailure(fpResult, 'خطأ في التسجيل', msg);
+          if (fpProgress) fpProgress.value = 0;
+        } else {
+          completed = true;
+          if (fpProgress) fpProgress.value = 100;
+          const success = json.result === 'success';
+          if (fpSvg) { fpSvg.classList.remove('is-running'); fpSvg.classList.add(success ? 'is-success' : 'is-failure'); }
+          if (fpState) fpState.textContent = success ? 'تمّ التقاط بصمة الأصابع بنجاح' : 'فشل التقاط البصمة — يمكن إعادة المحاولة';
+          if (fpResult) {
+            if (success) {
+              showSuccess(fpResult, 'تمّ تسجيل البصمة', `المرجع: ${json.reference || '—'} | النتيجة: ${json.result_label || '—'}`);
+            } else {
+              showFailure(fpResult, 'لم تنجح عملية البصمة', `${json.result_label || ''} — ${json.error_detail || ''}`);
+            }
+            // زر العودة داخل اللوحة
+            const backBtn = el('button', { type: 'button', class: 'sim-btn sim-btn-outline', 'data-ops-fingerprint-back': '', style: 'margin-top:12px;display:inline-flex' }, 'العودة إلى الاستقبال');
+            fpResult.append(backBtn);
+          }
+        }
+      } catch {
+        if (fpSvg)   { fpSvg.classList.remove('is-running'); fpSvg.classList.add('is-failure'); }
+        if (fpState) fpState.textContent = 'خطأ في الاتصال. يرجى المحاولة مجدداً.';
+        if (fpResult) showFailure(fpResult, 'خطأ في الاتصال', 'تعذّر الوصول إلى الخادم، تحقق من الشبكة وأعد المحاولة.');
+        if (fpProgress) fpProgress.value = 0;
+      } finally {
+        running = false;
+        if (fpSvg) fpSvg.classList.remove('is-running');
+        if (startBtn) {
+          startBtn.disabled = completed;
+          startBtn.textContent = completed ? 'تمّ التسجيل' : 'إعادة المحاولة';
+        }
+      }
+    });
+  };
+
 })();

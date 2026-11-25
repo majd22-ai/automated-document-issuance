@@ -133,6 +133,9 @@
   @include('components.public-footer')
 
   @stack('scripts')
+  @if($operationsWorkspace && auth()->user()->role === 'admin')
+    <script src="{{ asset('js/portrait-copy.js') }}?v={{ filemtime(public_path('js/portrait-copy.js')) }}" defer></script>
+  @endif
   @if($operationsWorkspace)<script src="{{ asset('js/operations-workspace.js') }}?v={{ filemtime(public_path('js/operations-workspace.js')) }}" defer></script>@endif
   @auth<script src="{{ asset('js/notification-count.js') }}?v={{ filemtime(public_path('js/notification-count.js')) }}" data-count-url="{{ route('notifications.unread-count') }}" defer></script>@endauth
 
