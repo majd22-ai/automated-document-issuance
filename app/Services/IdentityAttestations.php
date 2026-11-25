@@ -35,6 +35,9 @@ class IdentityAttestations
             throw ValidationException::withMessages(['neighborhood' => 'يجب أن يطابق حي السكن في الاستمارة الحي المسؤول عنه العاقل. راجع البيانات قبل طلب المصادقة.']);
         }
         if ($form) {
+            if (filled($form->data['residence_official_id'] ?? null) && (int) $form->data['residence_official_id'] !== $official->id) {
+                throw ValidationException::withMessages(['official_id' => 'اختر العاقل المرتبط بالحي المحفوظ في عنوان الإقامة.']);
+            }
             foreach (['residence_governorate' => $official->district->governorate->name, 'residence_district' => $official->district->name] as $field => $name) {
                 if (filled($form->data[$field] ?? null) && $normalize($form->data[$field]) !== $normalize($name)) {
                     throw ValidationException::withMessages(['district_id' => 'المحافظة والمديرية يجب أن تطابقا عنوان الإقامة المحفوظ في الاستمارة.']);

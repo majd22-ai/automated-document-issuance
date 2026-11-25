@@ -6,7 +6,9 @@ use App\Services\Integrations\LocalCivilRegistryProvider;
 use App\Services\MockCivilRegistry;
 use App\Services\Oversight\AuditTrail;
 use App\Services\Registration\MockCivilSystems;
+use App\Services\Registration\MockPortraits;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class CivilRegistrySimulationController extends Controller
@@ -48,6 +50,21 @@ class CivilRegistrySimulationController extends Controller
             ->header('Cache-Control', 'no-store, private');
     }
 
+    public function portrait(Request $request, int $person, MockPortraits $portraits)
+    {
+        abort_unless(LocalCivilRegistryProvider::enabled() && MockCivilSystems::enabled(), 404);
+        abort_unless(LocalCivilRegistryProvider::canSimulate($request->user()), 403);
+        $record = DB::table('mock_civil_persons')->find($person);
+        $image = $record ? $portraits->viewableImage($record) : null;
+        abort_unless($image, 404);
+
+        app(AuditTrail::class)->record('mock_civil_registry.simulate_portrait', 'mock_civil_person', $person, $request->user());
+
+        return response()->file($image['path'], [
+            'Content-Type' => $image['mime'], 'Cache-Control' => 'no-store, private', 'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     private function findRecord(string $input, bool $suggest, MockCivilRegistry $registry, LocalCivilRegistryProvider $provider): array
     {
         $term = preg_replace('/\s+/u', ' ', trim($input));
@@ -66,7 +83,9 @@ class CivilRegistrySimulationController extends Controller
         }
         $records = $available ? $registry->simulationRecords($term, $byNumber) : collect();
         if ($records->isNotEmpty()) {
-            return ['outcome' => 'match', 'civil_records' => $records];
+            return ['outcome' => 'match', 'civil_records' => $records->map(fn ($record) => $record + [
+                'portrait_url' => route('integrations.civil-registry-demo.portrait', $record['person']->id, false),
+            ])];
         }
 
         foreach ($fixtures as $number => $record) {

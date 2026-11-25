@@ -11,7 +11,9 @@
     @foreach(['conditions' => 'الشروط والمتطلبات', 'required_documents' => 'المستندات المطلوبة'] as $field => $label)
       @php
         $documents = $service->{$field} ?? [];
-        if ($field === 'required_documents' && $service->document_type === 'identity') {
+        if ($field === 'required_documents' && $service->code === 'identity-first-issue') {
+          $documents = ['تُرفع الصورة الشخصية ضمن الخطوة الرابعة من الاستمارة الإلكترونية.'];
+        } elseif ($field === 'required_documents' && $service->document_type === 'identity') {
           $identitySections = array_values(config('civil_registry_guides.identity.sections'));
           $documents = $identitySections[$service->operation === 'issue' ? 0 : 1];
         }

@@ -62,6 +62,9 @@ Route::post('/integrations/civil-registry-demo', [CivilRegistrySimulationControl
 Route::get('/integrations/civil-registry-demo', [CivilRegistrySimulationController::class, 'preview'])
     ->middleware(['auth', 'role:admin,employee'])
     ->name('integrations.civil-registry-demo');
+Route::get('/integrations/civil-registry-demo/{person}/portrait', [CivilRegistrySimulationController::class, 'portrait'])
+    ->middleware(['auth', 'role:admin,employee', 'throttle:60,1'])->whereNumber('person')
+    ->name('integrations.civil-registry-demo.portrait');
 
 Route::middleware(['demo.registry.audit', 'role:employee'])
     ->prefix('employee/demo-civil-registry')->name('employee.demo-civil-registry.')
@@ -141,7 +144,7 @@ Route::get('/appointments/book', function () {
 // الاستعلام والتواصل — واجهات تجريبية
 // =====================================================
 
-Route::get('/inquiry/request', fn () => redirect()->route(auth()->user()->role === 'employee' ? 'employee.tracking.index' : (auth()->user()->role === 'admin' ? 'admin.dashboard' : 'citizen.applications.index')))->middleware('auth')->name('inquiry.reference');
+Route::get('/inquiry/request', [ApplicationTrackingController::class, 'inquiry'])->middleware(['auth', 'throttle:60,1'])->name('inquiry.reference');
 Route::get('/inquiry/my-requests', fn () => redirect()->route(auth()->user()->role === 'employee' ? 'employee.tracking.index' : (auth()->user()->role === 'admin' ? 'admin.dashboard' : 'citizen.applications.index')))->middleware('auth')->name('inquiry.mine');
 
 Route::view('/contact', 'public.contact', [
@@ -434,12 +437,15 @@ Route::middleware(['auth', 'role:admin'])
     ->group(function () {
 
         Route::get('/neighborhood-officials', [NeighborhoodOfficialController::class, 'index'])->name('neighborhood-officials.index');
+        Route::get('/neighborhood-officials/suggestions', [NeighborhoodOfficialController::class, 'suggestions'])->middleware('throttle:90,1')->name('neighborhood-officials.suggestions');
         Route::get('/mock-systems', [\App\Http\Controllers\MockActivationController::class, 'systems'])->name('mock-systems.index');
         Route::get('/mock-systems/{person}/portrait', [\App\Http\Controllers\MockActivationController::class, 'registryPortrait'])->whereNumber('person')->name('mock-systems.portrait');
         Route::get('/mock-civil-registry', [\App\Http\Controllers\MockCivilRegistryController::class, 'index'])->name('mock-civil-registry.index');
         Route::get('/mock-civil-registry/{person}', [\App\Http\Controllers\MockCivilRegistryController::class, 'show'])->whereNumber('person')->name('mock-civil-registry.show');
         Route::get('/simulations', [\App\Http\Controllers\SimulationCenterController::class, 'index'])->name('simulations.index');
         Route::post('/neighborhood-officials', [NeighborhoodOfficialController::class, 'store'])->middleware('throttle:20,1')->name('neighborhood-officials.store');
+        Route::post('/neighborhood-officials/generate-demo', [NeighborhoodOfficialController::class, 'generate'])->middleware('throttle:5,1')->name('neighborhood-officials.generate');
+        Route::post('/neighborhood-officials/{official}/demo-password', [NeighborhoodOfficialController::class, 'demoPassword'])->middleware('throttle:10,1')->name('neighborhood-officials.demo-password');
         Route::patch('/neighborhood-officials/{official}', [NeighborhoodOfficialController::class, 'update'])->name('neighborhood-officials.update');
 
         Route::get('/dashboard', [OperationalReportController::class, 'index'])->name('dashboard');

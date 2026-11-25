@@ -2,22 +2,31 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Registration\MockCivilSystems;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    public function edit(Request $request): View
+    public function edit(Request $request): Response
     {
-        return view('profile.edit', ['user' => $request->user()]);
+        $user = $request->user();
+        $civilRecord = $user->role === 'citizen' && $user->mock_person_id && MockCivilSystems::enabled()
+            ? DB::table('mock_civil_persons')->where('id', $user->mock_person_id)
+                ->first(['name', 'national_id', 'birth_date', 'birth_place', 'father_name', 'mother_name', 'phone'])
+            : null;
+
+        return response()->view('profile.edit', compact('user', 'civilRecord'))->header('Cache-Control', 'no-store, private');
     }
 
     public function update(Request $request): RedirectResponse
     {
         $user = $request->user();
+        abort_if($user->role === 'citizen', 403, 'بيانات الملف الشخصي للمواطن للعرض فقط.');
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],

@@ -77,7 +77,11 @@ class IdentityCardForms
                     throw ValidationException::withMessages(['attestation' => 'يجب اعتماد مصادقة عاقل الحارة في الخطوة السادسة قبل المتابعة.']);
                 }
                 if ($step <= 3) {
-                    $form->data = array_replace($form->data ?? [], $input['data'] ?? []);
+                    $data = $input['data'] ?? [];
+                    if ($step === 3 && array_key_exists('neighborhood', $data)) {
+                        $data += ['residence_official_id' => null];
+                    }
+                    $form->data = array_replace($form->data ?? [], $data);
                 }
                 if ($step === 4 && $photo) {
                     $this->photo($form, $photo, $newPath);
@@ -279,6 +283,11 @@ class IdentityCardForms
                 throw ValidationException::withMessages(['photo' => 'الصورة الحالية لا تستوفي الحجم أو الأبعاد أو الصيغة المطلوبة؛ عد لمرحلة الصورة واستبدلها.']);
             }
             app(PhotoQuality::class)->inspect(Storage::disk('attachments')->path($photo->storage_path));
+            $firstIssue = ! $form->isRenewal();
+            if ($firstIssue) {
+                $copy = ['attachment_id' => $photo->id, 'width_cm' => 4, 'height_cm' => 6];
+                $form->data = array_replace($form->data ?? [], ['photo_print_copies' => [$copy, $copy]]);
+            }
             if ($correction) {
                 $application = CitizenServiceRequest::whereKey($form->citizen_service_request_id)->lockForUpdate()->firstOrFail();
                 abort_unless($application->user_id === $actor->id && $application->government_service_id === $form->government_service_id
@@ -308,7 +317,9 @@ class IdentityCardForms
             }
             $submission = app(ServiceRequestSubmission::class);
             try {
-                $preview = $submission->preview($actor, $form->service, ['data' => $form->data]);
+                $preview = $submission->preview($actor, $form->service, [
+                    'data' => \Illuminate\Support\Arr::except($form->data, ['residence_official_id', 'photo_print_copies']),
+                ], firstIssueIntake: $firstIssue);
             } catch (ValidationException $exception) {
                 if (! array_key_exists('service', $exception->errors())) {
                     throw $exception;

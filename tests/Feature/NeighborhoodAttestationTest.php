@@ -7,6 +7,8 @@ use App\Models\NeighborhoodOfficial;
 use App\Models\ResidenceDistrict;
 use App\Models\ResidenceGovernorate;
 use App\Models\User;
+use App\Services\DemoNeighborhoods;
+use App\Services\ResidenceLocations;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -58,6 +60,72 @@ class NeighborhoodAttestationTest extends TestCase
         $this->actingAs($citizen)->get('/admin/neighborhood-officials')->assertForbidden();
         $this->getJson('/residence/districts/'.$official->district_id.'/officials')->assertOk()->assertJsonFragment(['phone' => $official->phone])->assertDontSee($official->national_id);
         $this->actingAs(User::factory()->create(['role' => 'admin']))->get('/admin/neighborhood-officials')->assertOk();
+    }
+
+    public function test_demo_directory_generation_and_sabeen_attestation_use_the_same_official(): void
+    {
+        [$citizen, $form, $manual] = $this->fixture();
+        $generate = route('admin.neighborhood-officials.generate');
+        $this->actingAs($citizen)->post($generate)->assertForbidden();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)->post($generate)->assertRedirect();
+        $this->post($generate)->assertRedirect();
+        $this->assertSame(193, NeighborhoodOfficial::count());
+        $this->assertSame(192, User::where('email', 'like', '%'.DemoNeighborhoods::EMAIL_SUFFIX)->count());
+        $this->assertSame('Test neighborhood', $manual->fresh()->neighborhood);
+        foreach (['YE11' => 20, 'YE23' => 16, 'YE15' => 23] as $code => $total) {
+            $districts = ResidenceDistrict::whereHas('governorate', fn ($query) => $query->where('code', $code))
+                ->withCount('officials')->get();
+            $this->assertCount($total, $districts);
+            $this->assertSame([3], $districts->pluck('officials_count')->unique()->values()->all());
+        }
+        $district = ResidenceDistrict::where('code', DemoNeighborhoods::SABEEN)->firstOrFail();
+        $rows = $this->actingAs($citizen)->getJson(route('residence.officials', $district))->assertOk()->json();
+        $this->assertSame(DemoNeighborhoods::SABEEN_NEIGHBORHOODS, array_column($rows, 'neighborhood'));
+        $official = NeighborhoodOfficial::with('user')->findOrFail($rows[0]['id']);
+        $directory = route('admin.neighborhood-officials.index');
+        $suggestions = route('admin.neighborhood-officials.suggestions', ['q' => 'Test']);
+        $this->getJson($suggestions)->assertForbidden();
+        $this->actingAs($admin)->get($directory.'?q=Test%20official')
+            ->assertOk()->assertViewHas('officials', fn ($results) => $results->total() === 1 && $results->first()->is($manual));
+        $this->getJson($suggestions)->assertOk()->assertJsonPath('0.id', $manual->id)
+            ->assertJsonPath('0.name', $manual->full_name)->assertJsonCount(1);
+        $firstName = Str::before($official->full_name, ' ');
+        $this->getJson(route('admin.neighborhood-officials.suggestions', ['q' => $firstName]))
+            ->assertOk()->assertJsonPath('0.name', fn ($name) => str_starts_with($name, $firstName));
+        $this->get(route('admin.neighborhood-officials.index', ['q' => $firstName, 'official_id' => $official->id]))
+            ->assertOk()->assertViewHas('officials', fn ($results) => $results->total() === 1 && $results->first()->is($official));
+        $searchUrl = route('admin.neighborhood-officials.index', ['q' => $official->full_name]);
+        $passwordUrl = route('admin.neighborhood-officials.demo-password', $official);
+        $this->get($searchUrl)->assertOk()->assertSee($passwordUrl);
+        $this->from($searchUrl)->post($passwordUrl)
+            ->assertRedirect($searchUrl.'#demo-official-credentials')
+            ->assertSessionHas('demoNeighborhoodCredentials.username', $official->user->username);
+        $this->get($searchUrl)->assertSee('بيانات الدخول التجريبية لهذا العرض فقط');
+        $address = ['residence_country' => 'اليمن', 'residence_governorate' => 'أمانة العاصمة',
+            'residence_district' => 'السبعين', 'neighborhood' => $official->neighborhood, 'residence_official_id' => $official->id];
+        $locations = app(ResidenceLocations::class);
+        $this->assertSame([], $locations->errors($address));
+        $this->assertArrayHasKey('data.neighborhood', $locations->errors(array_replace($address, ['residence_official_id' => $manual->id])));
+        $official->forceFill(['is_active' => false])->save();
+        $this->assertArrayHasKey('data.neighborhood', $locations->errors($address));
+        $official->forceFill(['is_active' => true])->save();
+        $form->forceFill(['data' => array_replace($form->data, $address)])->save();
+        $request = $this->requestApproval([$citizen, $form, $official, [
+            'authority_type' => 'neighborhood', 'governorate_id' => $district->governorate_id,
+            'district_id' => $district->id, 'official_id' => $official->id, 'neighborhood' => $official->neighborhood,
+        ]]);
+        $this->assertSame($official->user_id, data_get($request->recipient_scope, 'employee_id'));
+        $this->assertSame(1, $official->user->notifications()->where('data->kind', 'neighborhood_attestation')->count());
+        $this->actingAs($official->user)->get(route('employee.neighborhood-attestations.show', $request))->assertOk();
+        $this->get(route('employee.lost-cards.index'))->assertForbidden();
+        $this->post(route('employee.neighborhood-attestations.confirm', $request), [
+            'method' => 'simulated_fingerprint', 'simulation_acknowledged' => 1,
+        ])->assertSessionHas('confirmation_token');
+        $this->post(route('employee.neighborhood-attestations.decide', $request), [
+            'decision' => 'approved', 'confirmation_token' => session('confirmation_token'),
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('approved', $request->fresh()->status);
     }
 
     public function test_citizen_requests_registered_official_and_only_assigned_employee_can_approve(): void

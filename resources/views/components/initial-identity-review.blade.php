@@ -2,9 +2,9 @@
     $initialTasks = app(\App\Services\Identity\InitialIdentityReview::class)->tasks($application->identityCardForm);
     $identityForm = $application->identityCardForm;
 @endphp
-<section aria-label="مراجعة الخطوات ٤ و٥ و٦">
+<section aria-label="المراجعة الأولية لمعاملة الهوية">
 <h2>ملف معاملة الهوية — المراجعة الأولية</h2>
-@if($identityForm->isRenewal())<p>ابدأ باستلام طلب التجديد، ثم راجع الصورة الحديثة وصورة البطاقة السابقة مقابل السجل. لا تُعد مراجعة البيانات التي تحقق منها النظام. القبول المبدئي يتطلب إكمال المهمتين.</p>@else<p>ابدأ باستلام الطلب، ثم راجع الصورة والشاهدين ومصادقة العاقل. البيانات التي تحقق منها النظام موجودة في التفاصيل أدناه. القبول المبدئي متاح بعد اكتمال المهام الثلاث.</p>@endif
+@if($identityForm->isRenewal())<p>ابدأ باستلام طلب التجديد، ثم راجع الصورة الحديثة وصورة البطاقة السابقة مقابل السجل. القبول المبدئي يتطلب إكمال المهمتين.</p>@else<p>ابدأ باستلام الطلب، ثم راجع الصورة الشخصية وبيانات الشاهدين. القبول المبدئي متاح بعد اكتمال المهام الثلاث.</p>@endif
 @if($application->status === 'submitted')
 @can('transition', [$application, \App\Enums\ServiceRequestStatus::UnderReview])
 <form method="POST" action="{{ route('employee.applications.decisions', $application) }}">@csrf
@@ -18,9 +18,20 @@
 <p><strong>{{ $task['approved'] ? 'مكتملة' : ($task['ready'] ? 'بانتظار قرار الموظف' : 'أدلة ناقصة أو غير متطابقة') }}</strong></p>
 <p>{{ $task['message'] }}</p>
 @if($task['issues'])<ul>@foreach($task['issues'] as $issue)<li>{{ $issue }}</li>@endforeach</ul>@endif
-@if($taskKey === 'photo' && $identityForm->photo?->intact())
-<a href="{{ route('citizen.identity-card.photo', $identityForm) }}" target="_blank" rel="noopener"><img src="{{ route('citizen.identity-card.photo', $identityForm) }}" alt="الصورة المرفوعة للمراجعة" style="max-width:220px;max-height:240px;object-fit:contain"></a>
-<p>قرار الموافقة هنا لجودة الصورة وملاءمتها؛ مطابقة صاحبها تُستكمل عند الحضور.</p>
+@if($taskKey === 'photo')
+    @if($identityForm->photo?->intact())
+        <x-review-image-dialog id="review-citizen-photo" :source="route('citizen.identity-card.photo', $identityForm)"
+                               title="الصورة الشخصية للمواطن" label="تكبير الصورة الشخصية" :thumbnail="true" />
+    @endif
+    <dl class="review-photo-identity">
+        <dt>اسم المواطن</dt><dd>{{ $registryIdentity?->name ?? (data_get($identityForm->data, 'applicant_name') ?: $application->citizen->name) }}</dd>
+        @if($nationalId = $registryIdentity?->national_id ?: $application->citizen->national_id)
+            <dt>الرقم الوطني</dt><dd><bdi>{{ $nationalId }}</bdi></dd>
+        @else
+            <dt>اسم المستخدم</dt><dd><bdi>{{ $application->citizen->username ?: 'غير مسجل' }}</bdi></dd>
+        @endif
+    </dl>
+    <p>قرار الموافقة هنا لجودة الصورة وملاءمتها. مطابقة صاحبها تُستكمل عند الحضور.</p>
 @endif
 @if($taskKey === 'previous_card')
 @php($renewalCopy = app(\App\Services\Identity\IdentityRenewals::class)->cardCopy($identityForm))
@@ -35,11 +46,12 @@
 </tbody></table></div>
 @php($witnessPosition = (int) substr($taskKey, -1))
 @if($identityForm->witnesses->firstWhere('position', $witnessPosition)?->selfieIntact())
-<a href="{{ route('citizen.identity-card.witness-selfie', [$identityForm, $witnessPosition]) }}" target="_blank" rel="noopener">عرض صورة الشاهد مع وثيقته</a>
+<x-review-image-dialog :id="'review-witness-photo-'.$witnessPosition"
+                       :source="route('citizen.identity-card.witness-selfie', [$identityForm, $witnessPosition])"
+                       :title="'صورة الشاهد '.$witnessPosition.' مع وثيقته'" label="عرض صورة الشاهد مع وثيقته" :side="true" />
 @else<p>صورة الشاهد مفقودة أو تعذر التحقق من سلامتها.</p>@endif
 <p>رقم التواصل في السجل: {{ $task['source_phone'] ?: 'غير متاح' }}. سجل الموظفين التجريبي منفصل، ولا توجد مطابقة تلقائية بين السجلين بالاسم.</p>
 @endif
-@if($taskKey === 'attestation')<p>مرجع المصادقة: {{ $task['reference'] ?: 'غير موجود' }} — وقت التحقق: {{ $task['verified_at'] ?: 'غير متاح' }}</p>@endif
 @if($task['decision'])<p>آخر قرار: {{ ($task['decision']->details['outcome'] ?? '') === 'approved' ? 'موافقة' : 'يحتاج استكمالًا' }} — {{ $task['decision']->actor?->name }} — {{ $task['decision']->decided_at?->format('Y-m-d H:i') }}</p>
 @if(!empty($task['decision']->details['note']))<p>{{ $task['decision']->details['note'] }}</p>@endif
 @if(!empty($task['decision']->details['consent_reference']))
@@ -52,10 +64,11 @@
 @if(str_starts_with($taskKey, 'witness_'))
 <label for="consent-method-{{ $taskKey }}">دليل موافقة الشاهد المستقل</label>
 <select class="form-control" name="consent_method" id="consent-method-{{ $taskKey }}"><option value="">اختر بعد التحقق من الدليل</option><option value="signed_statement">إقرار شهادة موقع تم فحصه</option><option value="independent_confirmation">تأكيد مستقل من الشاهد تم توثيقه</option></select>
-<label for="consent-reference-{{ $taskKey }}">مرجع الإقرار أو سجل التأكيد</label><input class="form-control" id="consent-reference-{{ $taskKey }}" name="consent_reference" maxlength="200">
+<label for="consent-reference-{{ $taskKey }}">مرجع الإقرار أو سجل التأكيد</label>
+<input class="form-control" id="consent-reference-{{ $taskKey }}" name="consent_reference" maxlength="200" value="{{ old('task') === $taskKey ? old('consent_reference') : '' }}">
 <p>هذا توثيق إداري من الموظف بعد فحص الدليل؛ النظام لا يرسل تأكيدًا للشاهد تلقائيًا. لا يُطلب حضوره افتراضيًا.</p>
 @endif
-<label for="note-{{ $taskKey }}">ملاحظة المراجعة أو سبب الاستكمال</label><textarea class="form-control" name="note" id="note-{{ $taskKey }}" maxlength="1000"></textarea>
+<label for="note-{{ $taskKey }}">ملاحظة المراجع أو سبب الاستكمال (اختياري)</label><textarea class="form-control" name="note" id="note-{{ $taskKey }}" maxlength="1000">{{ old('task') === $taskKey ? old('note') : '' }}</textarea>
 <label><input type="checkbox" name="confirmed" value="1"> أؤكد إتمام الفحص اليدوي للأدلة المذكورة</label>
 <div style="margin-block-start:1rem"><button class="btn btn-primary" name="outcome" value="approved" @disabled(!$task['ready'])>اعتماد مراجعة العنصر</button> <button class="btn btn-outline" name="outcome" value="correction_required">تسجيل نقص في العنصر</button></div>
 </form>

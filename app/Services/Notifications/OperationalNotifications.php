@@ -22,6 +22,19 @@ class OperationalNotifications
 {
     private ?User $actor = null;
 
+    public function identityFormSubmitted(CitizenServiceRequest $request): void
+    {
+        User::where('role', 'employee')->where('is_active', true)
+            ->whereHas('reviewPermissions', fn ($query) => $query
+                ->where('government_service_id', $request->government_service_id)->where('can_review', true))
+            ->eachById(function (User $employee) use ($request) {
+                if ($employee->can('viewReview', $request)) {
+                    $this->send($employee, 'identity-form-submitted:'.$request->id, 'request_activity',
+                        'طلب إصدار بطاقة شخصية جديد', 'قُدّمت استمارة جديدة لإصدار بطاقة شخصية. افتح الطلب لبدء المراجعة.', $request);
+                }
+            });
+    }
+
     public function asActor(User $actor, callable $work): mixed
     {
         $previous = $this->actor;

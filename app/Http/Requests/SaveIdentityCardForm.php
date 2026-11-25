@@ -73,7 +73,7 @@ class SaveIdentityCardForm extends FormRequest
             foreach (app(\App\Services\ResidencePhones::class)->errors($data, is_array($witnesses) ? $witnesses : []) as $key => $message) {
                 $validator->errors()->add($key, $message);
             }
-            if ((int) $this->input('step') === 3 && $this->input('action') === 'next' && ! $validator->errors()->any()) {
+            if ((int) $this->input('step') === 3 && ($this->input('action') === 'next' || $this->filled('data.residence_official_id')) && ! $validator->errors()->any()) {
                 foreach (app(\App\Services\ResidenceLocations::class)->errors($this->input('data', [])) as $key => $message) {
                     $validator->errors()->add($key, $message);
                 }
@@ -148,6 +148,10 @@ class SaveIdentityCardForm extends FormRequest
         $rules = ['step' => ['required', 'integer', 'between:1,7'], 'action' => ['required', 'in:save,next'], 'version' => ['required', 'integer', 'min:1']];
         if ($step >= 1 && $step <= 3) {
             $fields = array_keys(config('identity_card.fields.'.$step));
+            if ($step === 3) {
+                $fields[] = 'residence_official_id';
+                $rules['data.residence_official_id'] = ['nullable', 'integer', 'min:1'];
+            }
             $rules['data'] = ['present', 'array:'.implode(',', $fields)];
             $rules += self::dataRules($step, $complete);
         }

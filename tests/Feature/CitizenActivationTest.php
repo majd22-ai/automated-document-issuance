@@ -452,7 +452,7 @@ class CitizenActivationTest extends TestCase
     public function test_citizen_profile_cannot_set_activation_or_identity_verification(): void
     {
         $citizen = $this->citizen();
-        $this->actingAs($citizen)->patch('/profile', ['name' => $citizen->name, 'email' => $citizen->email, 'account_activated_at' => now()->toDateTimeString(), 'identity_verified_at' => now()->toDateTimeString()])->assertSessionHasErrors(['account_activated_at', 'identity_verified_at']);
+        $this->actingAs($citizen)->patch('/profile', ['name' => $citizen->name, 'email' => $citizen->email, 'account_activated_at' => now()->toDateTimeString(), 'identity_verified_at' => now()->toDateTimeString()])->assertForbidden();
         $this->assertNull($citizen->fresh()->account_activated_at);
     }
 

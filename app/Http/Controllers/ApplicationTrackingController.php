@@ -10,6 +10,34 @@ use Illuminate\Support\Facades\Gate;
 
 class ApplicationTrackingController extends Controller
 {
+    public function inquiry(Request $request)
+    {
+        $user = $request->user();
+        if ($user->role !== 'citizen') {
+            return redirect()->route($user->role === 'employee' ? 'employee.tracking.index'
+                : ($user->role === 'admin' ? 'admin.dashboard' : 'citizen.applications.index'));
+        }
+
+        $searching = $request->hasAny(['service', 'reference']);
+        $filters = $searching ? $request->validate([
+            'service' => ['required', 'integer', 'min:1'],
+            'reference' => ['required', 'string', 'max:100'],
+        ], ['service.required' => 'اختر الخدمة.', 'reference.required' => 'أدخل الرقم المرجعي للطلب.']) : [];
+        if ($searching) {
+            $application = $user->serviceRequests()->where('government_service_id', $filters['service'])
+                ->where('reference', strtoupper(trim($filters['reference'])))->first();
+            if ($application) {
+                return redirect()->route('citizen.applications.show', $application->id);
+            }
+        }
+
+        $previousServices = $user->serviceRequests()->select('government_service_id');
+        $services = GovernmentService::where(fn ($query) => $query->where('is_active', true)
+            ->orWhereIn('id', $previousServices))->orderBy('name')->get(['id', 'name']);
+
+        return response()->view('tracking.inquiry', compact('services', 'filters', 'searching'))->header('Cache-Control', 'no-store, private');
+    }
+
     public function index(Request $request)
     {
         $filters = $request->validate(['search' => ['nullable', 'string', 'max:100'], 'status' => ['nullable', 'in:submitted,under_review,requires_correction,accepted,approved,processing,completed,rejected,cancelled'],

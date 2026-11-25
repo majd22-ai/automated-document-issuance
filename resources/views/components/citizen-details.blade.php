@@ -5,7 +5,7 @@
     <div class="alert alert-danger" role="alert">{{ session('citizen_data_error') }}</div>
   @endif
   @if($missing)
-    <div class="alert alert-danger" role="alert">بياناتك غير مكتملة. الحقول المطلوبة: {{ implode('، ', $missing) }}. راجع الجهة المختصة لتصحيح الرقم الوطني، ويمكن تحديث بيانات الاتصال من الملف الشخصي.</div>
+    <div class="alert alert-danger" role="alert">بياناتك غير مكتملة. الحقول المطلوبة: {{ implode('، ', $missing) }}. راجع الجهة المختصة لتصحيح البيانات.</div>
   @else
     <p role="status">الحقول الأساسية المطلوبة مكتملة.</p>
   @endif

@@ -340,7 +340,7 @@ class IdentityCardWizardTest extends TestCase
         $this->assertNull($form->fresh()->submitted_at);
     }
 
-    public function test_review_explains_service_assessment_blockers_without_submitting_or_losing_draft(): void
+    public function test_step_seven_submits_without_separate_documents_and_notifies_authorized_reviewers(): void
     {
         $form = $this->draft();
         $this->ready($form);
@@ -351,27 +351,40 @@ class IdentityCardWizardTest extends TestCase
             'required_documents' => ['وثيقة اختبار غير معدة'],
             'verification_rules' => [],
         ]);
-        $this->get('/citizen/identity-card/'.$form->id.'?step=7')->assertOk();
+        $employee = User::factory()->create(['role' => 'employee']);
+        $other = User::factory()->create(['role' => 'employee']);
+        $admin = User::factory()->create(['role' => 'admin']);
+        (new ServiceReviewPermission)->forceFill([
+            'user_id' => $employee->id, 'government_service_id' => $form->government_service_id,
+            'can_review' => true, 'granted_by' => $admin->id,
+        ])->save();
+        $this->get('/citizen/identity-card/'.$form->id.'?step=7')->assertOk()
+            ->assertDontSee(route('citizen.services.attachments.index', $form->service), false);
         $reviews = session('identity_card_reviews');
 
-        $this->post('/citizen/identity-card/'.$form->id.'/submit', [
+        $submissionUrl = '/citizen/identity-card/'.$form->id.'/submit';
+        $payload = [
             'version' => $form->fresh()->version,
             'declaration' => '1',
             'review_token' => array_key_last($reviews),
-        ])->assertSessionHasErrors(['service', 'submission']);
+        ];
+        $this->post($submissionUrl, $payload)->assertSessionHasNoErrors()->assertRedirect();
 
-        $this->get('/citizen/identity-card/'.$form->id.'?step=7')->assertOk()
-            ->assertSee('لم يتم تقديم الطلب')
-            ->assertSee('هذه أسباب تخص أهلية الخدمة واعتماد متطلباتها، وليست أخطاء في بيانات الحقول.')
-            ->assertSee('لم تعتمد قاعدة النوع والمراجعة للمستند المطلوب')
-            ->assertSee('بياناتك الحالية محفوظة كمسودة.')
-            ->assertSee('تفاصيل الخدمة ومتطلباتها')
-            ->assertSee('رفع المستندات المطلوبة ومتابعة مراجعتها')
-            ->assertSee(route('citizen.services.attachments.index', $form->service), false)
-            ->assertDontSee('تم تقديم الاستمارة');
-        $this->assertNull($form->fresh()->submitted_at);
-        $this->assertSame(0, $form->citizen->serviceRequests()->count());
-        $this->assertSame('بيان اختبار', $form->fresh()->data['first_name']);
+        $form = $form->fresh();
+        $application = $form->application;
+        $this->assertSame('submitted', $application->status);
+        $this->assertSame($application->id, $form->photo->citizen_service_request_id);
+        $copy = ['attachment_id' => $form->photo->id, 'width_cm' => 4, 'height_cm' => 6];
+        $this->assertSame([$copy, $copy], $form->data['photo_print_copies']);
+        $this->assertArrayNotHasKey('photo_print_copies', $application->request_data);
+        $this->get(route('citizen.services.attachments.index', $form->service))->assertRedirect(route('citizen.identity-card.index'));
+        $this->get(route('citizen.applications.attachments.index', $application->id))->assertRedirect(route('citizen.identity-card.index'));
+        $this->post($submissionUrl, $payload)->assertRedirect();
+        $notice = $employee->notifications()->where('request_id', $application->id)->sole();
+        $this->assertSame('طلب إصدار بطاقة شخصية جديد', $notice->data['title']);
+        $this->assertSame(0, $other->notifications()->where('request_id', $application->id)->count());
+        $this->actingAs($employee)->post(route('employee.notifications.open', $notice->id))
+            ->assertRedirect(route('employee.applications.review', $application->id));
     }
 
     public function test_guest_and_employee_cannot_create_citizen_forms(): void

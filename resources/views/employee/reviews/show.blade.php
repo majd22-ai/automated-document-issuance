@@ -32,7 +32,15 @@
 <section class="card ops-card" style="padding:1.5rem;margin-block:1rem"><h2>{{ $decisionTitle }}</h2><form method="POST" action="{{ route('employee.applications.decisions',$application->id) }}">@csrf<input type="hidden" name="action" value="{{ $action }}"><input type="hidden" name="decision_token" value="{{ \Illuminate\Support\Str::uuid() }}"><input type="hidden" name="expected_version" value="{{ $application->review_version }}"><input type="hidden" name="expected_rules_version" value="{{ $application->service->rules_version }}"><input type="hidden" name="expected_fingerprint" value="{{ $fingerprint }}">
 @if(in_array($action,['return','reject']))<label for="public-{{ $action }}" style="display:block;margin-block:1rem .4rem">السبب الذي يظهر للمواطن</label><textarea class="form-control" name="public_reason" id="public-{{ $action }}" minlength="3" maxlength="2000" required></textarea>@endif
 @if($action==='return')<p>حدد نقصًا أو أكثر. field لحقل النموذج، attachment لرمز المرفق، requirement لرمز شرط التحقق، أو other لاستكمال يدوي.</p>
-@if($initialIdentity)<p>لإعادة العنصر المطلوب فقط، اختر «شرط تحقق» واستخدم رمزه: initial_identity.photo للصورة، initial_identity.witness_1 للشاهد الأول، initial_identity.witness_2 للشاهد الثاني، initial_identity.attestation للمصادقة.</p>@endif
+@if($initialIdentity)
+<p>لإعادة عنصر محدد اختر «شرط تحقق» واستخدم <bdi>initial_identity.photo</bdi> للصورة.
+@if($application->identityCardForm->isRenewal())
+استخدم <bdi>initial_identity.previous_card</bdi> للبطاقة السابقة.
+@else
+استخدم <bdi>initial_identity.witness_1</bdi> للشاهد الأول أو <bdi>initial_identity.witness_2</bdi> للشاهد الثاني.
+@endif
+</p>
+@endif
 @for($i=0;$i<5;$i++)<fieldset style="margin-block:1rem"><legend>نقص {{ $i+1 }} {{ $i===0?'(مطلوب)':'(اختياري)' }}</legend><label for="type-{{ $i }}" style="display:block;margin-block:1rem .4rem">النوع</label><select class="form-control" name="deficiencies[{{ $i }}][target_type]" id="type-{{ $i }}"><option value="other">استكمال يدوي</option><option value="field">حقل في النموذج</option><option value="attachment">مرفق</option><option value="requirement">شرط تحقق</option></select><label for="key-{{ $i }}" style="display:block;margin-block:1rem .4rem">رمز الحقل أو المرفق أو الشرط</label><input class="form-control" name="deficiencies[{{ $i }}][target_key]" id="key-{{ $i }}" maxlength="100" @required($i===0)><label for="description-{{ $i }}" style="display:block;margin-block:1rem .4rem">وصف واضح للنقص وطريقة استكماله</label><input class="form-control" name="deficiencies[{{ $i }}][description]" id="description-{{ $i }}" minlength="3" maxlength="500" @required($i===0)></fieldset>@endfor
 <p>حقول النموذج: {{ implode('، ',array_column($application->service_snapshot['application_fields']??[],'key')) ?: 'لا توجد' }}. المرفقات: {{ implode('، ',array_column($application->service_snapshot['verification_rules']['documents']??[],'code')) ?: 'لا توجد' }}.</p>@endif
 @if($action!=='start')<label for="internal-{{ $action }}" style="display:block;margin-block:1rem .4rem">ملاحظات داخلية للمخولين فقط</label><textarea class="form-control" name="internal_notes" id="internal-{{ $action }}" maxlength="2000"></textarea>@endif

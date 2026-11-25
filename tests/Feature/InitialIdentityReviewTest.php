@@ -46,7 +46,7 @@ class InitialIdentityReviewTest extends TestCase
     public function test_missing_evidence_is_never_a_match_or_an_approval(): void
     {
         $tasks = app(InitialIdentityReview::class)->tasks($this->form());
-        $this->assertSame(['photo', 'witness_1', 'witness_2', 'attestation'], array_keys($tasks));
+        $this->assertSame(['photo', 'witness_1', 'witness_2'], array_keys($tasks));
         foreach ($tasks as $task) {
             $this->assertFalse($task['ready']);
             $this->assertFalse($task['approved']);
@@ -98,11 +98,17 @@ class InitialIdentityReviewTest extends TestCase
             $this->assertTrue((bool) $task['approved']);
         }
         $this->actingAs($staff)->get(route('employee.applications.review', $form->application))
-            ->assertOk()->assertSee('٤ — الصورة الشخصية')->assertSee('٦ — مصادقة العاقل')
+            ->assertOk()->assertSee('٤ — الصورة الشخصية')->assertDontSee('٦ — مصادقة العاقل')
+            ->assertSee('تكبير الصورة الشخصية')->assertSee('review-citizen-photo')
+            ->assertSee('review-witness-photo-1')->assertSee('review-witness-photo-2')
+            ->assertSee($form->citizen->name)->assertSee('مرجع الإقرار أو سجل التأكيد')
+            ->assertSee('ملاحظة المراجع أو سبب الاستكمال (اختياري)')
             ->assertSee('سجل وثائق محاكاة التسجيل')->assertSee('نتائج النظام وبيانات الطلب');
+        $this->get(route('citizen.identity-card.photo', $form))->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->get(route('citizen.identity-card.witness-selfie', [$form, 1]))->assertOk()->assertHeader('Content-Type', 'image/png');
     }
 
-    public function test_source_changes_invalidate_witness_proof_and_official_revocation_invalidates_attestation(): void
+    public function test_source_changes_invalidate_witness_proof_without_a_manual_attestation_task(): void
     {
         [$form] = $this->reviewed();
         $review = app(InitialIdentityReview::class);
@@ -111,7 +117,7 @@ class InitialIdentityReviewTest extends TestCase
         $form->attestation->official->forceFill(['is_active' => false])->save();
         $after = $review->tasks($form);
         $this->assertFalse((bool) $after['witness_1']['approved']);
-        $this->assertFalse((bool) $after['attestation']['approved']);
+        $this->assertArrayNotHasKey('attestation', $after);
         $this->assertTrue((bool) $after['witness_2']['approved']);
         $this->assertNotSame($before['witness_1']['fingerprint'], $after['witness_1']['fingerprint']);
     }
@@ -145,7 +151,7 @@ class InitialIdentityReviewTest extends TestCase
     {
         $form = $this->form();
         $checks = app(InitialIdentityReview::class)->requirements($form->application, \App\Enums\ServiceRequestStatus::Accepted);
-        $this->assertCount(4, $checks);
+        $this->assertCount(3, $checks);
         foreach ($checks as $check) {
             $this->assertTrue($check->mandatory);
             $this->assertSame(\App\Enums\RequirementState::NeedsReview, $check->state);
@@ -162,6 +168,19 @@ class InitialIdentityReviewTest extends TestCase
         DB::table('citizen_service_requests')->where('id', $application->id)->update(['status' => 'accepted']);
         app(\App\Services\Review\ReviewActions::class)->save($application->fresh(), $staff, 'accept', 'under_review', null, []);
         $this->assertSame([], app(InitialIdentityReview::class)->requirements($application->fresh(), \App\Enums\ServiceRequestStatus::Processing));
+    }
+
+    public function test_employee_can_record_missing_evidence_without_an_optional_note(): void
+    {
+        [$form, $staff] = $this->reviewed();
+        $service = app(InitialIdentityReview::class);
+        $task = $service->tasks($form)['witness_1'];
+        $decision = $service->record($staff, $form->application, [
+            'task' => 'witness_1', 'outcome' => 'correction_required', 'decision_token' => (string) Str::uuid(),
+            'fingerprint' => $task['fingerprint'],
+        ]);
+        $this->assertNull($decision->details['note']);
+        $this->assertFalse((bool) $service->tasks($form)['witness_1']['approved']);
     }
 
     public function test_service_rejects_false_confirmation_from_direct_callers(): void

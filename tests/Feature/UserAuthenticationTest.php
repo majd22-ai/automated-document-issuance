@@ -306,7 +306,7 @@ class UserAuthenticationTest extends TestCase
 
     public function test_profile_displays_and_updates_only_the_authenticated_user(): void
     {
-        $user = $this->user();
+        $user = $this->user('employee');
         $other = $this->user();
         $this->actingAs($user)->get(route('profile.edit'))->assertOk()->assertSee($user->email);
         $this->patch(route('profile.update'), ['name' => 'الاسم الجديد', 'email' => 'new@example.test', 'phone' => '777123456'])
@@ -323,7 +323,7 @@ class UserAuthenticationTest extends TestCase
         $this->actingAs($user)->patch(route('profile.update'), [
             'name' => 'Intruder', 'email' => $user->email, 'role' => 'admin', 'is_active' => false,
             'id' => $other->id, 'user_id' => $other->id,
-        ])->assertSessionHasErrors(['role', 'is_active', 'id', 'user_id']);
+        ])->assertForbidden();
         $this->assertSame('citizen', $user->fresh()->role);
         $this->assertNotSame('Intruder', $other->fresh()->name);
         $this->patch('/profile/'.$other->id, ['name' => 'Intruder'])->assertNotFound();
@@ -332,7 +332,7 @@ class UserAuthenticationTest extends TestCase
 
     public function test_profile_email_must_be_unique_and_existing_email_can_be_kept(): void
     {
-        $user = $this->user();
+        $user = $this->user('employee');
         $other = $this->user();
         $this->actingAs($user)->patch(route('profile.update'), ['name' => $user->name, 'email' => $other->email])
             ->assertSessionHasErrors('email');
@@ -409,7 +409,7 @@ class UserAuthenticationTest extends TestCase
             $this->actingAs($user)->patch(route('profile.update'), [
                 'name' => $user->name, 'email' => $user->email,
                 'username' => $value, 'password' => $value, 'role' => $value, 'is_active' => $value,
-            ])->assertSessionHasErrors(['username', 'password', 'role', 'is_active']);
+            ])->assertForbidden();
         }
         $this->assertSame($username, $user->fresh()->username);
         $this->assertSame($password, $user->fresh()->password);

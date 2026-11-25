@@ -19,6 +19,9 @@ class CitizenAttachmentController extends Controller
 {
     public function index(Request $request, GovernmentService $service, AttachmentRules $rules, ManageAttachments $manager)
     {
+        if ($service->code === 'identity-first-issue') {
+            return redirect()->route('citizen.identity-card.index');
+        }
         $manager->assertUploadContext($request->user(), $service, null);
 
         return $this->page($service, $request->user(), null, $rules);
@@ -29,6 +32,9 @@ class CitizenAttachmentController extends Controller
         $application = $request->user()->serviceRequests()->findOrFail($id);
         Gate::authorize('view', $application);
         abort_unless($application->service, 422, 'الخدمة المرتبطة بهذا السجل غير متوفرة.');
+        if ($application->service->code === 'identity-first-issue') {
+            return redirect()->route('citizen.identity-card.index');
+        }
 
         return $this->page($application->service, $request->user(), $application, $rules);
     }
@@ -44,6 +50,7 @@ class CitizenAttachmentController extends Controller
 
     public function store(StoreCitizenAttachmentRequest $request, GovernmentService $service, ManageAttachments $manager)
     {
+        abort_if($service->code === 'identity-first-issue', 404);
         $manager->store($request->user(), $service, null, $request->validated('document_code'), $request->file('file'));
 
         return redirect()->route('citizen.services.attachments.index', $service)->with('status', 'تم رفع الملف والتحقق منه فنيًا. راجع حالة المراجعة الموضحة أدناه.');
@@ -54,6 +61,7 @@ class CitizenAttachmentController extends Controller
         $application = $request->user()->serviceRequests()->findOrFail($id);
         Gate::authorize('view', $application);
         abort_unless($application->service, 422);
+        abort_if($application->service->code === 'identity-first-issue', 404);
         $manager->store($request->user(), $application->service, $application, $request->validated('document_code'), $request->file('file'));
 
         return redirect()->route('citizen.applications.attachments.index', $id)->with('status', 'تم حفظ المرفق. يلزم إعادة التحقق من متطلبات الطلب.');

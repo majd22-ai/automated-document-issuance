@@ -30,7 +30,7 @@ class ServiceEligibility
         return $this->evaluate($citizen, $service)->reasons();
     }
 
-    public function evaluate(User $citizen, GovernmentService $service, ?CitizenServiceRequest $request = null, ?ServiceRequestStatus $target = null): EligibilityResult
+    public function evaluate(User $citizen, GovernmentService $service, ?CitizenServiceRequest $request = null, ?ServiceRequestStatus $target = null, bool $firstIssueIntake = false): EligibilityResult
     {
         $report = new EligibilityResult;
         if ($request && ($request->user_id !== $citizen->id || $request->government_service_id !== $service->id)) {
@@ -80,11 +80,11 @@ class ServiceEligibility
             && filled($assessment->verification_reference) && $assessment->reviewed_by && $assessment->reviewed_at && $assessment->reviewed_at->lte(now());
         foreach (['identity' => ['identity_verified', 'توثيق ارتباط الهوية بالحساب'], 'conditions' => ['conditions_met', 'استيفاء الشروط المسجلة']] as $code => [$field, $label]) {
             $met = $current && $assessment->{$field};
-            $report->add(new RequirementResult($code, $label, $met ? State::Met : State::NeedsReview, $met ? $label.' موثق وفق التقييم المسجل.' : 'يلزم تقييم موثّق أو تحديث تقييم '.$label.' لدى الجهة المختصة.'));
+            $report->add(new RequirementResult($code, $label, $met ? State::Met : State::NeedsReview, $met ? $label.' موثق وفق التقييم المسجل.' : 'يلزم تقييم موثّق أو تحديث تقييم '.$label.' لدى الجهة المختصة.', mandatory: ! $firstIssueIntake));
         }
         if ($service->minimum_age !== null) {
             $met = $current && $assessment->age_requirement_met;
-            $report->add(new RequirementResult('age', 'شرط العمر', $met ? State::Met : State::NeedsReview, $met ? 'شرط العمر المسجل تم التحقق منه يدويًا وفق المرجع.' : 'لم يتم اعتماد استيفاء شرط العمر المسجل للخدمة.'));
+            $report->add(new RequirementResult('age', 'شرط العمر', $met ? State::Met : State::NeedsReview, $met ? 'شرط العمر المسجل تم التحقق منه يدويًا وفق المرجع.' : 'لم يتم اعتماد استيفاء شرط العمر المسجل للخدمة.', mandatory: ! $firstIssueIntake));
         }
         if ($service->requires_driving_clearance) {
             $met = $current && $assessment->driving_requirements_met;
@@ -101,7 +101,7 @@ class ServiceEligibility
         } elseif (($rules['restriction_source'] ?? 'manual') === 'external') {
             $report->add($this->evidence->restrictions($citizen, $service, $request));
         } elseif (($rules['restriction_source'] ?? 'manual') === 'manual') {
-            $report->add(new RequirementResult('restrictions', 'التحقق من الموانع', $current ? State::Met : State::Unverifiable, $current ? 'التقييم اليدوي الموثق لا يسجل مانعًا لهذه الخدمة.' : 'تعذّر التحقق من الموانع دون تقييم موثق حالي؛ غياب البيانات ليس دليلًا على الخلو.'));
+            $report->add(new RequirementResult('restrictions', 'التحقق من الموانع', $current ? State::Met : State::Unverifiable, $current ? 'التقييم اليدوي الموثق لا يسجل مانعًا لهذه الخدمة.' : 'تعذّر التحقق من الموانع دون تقييم موثق حالي؛ غياب البيانات ليس دليلًا على الخلو.', mandatory: ! $firstIssueIntake));
         } else {
             $report->add(new RequirementResult('restrictions', 'التحقق من الموانع', State::Unverifiable, 'نوع مصدر الموانع غير معرّف بصورة صحيحة.'));
         }
@@ -127,13 +127,13 @@ class ServiceEligibility
                     : $this->evidence->authenticity($citizen, $service, $document, $request));
             }
         }
-        $documentRules = $rules['documents'] ?? [];
+        $documentRules = $service->code === 'identity-first-issue' ? [] : ($rules['documents'] ?? []);
         if (! is_array($documentRules) || count(array_column($documentRules, 'code')) !== count(array_unique(array_column($documentRules, 'code')))) {
             $report->add(new RequirementResult('document_configuration', 'قواعد المستندات', State::Unverifiable, 'بنية قواعد المستندات أو رموزها غير صالحة.'));
             $documentRules = [];
         }
         $configured = array_column($documentRules, null, 'name');
-        foreach ($service->required_documents ?? [] as $name) {
+        foreach ($service->code === 'identity-first-issue' ? [] : ($service->required_documents ?? []) as $name) {
             $rule = $configured[$name] ?? null;
             $valid = is_array($rule) && filled($rule['code'] ?? null) && in_array($rule['kind'] ?? null, ['photo', 'document'], true)
                 && is_array($rule['allowed_mime_types'] ?? null) && $rule['allowed_mime_types'] !== [] && is_bool($rule['requires_review'] ?? null);

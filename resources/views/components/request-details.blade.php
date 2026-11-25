@@ -24,7 +24,7 @@
 @if($application->government_service_id)<p><a class="btn btn-primary" href="{{ route((auth()->user()->role==='employee'?'employee':'citizen').'.applications.operations',$application->id) }}">المواعيد والفحوصات والرسوم</a></p>@endif
 <h2>المرفقات المرتبطة بهذا الطلب</h2>
 @include('components.attachment-list', ['attachments' => $application->attachments])
-@if(auth()->user()->role === 'citizen' && $application->government_service_id)<p><a class="btn btn-outline" href="{{ route('citizen.applications.attachments.index', $application->id) }}">عرض وإدارة مرفقات الطلب</a></p>@endif
+@if(auth()->user()->role === 'citizen' && $application->government_service_id && $application->service_code !== 'identity-first-issue')<p><a class="btn btn-outline" href="{{ route('citizen.applications.attachments.index', $application->id) }}">عرض وإدارة مرفقات الطلب</a></p>@endif
 @if(auth()->user()->role === 'employee')<p><a href="{{ route('employee.attachments.index') }}">مراجعة المرفقات</a></p>@endif
 @if($application->requirements_result)
   @include('components.requirements-result', ['requirementsResult' => $application->requirements_result])

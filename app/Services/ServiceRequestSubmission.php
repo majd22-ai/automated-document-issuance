@@ -31,10 +31,10 @@ class ServiceRequestSubmission
         return hash('sha256', json_encode($data, JSON_THROW_ON_ERROR));
     }
 
-    public function preview(User $citizen, GovernmentService $service, array $payload): array
+    public function preview(User $citizen, GovernmentService $service, array $payload, bool $firstIssueIntake = false): array
     {
         Gate::forUser($citizen)->authorize('create', CitizenServiceRequest::class);
-        $this->assertEligible($citizen, $service);
+        $this->assertEligible($citizen, $service, $firstIssueIntake);
         $payload = Validator::make($payload, PreviewServiceRequest::payloadRules($service))->validate();
 
         return [
@@ -46,9 +46,9 @@ class ServiceRequestSubmission
         ];
     }
 
-    public function assertEligible(User $citizen, GovernmentService $service): EligibilityResult
+    public function assertEligible(User $citizen, GovernmentService $service, bool $firstIssueIntake = false): EligibilityResult
     {
-        $report = $this->eligibility->evaluate($citizen, $service);
+        $report = $this->eligibility->evaluate($citizen, $service, firstIssueIntake: $firstIssueIntake && $service->code === 'identity-first-issue');
         $this->eligibility->audit($report, $citizen, $service);
         if (! $report->eligible()) {
             throw ValidationException::withMessages(['service' => $report->reasons()]);
@@ -92,7 +92,8 @@ class ServiceRequestSubmission
                     }
                 }
                 $this->assertCurrentPreview($citizen, $service, $preview);
-                $report = $this->assertEligible($citizen, $service);
+                $firstIssueIntake = $identityForm && $service->code === 'identity-first-issue';
+                $report = $this->assertEligible($citizen, $service, $firstIssueIntake);
                 $payload = Validator::make($preview['payload'], PreviewServiceRequest::payloadRules($service))->validate();
                 $request = $citizen->serviceRequests()->make(['reference' => 'REQ-'.Str::ulid(), 'service_code' => $service->code, 'status' => 'submitted']);
                 $request->forceFill([
@@ -106,7 +107,14 @@ class ServiceRequestSubmission
                     abort_unless($identityForm->user_id === $citizen->id && $identityForm->government_service_id === $service->id && ! $identityForm->citizen_service_request_id, 409);
                     $identityForm->forceFill(['citizen_service_request_id' => $request->id])->save();
                 }
-                $this->attachments->bind($citizen, $service, $request);
+                if ($firstIssueIntake) {
+                    abort_unless($identityForm->citizen_attachment_id, 409);
+                    $this->attachments->bind($citizen, $service, $request, $identityForm->citizen_attachment_id);
+                    abort_unless($request->attachments()->whereKey($identityForm->citizen_attachment_id)->exists(), 409);
+                    app(\App\Services\Notifications\OperationalNotifications::class)->identityFormSubmitted($request);
+                } else {
+                    $this->attachments->bind($citizen, $service, $request);
+                }
                 app(RequestCharges::class)->ensure($request);
                 app(CitizenUpdates::class)->submitted($request);
 

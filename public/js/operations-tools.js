@@ -301,7 +301,7 @@
       node.textContent = value;
       return node;
     };
-    for (const { person, birth, card, members = [], civilDocuments = [] } of records) {
+    for (const { person, birth, card, portrait_url, members = [], civilDocuments = [] } of records) {
       const article = document.createElement('article');
       article.className = 'card ops-card';
       const details = document.createElement('dl');
@@ -314,7 +314,16 @@
       ]) {
         details.append(element('dt', label), element('dd', value || 'غير مسجل'));
       }
-      article.append(element('h3', person.name), details);
+      article.append(element('h3', person.name));
+      if (portrait_url) {
+        const portrait = document.createElement('img');
+        portrait.className = 'operations-civil-portrait';
+        portrait.alt = 'صورة السجل التجريبي لـ ' + person.name;
+        portrait.addEventListener('error', () => portrait.replaceWith(element('p', 'صورة السجل التجريبي غير متوفرة.')));
+        portrait.src = portrait_url;
+        article.append(portrait);
+      }
+      article.append(details);
       for (const [label, items] of [
         ['أفراد الأسرة', members.map(member => [member.name, roles[member.family_role]].filter(Boolean).join(' · '))],
         ['الوثائق المدنية التجريبية', civilDocuments.map(doc => [

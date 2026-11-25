@@ -39,7 +39,6 @@
                 <div class="identity-actions">
                     <a class="btn btn-outline" href="{{ route('citizen.applications.index') }}">التحقق من طلباتي</a>
                     <a class="btn btn-outline" href="{{ $form->service->publicUrl() }}">تفاصيل الخدمة ومتطلباتها</a>
-                    <a class="btn btn-outline" href="{{ route('citizen.services.attachments.index', $form->service) }}">رفع المستندات المطلوبة ومتابعة مراجعتها</a>
                 </div>
             @endif
         </div>
@@ -51,7 +50,6 @@
         @if($decision = $form->administrativeDecisions()->whereNotNull('citizen_reason')->latest('id')->first())<p class="identity-notice">سبب الإجراء المسموح بعرضه: {{ $decision->citizen_reason }}</p>@endif
         <p><a class="btn btn-outline" href="{{ route('identity-workflow.print', $form) }}">معاينة نموذج الطلب والطباعة</a></p>
         @include('components.identity-card-attestation', ['identityForm' => $form])
-        @if($form->application?->status === 'requires_correction')<p><a class="btn btn-outline" href="{{ route('citizen.applications.attachments.index', $form->application->id) }}">استبدال الصورة أو استكمال المرفقات المطلوبة من الموظف</a></p>@endif
         <div class="identity-notice" role="status"><h3>تم تقديم الاستمارة</h3><p>مرجع الطلب الداخلي: <b dir="ltr">{{ $form->application?->reference ?? $form->reference }}</b></p><p>هذا مرجع للمتابعة داخل المنصة، وليس رقم بطاقة أو وثيقة رسمية. التقديم لا يعني اعتماد البيانات أو إصدار البطاقة.</p></div>
         @include('components.identity-card-summary', ['identityForm'=>$form])
         <a class="btn btn-primary" href="{{ route('citizen.identity-card.index') }}">العودة إلى الاستمارات</a>
@@ -64,14 +62,28 @@
             @csrf<input type="hidden" name="step" value="{{ $step }}"><input type="hidden" name="version" value="{{ $form->version }}">
             @if($step <= 3)
                 <p>الحقول المشار إليها بـ * مطلوبة للانتقال إلى الخطوة التالية. يمكنك حفظ مسودة غير مكتملة.</p>
-                <div class="identity-field-grid identity-panel" @if($step === 3) data-residence-cascade data-residence-url="{{ route('locations.residence', ['country' => 'ZZ']) }}" @endif>
+                <div class="identity-field-grid identity-panel" @if($step === 3) data-residence-cascade data-residence-url="{{ route('locations.residence', ['country' => 'ZZ']) }}" data-officials-url="{{ url('/residence/districts/__DISTRICT__/officials') }}" @endif>
                 @if($step === 3)
                     @include('components.residence-country-selects')
+                    <div class="identity-field">
+                        <label for="field-neighborhood" data-neighborhood-label>الحي / الحارة *</label>
+                        <input id="field-neighborhood" name="data[neighborhood]" data-neighborhood-manual
+                               value="{{ old('data.neighborhood', data_get($form->data, 'neighborhood')) }}" maxlength="200" required>
+                        <select id="field-neighborhood-list" name="data[neighborhood]" data-neighborhood-list hidden disabled required></select>
+                        <input type="hidden" name="data[residence_official_id]" data-neighborhood-official-id
+                               value="{{ old('data.residence_official_id', data_get($form->data, 'residence_official_id')) }}">
+                        <p data-neighborhood-status role="status"></p>
+                        @error('data.neighborhood')<p class="identity-field-error">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="identity-field" data-neighborhood-official hidden>
+                        <label for="field-residence-official-name">اسم عاقل الحارة</label>
+                        <input id="field-residence-official-name" readonly>
+                    </div>
                 @endif
                 @foreach($fields[$step] as $key => $field)
                     @if($step === 2 && $loop->first)@include('components.birth-details')@endif
                     @continue($step === 2 && str_starts_with($key,'birth_'))
-                    @continue($step === 3 && in_array($key,['residence_country','residence_governorate','residence_district']))
+                    @continue($step === 3 && in_array($key,['residence_country','residence_governorate','residence_district','neighborhood']))
                     @php
                         $errorKey = 'data.'.$key;
                     @endphp
@@ -185,8 +197,6 @@
                 <input type="hidden" name="review_token" value="{{ $reviewToken }}">
                 <nav class="identity-actions" aria-label="تعديل بيانات الملخص">@foreach([1=>'البيانات الشخصية',2=>'الميلاد والجنسية',3=>'العنوان والحالة',4=>'الصورة',5=>'الشاهدان'] as $editStep=>$editLabel)<a href="{{ route('citizen.identity-card.show', ['form'=>$form,'step'=>$editStep]) }}">تعديل {{ $editLabel }}</a>@endforeach</nav>
                 <p>راجع جميع البيانات والصورة وبيانات الشاهدين قبل تقديم الاستمارة. إذا ظهر خطأ، ستجد سببه هنا ويمكنك العودة إلى المرحلة ذات الصلة لتصحيحه.</p>
-                <p class="identity-notice">ارفع المستندات التجريبية المطلوبة وتأكد من اعتماد مراجعتها قبل التقديم.</p>
-                <p><a class="btn btn-outline" href="{{ route('citizen.services.attachments.index', $form->service) }}">رفع المستندات المطلوبة ومتابعة مراجعتها</a></p>
                 @include('components.identity-card-summary', ['identityForm'=>$form])
                 <div class="identity-panel"><label class="identity-declaration"><input type="checkbox" name="declaration" value="1" required @checked(old('declaration')) aria-describedby="declaration-error">أقر بصحة البيانات المدخلة وأتحمل مسؤوليتها، وأفهم أن تقديم الاستمارة لا يعني إصدار وثيقة رسمية.</label>@error('declaration')<p id="declaration-error" class="identity-field-error">{{ $message }}</p>@enderror</div>
             @endif

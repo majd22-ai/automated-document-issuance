@@ -5,7 +5,7 @@
   <h1>بياناتي</h1>
   @include('components.citizen-details')
   <p style="margin-top:1rem;">
-    <a class="btn btn-outline" href="{{ route('profile.edit') }}">تحديث بيانات الاتصال</a>
+    <a class="btn btn-outline" href="{{ route('profile.edit') }}">عرض الملف الشخصي</a>
     <a class="btn btn-outline" href="{{ route('citizen.documents.index') }}">وثائقي</a>
     <a class="btn btn-outline" href="{{ route('citizen.applications.index') }}">طلباتي</a>
     @if(!$missing)<a class="btn btn-primary" href="{{ route('citizen.applications.create') }}">بدء خدمة</a>@endif

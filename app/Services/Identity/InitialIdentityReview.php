@@ -6,10 +6,8 @@ use App\Enums\RequirementState;
 use App\Enums\ServiceRequestStatus;
 use App\Models\CitizenServiceRequest;
 use App\Models\IdentityCardForm;
-use App\Models\NeighborhoodOfficial;
 use App\Models\ReviewDecision;
 use App\Models\User;
-use App\Services\IdentityAttestations;
 use App\Services\Operations\LockedRequest;
 use App\Services\Registration\MockCivilSystems;
 use App\Services\Requirements\RequirementResult;
@@ -22,7 +20,7 @@ class InitialIdentityReview
 {
     public function tasks(IdentityCardForm $form): array
     {
-        $form = $form->fresh(['photo', 'witnesses', 'attestation.official.user']);
+        $form = $form->fresh(['photo', 'witnesses']);
         $photo = $form->photo;
         $validPhoto = $photo && $photo->user_id === $form->user_id
             && $photo->government_service_id === $form->government_service_id
@@ -97,31 +95,6 @@ class InitialIdentityReview
                 $tasks['witness_'.$position]['issues'][] = 'تعذر اعتماد استقلال هوية الشاهد عن المواطن والشاهد الآخر أو صلاحية سجله.';
             }
         }
-        $attestation = $form->attestation;
-        $official = $attestation?->official;
-        $validAttestation = IdentityAttestations::approvedForSubmission($attestation)
-            && $attestation->form_revision === $form->revision && ! $attestation->cancelled_at
-            && $attestation->decided_at?->lte(now()) && $attestation->verified_at?->lte(now())
-            && $official?->user && NeighborhoodOfficial::authorized($official->user)
-            && $official->is_active && $official->can_attest
-            && $attestation->decided_by === $official->user_id
-            && $this->normalize($attestation->citizen_name) === $this->normalize($form->data['applicant_name'] ?? $form->citizen->name)
-            && (int) data_get($attestation->recipient_scope, 'employee_id') === $official->user_id;
-        if ($validAttestation) {
-            try {
-                app(IdentityAttestations::class)->recipient(($attestation->recipient_scope ?? []) + ['official_id' => $official->id], $form);
-            } catch (ValidationException) {
-                $validAttestation = false;
-            }
-        }
-        $tasks['attestation'] = $this->task('٦ — مصادقة العاقل', (bool) $validAttestation,
-            'فحص آلي لسجل المصادقة الحالي وصلاحية العاقل ونطاق الحي وهوية صاحب القرار. صورة الختم وحدها لا تكفي.',
-            [$attestation?->only(['id', 'form_revision', 'status', 'authority_type', 'reference', 'neighborhood_official_id', 'recipient_scope', 'citizen_name', 'decided_by', 'decided_at', 'verified_at', 'verification_source', 'cancelled_at']), $official?->getAttributes(), $official?->user?->only(['id', 'role', 'is_active']), $form->data, $validAttestation], []);
-        $tasks['attestation']['reference'] = $attestation?->reference;
-        $tasks['attestation']['verified_at'] = $attestation?->verified_at?->format('Y-m-d H:i');
-        if (! $validAttestation) {
-            $tasks['attestation']['issues'][] = 'المصادقة لا تستوفي النسخة الحالية، أو هوية صاحب القرار، أو صلاحية العاقل ونطاق الحي. راجع مرجع المصادقة قبل قبولها.';
-        }
         }
         foreach ($tasks as $key => &$task) {
             $task['fingerprint'] = hash('sha256', json_encode([$form->id, $form->revision, $key, $task['evidence']], JSON_THROW_ON_ERROR));
@@ -140,10 +113,10 @@ class InitialIdentityReview
     {
         $input = array_map(fn ($value) => is_string($value) ? trim($value) : $value, $input);
         $input = \Illuminate\Support\Facades\Validator::make($input, [
-            'task' => ['required', 'in:photo,witness_1,witness_2,attestation,previous_card'],
+            'task' => ['required', 'in:photo,witness_1,witness_2,previous_card'],
             'outcome' => ['required', 'in:approved,correction_required'], 'decision_token' => ['required', 'uuid'],
             'fingerprint' => ['required', 'string', 'size:64'], 'note' => ['nullable', 'string', 'max:1000'],
-            'confirmed' => ['required_if:outcome,approved', 'accepted'],
+            'confirmed' => ['sometimes', 'accepted'],
             'consent_method' => ['nullable', 'in:signed_statement,independent_confirmation'],
             'consent_reference' => ['nullable', 'string', 'min:3', 'max:200'],
         ])->validate();
@@ -174,8 +147,6 @@ class InitialIdentityReview
                     $request->identityCardForm->photo->forceFill(['review_status' => 'approved', 'reviewed_by' => $actor->id, 'reviewed_at' => now(), 'public_reason' => null])->save();
                     $task = $this->tasks($request->identityCardForm)['photo'];
                 }
-            } elseif (mb_strlen(trim($input['note'] ?? '')) < 3) {
-                throw ValidationException::withMessages(['note' => 'حدد سبب الاستكمال لهذا العنصر.']);
             }
             $request->forceFill(['review_version' => $request->review_version + 1, 'requirements_result' => null, 'requirements_checked_at' => null])->save();
             return $actions->save($request, $actor, 'identity_step_review', $request->status, null, $context, null,

@@ -70,6 +70,38 @@ class TrackingNotificationsTest extends TestCase
         return $citizen->documents()->create(['document_type' => 'TEST identity', 'document_type_code' => 'identity', 'document_number' => 'TRACK-DOC-'.Str::uuid(), 'status' => $status, 'issued_at' => today()->subYear(), 'expires_at' => today()->addDays($days)]);
     }
 
+    public function test_citizen_inquiry_requires_the_matching_service_and_an_owned_reference(): void
+    {
+        [$citizen, , $service, $application] = $this->fixtures();
+        $inquiry = route('inquiry.reference');
+        $this->actingAs($citizen)->get($inquiry)->assertOk()->assertSee($service->name)->assertSee('الرقم المرجعي');
+        $query = ['service' => $service->id, 'reference' => strtolower($application->reference)];
+        $this->get(route('inquiry.reference', $query))->assertRedirect(route('citizen.applications.show', $application->id));
+        $this->get(route('citizen.applications.show', $application->id))->assertOk()->assertSee($application->reference)->assertSee('الخط الزمني');
+        $this->get(route('inquiry.reference', ['service' => $service->id + 1, 'reference' => $application->reference]))
+            ->assertOk()->assertSee('لم يُعثر على طلب في حسابك');
+        $this->actingAs($this->user())->get(route('inquiry.reference', $query))
+            ->assertOk()->assertSee('لم يُعثر على طلب في حسابك');
+    }
+
+    public function test_citizen_profile_reads_the_linked_record_and_rejects_writes(): void
+    {
+        config(['citizen_mock.enabled' => true]);
+        $personId = DB::table('mock_civil_persons')->insertGetId([
+            'fixture_key' => 'profile-test', 'name' => 'اسم من السجل التجريبي', 'national_id' => '99017771234',
+            'birth_date' => '2000-02-03', 'birth_place' => 'مكان الميلاد التجريبي', 'family_role' => 'child',
+        ]);
+        $citizen = $this->user();
+        $citizen->forceFill(['mock_person_id' => $personId])->save();
+        $this->actingAs($citizen)->get(route('profile.edit'))->assertOk()
+            ->assertSee('اسم من السجل التجريبي')->assertSee('99017771234')->assertSee('مكان الميلاد التجريبي')
+            ->assertDontSee('حفظ التغييرات');
+        $this->patch(route('profile.update'), ['name' => 'اسم بديل', 'email' => 'changed@example.test'])
+            ->assertForbidden();
+        $this->assertSame($citizen->email, $citizen->fresh()->email);
+        $this->actingAs($this->user())->get(route('profile.edit'))->assertOk()->assertDontSee('99017771234');
+    }
+
     public function test_real_submission_creates_one_native_notification_and_replay_does_not_duplicate(): void
     {
         [$citizen,$employee,$service,$request] = $this->fixtures();

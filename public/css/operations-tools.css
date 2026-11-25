@@ -29,6 +29,7 @@
 .operations-tools-suggestions button:hover,.operations-tools-suggestions button:focus-visible{background:#e5f2ee}
 .operations-civil-details{display:grid;grid-template-columns:minmax(6rem,auto) minmax(0,1fr);gap:.35rem .75rem}
 .operations-civil-details dd{margin:0}
+.operations-civil-portrait{display:block;width:auto;height:auto;max-width:min(100%,18rem);max-height:20rem;margin-block:.6rem 1rem;border-radius:.4rem;object-fit:contain}
 .operations-tools [data-ops-civil-records]>article{margin-block:1rem}
 .operations-tools [data-ops-suggestion-status]{margin:.25rem 0;font-size:.85rem}
 .operations-tools [data-ops-suggestion-status]:empty{display:none}

@@ -42,7 +42,7 @@ trait InitialIdentityEvidence
                 'selfie_size' => $file->getSize(), 'selfie_mime' => 'image/png'])->save();
         }
         $review = app(InitialIdentityReview::class);
-        foreach (['photo', 'witness_1', 'witness_2', 'attestation'] as $key) {
+        foreach (['photo', 'witness_1', 'witness_2'] as $key) {
             $task = $review->tasks($form)[$key];
             $review->record($staff, $form->application, ['task' => $key, 'outcome' => 'approved',
                 'fingerprint' => $task['fingerprint'], 'decision_token' => (string) Str::uuid(), 'confirmed' => '1',

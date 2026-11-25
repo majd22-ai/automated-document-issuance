@@ -300,7 +300,7 @@ class RegistrationFlowTest extends TestCase
     {
         $user = User::factory()->create();
         $user->forceFill(['registration_status' => 'initial_account'])->save();
-        $this->actingAs($user)->patch('/profile', ['name' => $user->name, 'email' => $user->email, 'registration_status' => 'identity_verified', 'phone_verified_at' => now()->toDateTimeString()])->assertSessionHasErrors(['registration_status', 'phone_verified_at']);
+        $this->actingAs($user)->patch('/profile', ['name' => $user->name, 'email' => $user->email, 'registration_status' => 'identity_verified', 'phone_verified_at' => now()->toDateTimeString()])->assertForbidden();
         $this->assertSame('initial_account', $user->fresh()->registration_status);
     }
 
@@ -352,12 +352,13 @@ class RegistrationFlowTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_profile_phone_change_removes_phone_verification(): void
+    public function test_citizen_cannot_change_verified_phone_from_read_only_profile(): void
     {
         $user = User::factory()->create(['phone' => '+967777123456']);
         $user->forceFill(['phone_verified_at' => now(), 'registration_status' => 'identity_verification_pending'])->save();
-        $this->actingAs($user)->patch('/profile', ['name' => $user->name, 'email' => $user->email, 'phone' => '+967771123456'])->assertSessionHasNoErrors();
-        $this->assertNull($user->fresh()->phone_verified_at);
+        $this->actingAs($user)->patch('/profile', ['name' => $user->name, 'email' => $user->email, 'phone' => '+967771123456'])->assertForbidden();
+        $this->assertNotNull($user->fresh()->phone_verified_at);
+        $this->assertSame('+967777123456', $user->fresh()->phone);
     }
 
     public function test_official_identity_input_does_not_accept_empty_identity_or_fake_verification_fields(): void

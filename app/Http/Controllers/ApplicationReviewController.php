@@ -11,10 +11,12 @@ use App\Models\CitizenServiceRequest;
 use App\Models\GovernmentService;
 use App\Models\User;
 use App\Services\Operations\LockedRequest;
+use App\Services\Registration\MockCivilSystems;
 use App\Services\Review\ReviewAdministration;
 use App\Services\Review\ReviewSnapshot;
 use App\Services\ServiceEligibility;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class ApplicationReviewController extends Controller
@@ -22,7 +24,7 @@ class ApplicationReviewController extends Controller
     public function identityStep(Request $request, string $id)
     {
         $input = $request->validate([
-            'task' => ['required', 'in:photo,witness_1,witness_2,attestation'],
+            'task' => ['required', 'in:photo,witness_1,witness_2,previous_card'],
             'outcome' => ['required', 'in:approved,correction_required'],
             'decision_token' => ['required', 'uuid'], 'fingerprint' => ['required', 'string', 'size:64'],
             'note' => ['nullable', 'string', 'max:1000'], 'confirmed' => ['sometimes', 'accepted'],
@@ -67,8 +69,11 @@ class ApplicationReviewController extends Controller
             $fingerprint = app(ReviewSnapshot::class)->fingerprint($application);
             $reviewers = User::where('role', 'employee')->where('is_active', true)->whereHas('reviewPermissions', fn ($q) => $q->where('government_service_id', $application->government_service_id)->where('can_review', true))->get(['id', 'name']);
             $registrySuggestedSection = $this->suggestedRegistrySection($application);
+            $registryIdentity = $owner->mock_person_id && MockCivilSystems::enabled() && Gate::allows('viewAnyDemoCivilRegistry', User::class)
+                ? DB::table('mock_civil_persons')->where('id', $owner->mock_person_id)->first(['name', 'national_id'])
+                : null;
 
-            return response(view('employee.reviews.show', compact('application', 'report', 'approvalReport', 'fingerprint', 'reviewers', 'registrySuggestedSection'))->render())->header('Cache-Control', 'no-store, private');
+            return response(view('employee.reviews.show', compact('application', 'report', 'approvalReport', 'fingerprint', 'reviewers', 'registrySuggestedSection', 'registryIdentity'))->render())->header('Cache-Control', 'no-store, private');
         });
     }
 

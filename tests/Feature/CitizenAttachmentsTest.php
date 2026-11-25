@@ -45,11 +45,11 @@ class CitizenAttachmentsTest extends TestCase
         $user = User::factory()->create();
         $user->forceFill(['username' => 'FILE-'.$user->id, 'role' => $role])->save();
 
-        if ($role === 'employee') $this->grantWorkspaceServices($user, ['identity-first-issue']);
+        if ($role === 'employee') $this->grantWorkspaceServices($user, ['passport-first-issue']);
         return $user;
     }
 
-    private function service(User $citizen, bool $review = false, string $code = 'identity-first-issue'): GovernmentService
+    private function service(User $citizen, bool $review = false, string $code = 'passport-first-issue'): GovernmentService
     {
         $service = GovernmentService::where('code', $code)->firstOrFail();
         $service->update(['is_active' => true, 'rules_approved' => true, 'source_reference' => 'TEST policy', 'required_documents' => ['صورة شخصية'], 'verification_rules' => ['documents' => [['code' => 'photo', 'name' => 'صورة شخصية', 'kind' => 'photo', 'allowed_mime_types' => ['image/png', 'image/jpeg'], 'requires_review' => $review]]]]);

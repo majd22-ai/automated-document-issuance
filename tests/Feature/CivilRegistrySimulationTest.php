@@ -7,7 +7,9 @@ use App\Models\User;
 use App\Services\Integrations\LocalCivilRegistryProvider;
 use App\Services\Integrations\VerificationContext;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CivilRegistrySimulationTest extends TestCase
@@ -88,6 +90,10 @@ class CivilRegistrySimulationTest extends TestCase
             'reference_photo' => 'private-not-for-lookup.jpg',
         ]);
         DB::table('mock_birth_records')->insert(['person_id' => $person, 'number' => 'MOCK-BIRTH-TEST']);
+        Storage::fake('attachments');
+        $photo = UploadedFile::fake()->image('lookup.jpg', 600, 600);
+        Storage::disk('attachments')->put('mock-registry/portraits/lookup-fixture.jpg', file_get_contents($photo->getPathname()));
+        $portraitUrl = route('integrations.civil-registry-demo.portrait', $person, false);
         $employee = $this->staff('employee');
         User::factory()->create(['mock_person_id' => $person]);
         $url = '/integrations/civil-registry-demo';
@@ -100,12 +106,17 @@ class CivilRegistrySimulationTest extends TestCase
                 ->assertJsonPath('outcome', 'match')
                 ->assertJsonPath('civil_records.0.birth.number', 'MOCK-BIRTH-TEST')
                 ->assertJsonPath('civil_records.0.person.national_id', '99010000901')
+                ->assertJsonPath('civil_records.0.portrait_url', $portraitUrl)
                 ->assertJsonMissingPath('civil_records.0.person.linked')
                 ->assertJsonMissingPath('civil_records.0.requests')
                 ->assertDontSee('private-not-for-lookup.jpg');
         }
+        $this->get($portraitUrl)->assertOk()->assertHeader('Content-Type', 'image/jpeg');
+        Storage::disk('attachments')->delete('mock-registry/portraits/lookup-fixture.jpg');
+        $this->get($portraitUrl)->assertNotFound();
         $this->actingAs(User::factory()->create(['role' => 'employee']))
             ->postJson($url, ['query' => '99010000901'])->assertForbidden();
+        $this->get($portraitUrl)->assertForbidden();
     }
 
     public function test_production_refuses_even_when_flag_enabled(): void
