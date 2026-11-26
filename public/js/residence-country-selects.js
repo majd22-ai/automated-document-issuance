@@ -13,65 +13,6 @@
         const cache = new Map();
         let generation = 0;
         let locations = [];
-        let neighborhoodGeneration = 0;
-        const neighborhoodInput = root.querySelector('[data-neighborhood-manual]');
-        const neighborhoodList = root.querySelector('[data-neighborhood-list]');
-        const neighborhoodLabel = root.querySelector('[data-neighborhood-label]');
-        const neighborhoodStatus = root.querySelector('[data-neighborhood-status]');
-        const officialId = root.querySelector('[data-neighborhood-official-id]');
-        const officialField = root.querySelector('[data-neighborhood-official]');
-        const savedNeighborhood = neighborhoodInput?.value || '';
-        const savedOfficial = officialId?.value || '';
-        const syncOfficial = () => {
-            const selected = neighborhoodList.selectedOptions[0];
-            officialId.value = selected?.dataset.id || '';
-            officialField.querySelector('input').value = selected?.dataset.name || '';
-            officialField.hidden = !officialId.value;
-        };
-        const loadNeighborhoods = async (initial = false) => {
-            if (!neighborhoodList) return;
-            const current = ++neighborhoodGeneration;
-            const governor = locations.find(row => row.name === governorate.select.value);
-            const area = governor?.districts.find(row => row.name === district.select.value);
-            const useDirectory = Boolean(area?.has_neighborhood_directory);
-            neighborhoodInput.hidden = neighborhoodInput.disabled = useDirectory;
-            neighborhoodList.hidden = !useDirectory;
-            neighborhoodList.disabled = !useDirectory;
-            neighborhoodLabel.htmlFor = useDirectory ? neighborhoodList.id : neighborhoodInput.id;
-            neighborhoodInput.value = initial ? savedNeighborhood : '';
-            neighborhoodStatus.textContent = '';
-            neighborhoodList.replaceChildren(new Option('جارٍ تحميل الأحياء…', ''));
-            syncOfficial();
-            if (!useDirectory) return;
-            try {
-                const response = await fetch(root.dataset.officialsUrl.replace('__DISTRICT__', area.id), {
-                    headers: {Accept: 'application/json'}, cache: 'no-store'
-                });
-                if (!response.ok) throw new Error('neighborhoods');
-                const rows = await response.json();
-                if (current !== neighborhoodGeneration) return;
-                neighborhoodList.replaceChildren(new Option(rows.length ? 'اختر الحي / الحارة' : 'لا توجد أحياء متاحة', ''));
-                rows.forEach(row => {
-                    const option = new Option(row.neighborhood, row.neighborhood);
-                    option.dataset.id = row.id;
-                    option.dataset.name = row.full_name;
-                    neighborhoodList.add(option);
-                });
-                if (initial) {
-                    const options = Array.from(neighborhoodList.options);
-                    const match = options.findIndex(option => option.value && (savedOfficial
-                        ? option.dataset.id === savedOfficial && option.value === savedNeighborhood
-                        : option.value === savedNeighborhood));
-                    if (match > 0) neighborhoodList.selectedIndex = match;
-                    else if (savedNeighborhood) neighborhoodStatus.textContent = 'الحي المحفوظ: ' + savedNeighborhood + '. اختر حيًا متاحًا للمتابعة.';
-                }
-                syncOfficial();
-            } catch {
-                if (current !== neighborhoodGeneration) return;
-                neighborhoodList.replaceChildren(new Option('تعذّر تحميل الأحياء', ''));
-                neighborhoodStatus.textContent = 'أعد اختيار المديرية للمحاولة مجددًا.';
-            }
-        };
         const label = (item, id) => item.label?.setAttribute('for', id);
         const list = (item, rows, placeholder, selected = '') => {
             item.manual.hidden = true;
@@ -95,7 +36,7 @@
             item.manual.value = value;
             label(item, item.manual.id);
         };
-        const loadDistricts = (selected = '', initial = false) => {
+        const loadDistricts = (selected = '') => {
             const location = locations.find(row => row.name === governorate.select.value);
             if (!location) {
                 if (selected && governorate.select.value) {
@@ -109,7 +50,6 @@
                 manual(district, selected);
                 status.textContent = 'لا تتوفر قائمة التقسيمات التابعة لهذه المنطقة؛ أدخل الاسم كما في وثيقة الإقامة.';
             }
-            loadNeighborhoods(initial);
         };
         const loadCountry = async (initial = false) => {
             const current = ++generation;
@@ -117,7 +57,6 @@
             locations = [];
             list(governorate, [], country.value ? 'جارٍ تحميل المحافظات…' : 'اختر الدولة أولًا');
             list(district, [], 'اختر المحافظة أولًا');
-            loadNeighborhoods(initial);
             if (!code) {
                 if (country.value) {
                     manual(governorate, initial ? saved.governorate : '');
@@ -140,7 +79,7 @@
                 if (locations.length) {
                     list(governorate, locations, 'اختر المحافظة / المنطقة', initial ? saved.governorate : '');
                     status.textContent = 'اختر المحافظة ثم المديرية التابعة لها.';
-                    loadDistricts(initial ? saved.district : '', initial);
+                    loadDistricts(initial ? saved.district : '');
                 } else {
                     manual(governorate, initial ? saved.governorate : '');
                     manual(district, initial ? saved.district : '');
@@ -156,8 +95,6 @@
         country.addEventListener('change', () => loadCountry());
         governorate.select.addEventListener('change', () => loadDistricts());
         governorate.manual.addEventListener('input', () => { district.manual.value = ''; });
-        district.select.addEventListener('change', () => loadNeighborhoods());
-        neighborhoodList?.addEventListener('change', syncOfficial);
         loadCountry(true);
     });
 })();

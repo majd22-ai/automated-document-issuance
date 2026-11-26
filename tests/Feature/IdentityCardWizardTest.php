@@ -141,6 +141,9 @@ class IdentityCardWizardTest extends TestCase
         for ($step = 1; $step <= 2; $step++) {
             $this->save($form, $step, ['data' => $this->data($step)])->assertSessionHasNoErrors();
         }
+        $this->get(route('citizen.identity-card.show', ['form' => $form, 'step' => 3]))
+            ->assertOk()->assertSee('<input id="field-neighborhood"', false)
+            ->assertDontSee('field-neighborhood-list', false)->assertDontSee('field-residence-official-name', false);
         $data = $this->data(3);
         unset($data['residence_village'], $data['house'], $data['residence_governorate']);
         $this->save($form, 3, ['data' => $data])->assertSessionHasErrors('data.residence_governorate');

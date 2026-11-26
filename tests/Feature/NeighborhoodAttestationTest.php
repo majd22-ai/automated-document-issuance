@@ -106,6 +106,8 @@ class NeighborhoodAttestationTest extends TestCase
             'residence_district' => 'السبعين', 'neighborhood' => $official->neighborhood, 'residence_official_id' => $official->id];
         $locations = app(ResidenceLocations::class);
         $this->assertSame([], $locations->errors($address));
+        $manualAddress = array_replace($address, ['neighborhood' => 'حي مكتوب يدويًا', 'residence_official_id' => null]);
+        $this->assertSame([], $locations->errors($manualAddress));
         $this->assertArrayHasKey('data.neighborhood', $locations->errors(array_replace($address, ['residence_official_id' => $manual->id])));
         $official->forceFill(['is_active' => false])->save();
         $this->assertArrayHasKey('data.neighborhood', $locations->errors($address));

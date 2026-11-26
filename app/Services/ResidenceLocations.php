@@ -33,12 +33,10 @@ class ResidenceLocations
     {
         abort_unless(preg_match('/^[A-Z]{2}$/D', $country) && in_array($country, array_column($this->countries(), 'code'), true), 404);
         if ($country === 'YE') {
-            return ResidenceGovernorate::with(['districts' => fn ($query) => $query->orderBy('name')->withExists('officials')])->orderBy('name')->get()
+            return ResidenceGovernorate::with(['districts' => fn ($query) => $query->orderBy('name')])->orderBy('name')->get()
                 ->map(fn ($row) => ['id' => (string) $row->id, 'name' => $row->name,
                     'label' => $row->code === 'YE13' ? 'أمانة العاصمة (مدينة صنعاء)' : $row->name,
-                    'districts' => $row->districts->map(fn ($district) => ['id' => (string) $district->id, 'name' => $district->name,
-                        'has_neighborhood_directory' => app()->environment(['local', 'testing'])
-                            && DemoNeighborhoods::includes($district->code) && $district->officials_exists])->all()])->all();
+                    'districts' => $row->districts->map(fn ($district) => ['id' => (string) $district->id, 'name' => $district->name])->all()])->all();
         }
         $governorates = json_decode(file_get_contents(database_path('data/residence-divisions/'.$country.'.json')), true, flags: JSON_THROW_ON_ERROR);
         if ($country === 'SA') {
@@ -80,7 +78,7 @@ class ResidenceLocations
         if ($selected['districts'] && ! $district) {
             return ['data.residence_district' => 'اختر مديرية أو تقسيمًا إداريًا تابعًا للمحافظة المحددة.'];
         }
-        if (! empty($district['has_neighborhood_directory']) || filled($officialId)) {
+        if (filled($officialId)) {
             $official = $district ? ResidenceDistrict::find($district['id'])?->officials()->available()
                 ->where('neighborhood', $data['neighborhood'] ?? null)
                 ->when(filled($officialId), fn ($query) => $query->whereKey($officialId))->first() : null;

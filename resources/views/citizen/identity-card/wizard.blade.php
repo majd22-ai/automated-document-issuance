@@ -62,22 +62,14 @@
             @csrf<input type="hidden" name="step" value="{{ $step }}"><input type="hidden" name="version" value="{{ $form->version }}">
             @if($step <= 3)
                 <p>الحقول المشار إليها بـ * مطلوبة للانتقال إلى الخطوة التالية. يمكنك حفظ مسودة غير مكتملة.</p>
-                <div class="identity-field-grid identity-panel" @if($step === 3) data-residence-cascade data-residence-url="{{ route('locations.residence', ['country' => 'ZZ']) }}" data-officials-url="{{ url('/residence/districts/__DISTRICT__/officials') }}" @endif>
+                <div class="identity-field-grid identity-panel" @if($step === 3) data-residence-cascade data-residence-url="{{ route('locations.residence', ['country' => 'ZZ']) }}" @endif>
                 @if($step === 3)
                     @include('components.residence-country-selects')
                     <div class="identity-field">
-                        <label for="field-neighborhood" data-neighborhood-label>الحي / الحارة *</label>
-                        <input id="field-neighborhood" name="data[neighborhood]" data-neighborhood-manual
+                        <label for="field-neighborhood">الحي / الحارة *</label>
+                        <input id="field-neighborhood" name="data[neighborhood]"
                                value="{{ old('data.neighborhood', data_get($form->data, 'neighborhood')) }}" maxlength="200" required>
-                        <select id="field-neighborhood-list" name="data[neighborhood]" data-neighborhood-list hidden disabled required></select>
-                        <input type="hidden" name="data[residence_official_id]" data-neighborhood-official-id
-                               value="{{ old('data.residence_official_id', data_get($form->data, 'residence_official_id')) }}">
-                        <p data-neighborhood-status role="status"></p>
                         @error('data.neighborhood')<p class="identity-field-error">{{ $message }}</p>@enderror
-                    </div>
-                    <div class="identity-field" data-neighborhood-official hidden>
-                        <label for="field-residence-official-name">اسم عاقل الحارة</label>
-                        <input id="field-residence-official-name" readonly>
                     </div>
                 @endif
                 @foreach($fields[$step] as $key => $field)
