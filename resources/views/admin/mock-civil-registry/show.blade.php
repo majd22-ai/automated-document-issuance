@@ -14,21 +14,15 @@
             @if(!empty($portraitAvailable))
                 <details>
                     <summary class="btn btn-outline">عرض الصورة</summary>
-                    <div style="display:flex;align-items:flex-start;gap:.75rem;margin-block:.75rem;flex-wrap:wrap">
+                    <div style="display:flex;align-items:flex-start;gap:.6rem;margin-block:.75rem;flex-wrap:wrap">
                         <img src="{{ route('admin.mock-systems.portrait', $person->id, false) }}"
                              alt="الصورة التجريبية لـ {{ $person->name }}"
-                             id="portrait-img-{{ $person->id }}"
                              loading="lazy"
                              style="display:block;width:min(100%, 20rem);height:auto">
                         <button type="button"
-                                class="btn btn-outline portrait-copy-button"
-                                data-copy-portrait="{{ route('admin.mock-systems.portrait', $person->id, false) }}">
-                            <span aria-live="polite">نسخ الصورة</span>
-                        </button>
-                        <button type="button" class="btn btn-outline portrait-copy-button"
-                                data-download-portrait="{{ route('admin.mock-systems.portrait', $person->id, false) }}"
-                                data-filename="portrait-{{ $person->id }}.png">
-                            <span aria-live="polite">تنزيل الصورة</span>
+                                data-copy-portrait="{{ route('admin.mock-systems.portrait', $person->id, false) }}"
+                                style="font-size:.7rem;padding:.2rem .5rem;border:1px solid currentColor;border-radius:.3rem;background:transparent;cursor:pointer;white-space:nowrap;align-self:flex-start;line-height:1.5">
+                            نسخ الصورة
                         </button>
                     </div>
                 </details>
@@ -132,4 +126,37 @@
         @endif
     </div>
 </section>
+@push('scripts')
+<script>
+document.querySelectorAll('[data-copy-portrait]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const url = btn.dataset.copyPortrait;
+    const label = btn;
+    const original = label.textContent.trim();
+    try {
+      const res = await fetch(url, { credentials: 'same-origin', cache: 'force-cache' });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const bmp = await createImageBitmap(blob);
+      const canvas = document.createElement('canvas');
+      canvas.width = bmp.width; canvas.height = bmp.height;
+      canvas.getContext('2d').drawImage(bmp, 0, 0);
+      canvas.toBlob(async png => {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
+          label.textContent = 'تم النسخ ✓';
+        } catch {
+          await navigator.clipboard.writeText(location.origin + url);
+          label.textContent = 'تم نسخ الرابط ✓';
+        }
+        setTimeout(() => { label.textContent = original; }, 2000);
+      }, 'image/png');
+    } catch {
+      label.textContent = 'تعذر النسخ ✗';
+      setTimeout(() => { label.textContent = original; }, 2000);
+    }
+  });
+});
+</script>
+@endpush
 @endsection
